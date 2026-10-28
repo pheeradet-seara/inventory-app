@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SEARA - Stock Uploader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- โหลด Library สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl p-6 md:p-8 w-full max-w-lg space-y-6">
+    
+    <div class="text-center space-y-2">
+      <div class="flex justify-center mb-1">
+        <img src="./logo.png" alt="Company Logo" class="h-14 w-auto object-contain">
+      </div>
+      <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Stock Data Uploader</h2>
+      <p class="text-[12px] text-slate-400 font-medium">ลากไฟล์ Excel จาก SAP มาวางเพื่ออัปเดตสต็อกขึ้นเว็บทันที</p>
+    </div>
+
+    <!-- โซนบันทึก Token (บันทึกไว้ในเบราว์เซอร์เครื่องนี้อัตโนมัติ ทำครั้งเดียว) -->
+    <div class="bg-slate-50 border border-slate-200/70 p-4 rounded-2xl space-y-2">
+      <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">GitHub Token (บันทึกอัตโนมัติในเครื่อง)</label>
+      <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" 
+             class="w-full px-3 py-2 border border-slate-200 rounded-xl text-[13px] bg-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600">
+      <div class="flex justify-between items-center text-[10px] text-slate-400">
+        <span>Repo: <b>pheeradet-seara/inventory-app</b></span>
+        <button onclick="saveToken()" class="text-indigo-600 font-bold hover:underline">บันทึกรหัส</button>
+      </div>
+    </div>
+
+    <!-- Drop Zone สำหรับลากไฟล์มาวาง -->
+    <div id="dropZone" 
+         ondragover="event.preventDefault(); this.classList.add('border-indigo-600', 'bg-indigo-50/30');"
+         ondragleave="this.classList.remove('border-indigo-600', 'bg-indigo-50/30');"
+         ondrop="handleDrop(event)"
+         onclick="document.getElementById('fileInput').click()"
+         class="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-slate-50 transition group">
+      <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
+      <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">📊</div>
+      <p class="text-[14px] font-bold text-slate-700">คลิกเลือกไฟล์ หรือลากไฟล์ SAP มาวางที่นี่</p>
+      <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์ .xlsx, .xls, .csv</p>
+    </div>
+
+    <!-- กล่องแสดงผลสถานะ -->
+    <div id="statusBox" class="hidden rounded-2xl p-4 text-[12px] font-semibold space-y-1"></div>
+
+  </div>
+
+  <script>
+    const REPO_NAME = "pheeradet-seara/inventory-app";
+    const TARGET_FILE = "data.json";
+
+    window.onload = () => {
+      const savedToken = localStorage.getItem('seara_gh_token');
+      if (savedToken) {
+        document.getElementById('githubToken').value = savedToken;
+      }
+    };
+
+    function saveToken() {
+      const token = document.getElementById('githubToken').value.trim();
+      if (token) {
+        localStorage.setItem('seara_gh_token', token);
+        showStatus('✅ บันทึก Token ลงในเครื่องเรียบร้อยแล้ว', 'bg-emerald-50 text-emerald-700 border border-emerald-200');
+      }
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('border-indigo-600', 'bg-indigo-50/30');
+      if (e.dataTransfer.files.length > 0) {
+        processExcel(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        processExcel(e.target.files[0]);
+      }
+    }
+
+    function showStatus(text, className) {
+      const box = document.getElementById('statusBox');
+      box.className = `rounded-2xl p-4 text-[12px] font-semibold ${className}`;
+      box.innerHTML = text;
+      box.classList.remove('hidden');
+    }
+
+    async function processExcel(file) {
+      const token = document.getElementById('githubToken').value.trim();
+      if (!token) {
+        showStatus('⚠️ กรุณากรอก GitHub Token ด้านบนก่อนดำเนินการ', 'bg-amber-50 text-amber-700 border border-amber-200');
+        return;
+      }
+      localStorage.setItem('seara_gh_token', token);
+
+      showStatus('⏳ กำลังอ่านและประมวลผลไฟล์ Excel...', 'bg-slate-100 text-slate-700 border border-slate-200');
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rawRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+          if (!rawRows || rawRows.length === 0) {
+            showStatus('❌ ไม่พบข้อมูลในไฟล์ Excel ที่เลือก', 'bg-red-50 text-red-700 border border-red-200');
+            return;
+          }
+
+          showStatus(`⏳ กำลังแปลงและบีบอัดข้อมูล (${rawRows.length.toLocaleString()} รายการ)...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
+
+          const items = [];
+          for (let row of rawRows) {
+            // ดึงค่าตามชื่อหัวตารางของ SAP
+            const itemNo = String(row['Item No.'] || '').trim();
+            if (!itemNo || ['nan', 'none', '-', 'total'].includes(itemNo.toLowerCase())) continue;
+
+            const wh = String(row['Warehouse Code'] || '').trim();
+            const brand = String(row['Brand'] || 'Unbranded').trim();
+            const desc = String(row['Item Description'] || '-').trim();
+            const unit = String(row['Inventory UoM'] || '-').trim();
+
+            const inStock = Math.round((parseFloat(row['In Stock']) || 0) * 100) / 100;
+            const defined = Math.round((parseFloat(row['Defined']) || 0) * 100) / 100;
+            const ordered = Math.round((parseFloat(row['Ordered']) || 0) * 100) / 100;
+            const availableInStock = Math.round((parseFloat(row['Available']) || (inStock - defined)) * 100) / 100;
+            const avgPrice = Math.round((parseFloat(row['Average Price']) || 0) * 100) / 100;
+
+            // กรองแถวที่สต็อกเป็น 0 ทุกช่องออก เพื่อลดขนาดไฟล์
+            if (inStock === 0 && ordered === 0 && defined === 0 && availableInStock === 0) continue;
+
+            // กำหนดสถานะ Badge
+            let statusText = 'Out of Stock';
+            let color = 'red';
+            if (availableInStock > 0) {
+              statusText = 'In Stock';
+              color = 'green';
+            } else if (availableInStock <= 0 && ordered > 0) {
+              statusText = 'Ordered';
+              color = 'yellow';
+            }
+
+            items.push({
+              wh, brand, itemNo, desc, unit,
+              inStock, defined, ordered, availableInStock, avgPrice,
+              statusText, color
+            });
+          }
+
+          const now = new Date();
+          const syncTime = `${now.toLocaleDateString('en-GB')}, ${now.toLocaleTimeString('en-GB')}`;
+          const finalPayload = {
+            syncTime: syncTime,
+            items: items
+          };
+
+          const jsonString = JSON.stringify(finalPayload);
+          const sizeMb = (new Blob([jsonString]).size / (1024 * 1024)).toFixed(2);
+
+          showStatus(`⏳ กำลังอัปโหลดข้อมูล ${items.length.toLocaleString()} รายการ (${sizeMb} MB) ขึ้น GitHub...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
+
+          await uploadToGitHub(token, jsonString, items.length);
+
+        } catch (err) {
+          console.error(err);
+          showStatus(`❌ เกิดข้อผิดพลาดในการประมวลผล: ${err.message}`, 'bg-red-50 text-red-700 border border-red-200');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    async function uploadToGitHub(token, contentStr, itemCount) {
+      const url = `https://api.github.com/repos/${REPO_NAME}/contents/${TARGET_FILE}`;
+      const headers = {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      };
+
+      try {
+        // 1. ดึง sha เดิมของไฟล์ data.json
+        const getRes = await fetch(url, { headers });
+        let sha = null;
+        if (getRes.ok) {
+          const getData = await getRes.json();
+          sha = getData.sha;
+        }
+
+        // 2. แปลงเนื้อหาเป็น UTF-8 Base64
+        const utf8Bytes = new TextEncoder().encode(contentStr);
+        let binaryStr = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binaryStr += String.fromCharCode(utf8Bytes[i]);
+        }
+        const b64Content = btoa(binaryStr);
+
+        // 3. ส่งข้อมูล Commit ทับไฟล์เดิม
+        const now = new Date();
+        const payload = {
+          message: `Update stock: ${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB')}`,
+          content: b64Content
+        };
+        if (sha) payload.sha = sha;
+
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (putRes.ok) {
+          showStatus(`🎉 สำเร็จ! อัปเดตข้อมูล ${itemCount.toLocaleString()} รายการขึ้นระบบเรียบร้อยแล้ว`, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
+        } else {
+          const errData = await putRes.json();
+          showStatus(`❌ อัปโหลดไม่สำเร็จ: ${errData.message || 'Token หรือสิทธิ์ไม่ถูกต้อง'}`, 'bg-red-50 text-red-700 border border-red-200');
+        }
+      } catch (err) {
+        showStatus(`❌ การเชื่อมต่อล้มเหลว: ${err.message}`, 'bg-red-50 text-red-700 border border-red-200');
+      }
+    }
+  </script>
+</body>
+</html>
