@@ -1,36 +1,104 @@
-const CACHE_NAME = 'inv-app-v4';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'
-];
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventory Checker</title>
+  
+  <!-- บังคับสเกลหน้าจอมือถือ (Mobile Responsive Viewport) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="InvChecker">
+  <meta name="theme-color" content="#0f172a">
 
-self.addEventListener('install', (e) => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
-});
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2897/2897785.png">
+  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2897/2897785.png">
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
-  );
-});
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+    .badge-green { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-yellow { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-red { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .custom-scroll::-webkit-scrollbar { height: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
 
-self.addEventListener('fetch', (e) => {
-  // บังคับปล่อยผ่านคำขอที่ไปหา Google Script เพื่อไม่ให้ Service Worker ดักตัดการเชื่อมต่อบนมือถือ
-  if (e.request.url.includes('script.google.com')) {
-    return;
-  }
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</head>
+<body class="max-w-xl mx-auto min-h-screen bg-slate-50/90 pb-28 text-slate-800 antialiased relative">
 
-  e.respondWith(
-    caches.match(e.request).then((res) => res || fetch(e.request))
-  );
-});
+  <!-- ================= DYNAMIC AUTH SCREEN ================= -->
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-5">
+    <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl shadow-indigo-100/50 p-8 w-full max-w-sm space-y-5">
+      
+      <div class="text-center space-y-1.5">
+        <div class="inline-flex p-3.5 bg-indigo-50 text-indigo-600 rounded-3xl text-3xl shadow-inner mb-1">📦</div>
+        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
+        <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
+      </div>
+
+      <!-- Step 1: Input Email -->
+      <div id="stepEmail" class="space-y-3.5">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Work Email</label>
+          <input type="email" id="loginEmailInput" 
+                 placeholder="name@company.com" 
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition"
+                 onkeydown="if(event.key === 'Enter') handleCheckEmail()">
+        </div>
+        <button onclick="handleCheckEmail()" id="checkEmailBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
+          Next →
+        </button>
+      </div>
+
+      <!-- Step 2A: Normal Login (ผู้ใช้มี PIN แล้ว) -->
+      <div id="stepPin" class="space-y-3.5 hidden">
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
+            <button onclick="resetToEmailStep()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Change Email</button>
+          </div>
+          <input type="password" id="loginPinInput" maxlength="8"
+                 placeholder="••••" 
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest"
+                 onkeydown="if(event.key === 'Enter') handleLogin()">
+        </div>
+        <button onclick="handleLogin()" id="loginBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
+          Sign In
+        </button>
+      </div>
+
+      <!-- Step 2B: First-Time Setup (ตั้ง PIN ครั้งแรก) -->
+      <div id="stepCreatePin" class="space-y-3.5 hidden">
+        <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
+          👋 First time sign-in: Please create a 4–8 digit PIN to protect your account.
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Create New PIN</label>
+          <input type="password" id="newPinInput" maxlength="8"
+                 placeholder="New 4-8 digit PIN" 
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Confirm PIN</label>
+          <input type="password" id="confirmPinInput" maxlength="8"
+                 placeholder="Confirm PIN" 
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest"
+                 onkeydown="if(event.key === 'Enter') handleSetupPin()">
+        </div>
+        <button onclick="handleSetupPin()" id="setupPinBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-emerald-200">
+          Set PIN & Sign In
+        </button>
+      </div>
+
+      <div id="loginError" class="hidden text-center text-[11px] text-red-600 bg-red-50 p-2.5 rounded-
