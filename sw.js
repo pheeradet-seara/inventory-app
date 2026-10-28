@@ -25,7 +25,7 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // หากเป็นคำขอวิ่งไปหา Google Apps Script ให้ปล่อยผ่านตรงๆ ห้ามดักแคชเด็ดขาด
+  // บังคับปล่อยผ่านคำขอที่ไปหา Google Script เพื่อไม่ให้ Service Worker ดักตัดการเชื่อมต่อบนมือถือ
   if (e.request.url.includes('script.google.com')) {
     return;
   }
