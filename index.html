@@ -710,13 +710,22 @@
     }
 
     function toggleBrand(brandName) {
-      openBrands[brandName] = !openBrands[brandName];
-      renderView();
+  openBrands[brandName] = !openBrands[brandName];
+  // วาดหน้าจอซ้ำตามจำนวนแบรนด์เดิมที่กำลังแสดงอยู่ ไม่ดีดกลับไปเริ่ม 0
+  rerenderCurrentState();
     }
 
-    function toggleItem(itemKey) {
-      openItems[itemKey] = !openItems[itemKey];
-      renderView();
+function toggleItem(itemKey) {
+  openItems[itemKey] = !openItems[itemKey];
+  rerenderCurrentState();
+    }
+
+function rerenderCurrentState() {
+  const container = document.getElementById('contentList');
+  const countToKeep = Math.max(displayedCount, BATCH_SIZE);
+  container.innerHTML = '';
+  displayedCount = 0;
+  renderBatch(countToKeep, false, (activeKeyword || '').toLowerCase().trim());
     }
 
     function escapeHtml(text) {
