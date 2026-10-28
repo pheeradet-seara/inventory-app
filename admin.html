@@ -5,7 +5,7 @@
   <title>SEARA - Stock Uploader</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- โหลด Library สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
+  <!-- Library สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -24,7 +24,7 @@
       <p class="text-[12px] text-slate-400 font-medium">ลากไฟล์ Excel จาก SAP มาวางเพื่ออัปเดตสต็อกขึ้นเว็บทันที</p>
     </div>
 
-    <!-- โซนบันทึก Token (บันทึกไว้ในเบราว์เซอร์เครื่องนี้อัตโนมัติ ทำครั้งเดียว) -->
+    <!-- โซนบันทึก Token -->
     <div class="bg-slate-50 border border-slate-200/70 p-4 rounded-2xl space-y-2">
       <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">GitHub Token (บันทึกอัตโนมัติในเครื่อง)</label>
       <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" 
@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <!-- Drop Zone สำหรับลากไฟล์มาวาง -->
+    <!-- Drop Zone -->
     <div id="dropZone" 
          ondragover="event.preventDefault(); this.classList.add('border-indigo-600', 'bg-indigo-50/30');"
          ondragleave="this.classList.remove('border-indigo-600', 'bg-indigo-50/30');"
@@ -48,7 +48,7 @@
       <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์ .xlsx, .xls, .csv</p>
     </div>
 
-    <!-- กล่องแสดงผลสถานะ -->
+    <!-- Status Box -->
     <div id="statusBox" class="hidden rounded-2xl p-4 text-[12px] font-semibold space-y-1"></div>
 
   </div>
@@ -120,7 +120,6 @@
 
           const items = [];
           for (let row of rawRows) {
-            // ดึงค่าตามชื่อหัวตารางของ SAP
             const itemNo = String(row['Item No.'] || '').trim();
             if (!itemNo || ['nan', 'none', '-', 'total'].includes(itemNo.toLowerCase())) continue;
 
@@ -132,13 +131,17 @@
             const inStock = Math.round((parseFloat(row['In Stock']) || 0) * 100) / 100;
             const defined = Math.round((parseFloat(row['Defined']) || 0) * 100) / 100;
             const ordered = Math.round((parseFloat(row['Ordered']) || 0) * 100) / 100;
-            const availableInStock = Math.round((parseFloat(row['Available']) || (inStock - defined)) * 100) / 100;
+            
+            // ตรวจสอบค่า Available ให้แม่นยำแม้เป็นเลข 0
+            const rawAvail = row['Available'];
+            const parsedAvail = (rawAvail !== undefined && rawAvail !== '') ? parseFloat(rawAvail) : (inStock - defined);
+            const availableInStock = Math.round((isNaN(parsedAvail) ? 0 : parsedAvail) * 100) / 100;
+
             const avgPrice = Math.round((parseFloat(row['Average Price']) || 0) * 100) / 100;
 
-            // กรองแถวที่สต็อกเป็น 0 ทุกช่องออก เพื่อลดขนาดไฟล์
+            // กรองแถวที่ไม่มีสต็อกเลยออกเพื่อลดขนาดไฟล์
             if (inStock === 0 && ordered === 0 && defined === 0 && availableInStock === 0) continue;
 
-            // กำหนดสถานะ Badge
             let statusText = 'Out of Stock';
             let color = 'red';
             if (availableInStock > 0) {
@@ -187,15 +190,14 @@
       };
 
       try {
-        // 1. ดึง sha เดิมของไฟล์ data.json
-        const getRes = await fetch(url, { headers });
+        // ดึง SHA สดใหม่เสมอโดยเติม timestamp ป้องกัน Browser Cache
+        const getRes = await fetch(`${url}?t=${new Date().getTime()}`, { headers });
         let sha = null;
         if (getRes.ok) {
           const getData = await getRes.json();
           sha = getData.sha;
         }
 
-        // 2. แปลงเนื้อหาเป็น UTF-8 Base64
         const utf8Bytes = new TextEncoder().encode(contentStr);
         let binaryStr = '';
         for (let i = 0; i < utf8Bytes.length; i++) {
@@ -203,7 +205,6 @@
         }
         const b64Content = btoa(binaryStr);
 
-        // 3. ส่งข้อมูล Commit ทับไฟล์เดิม
         const now = new Date();
         const payload = {
           message: `Update stock: ${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB')}`,
