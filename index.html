@@ -43,8 +43,8 @@
       
       <div class="text-center space-y-1.5">
         <div class="flex justify-center mb-2">
-  <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
-</div>
+          <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
+        </div>
         <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
         <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -709,23 +709,52 @@
       renderView();
     }
 
-    function toggleBrand(brandName) {
-  openBrands[brandName] = !openBrands[brandName];
-  // วาดหน้าจอซ้ำตามจำนวนแบรนด์เดิมที่กำลังแสดงอยู่ ไม่ดีดกลับไปเริ่ม 0
-  rerenderCurrentState();
+    function toggleBrand(brandName, btnElement) {
+      openBrands[brandName] = !openBrands[brandName];
+      const isOpen = openBrands[brandName];
+      
+      const card = btnElement.closest('.brand-card');
+      if (!card) return;
+      const content = card.querySelector('.brand-content');
+      const arrow = card.querySelector('.brand-arrow');
+      const countBadge = card.querySelector('.brand-count');
+      const avatar = card.querySelector('.brand-avatar');
+
+      if (isOpen) {
+        content.classList.remove('hidden');
+        card.classList.add('bg-white', 'border-indigo-200', 'shadow-lg', 'shadow-indigo-100/50', 'ring-2', 'ring-indigo-500/20');
+        card.classList.remove('border-slate-200/90', 'shadow-xs');
+        btnElement.classList.add('bg-indigo-50/40');
+        arrow.classList.add('bg-indigo-100', 'text-indigo-700', 'rotate-180');
+        countBadge.classList.add('bg-indigo-600', 'text-white');
+        avatar.classList.add('bg-indigo-600', 'text-white', 'shadow-indigo-200');
+      } else {
+        content.classList.add('hidden');
+        card.classList.remove('border-indigo-200', 'shadow-lg', 'shadow-indigo-100/50', 'ring-2', 'ring-indigo-500/20');
+        card.classList.add('bg-white', 'border-slate-200/90', 'shadow-xs');
+        btnElement.classList.remove('bg-indigo-50/40');
+        arrow.classList.remove('bg-indigo-100', 'text-indigo-700', 'rotate-180');
+        countBadge.classList.remove('bg-indigo-600', 'text-white');
+        avatar.classList.remove('bg-indigo-600', 'text-white', 'shadow-indigo-200');
+      }
     }
 
-function toggleItem(itemKey) {
-  openItems[itemKey] = !openItems[itemKey];
-  rerenderCurrentState();
-    }
+    function toggleItem(itemKey, btnElement) {
+      openItems[itemKey] = !openItems[itemKey];
+      const isOpen = openItems[itemKey];
+      
+      const card = btnElement.closest('.item-card');
+      if (!card) return;
+      const content = card.querySelector('.item-content');
+      const label = card.querySelector('.item-status-text');
 
-function rerenderCurrentState() {
-  const container = document.getElementById('contentList');
-  const countToKeep = Math.max(displayedCount, BATCH_SIZE);
-  container.innerHTML = '';
-  displayedCount = 0;
-  renderBatch(countToKeep, false, (activeKeyword || '').toLowerCase().trim());
+      if (isOpen) {
+        content.classList.remove('hidden');
+        label.innerText = '▲ Close';
+      } else {
+        content.classList.add('hidden');
+        label.innerText = '▼ View';
+      }
     }
 
     function escapeHtml(text) {
@@ -811,11 +840,11 @@ function rerenderCurrentState() {
         const initials = getBrandInitials(brand);
 
         html += `
-          <div class="rounded-3xl border transition-all duration-200 overflow-hidden ${isBrandOpen ? 'bg-white border-indigo-200 shadow-lg shadow-indigo-100/50 ring-2 ring-indigo-500/20' : 'bg-white border-slate-200/90 shadow-xs hover:border-indigo-200 hover:shadow-md'}">
-            <button onclick="toggleBrand('${escapeHtml(brand)}')" 
+          <div class="brand-card rounded-3xl border transition-all duration-200 overflow-hidden ${isBrandOpen ? 'bg-white border-indigo-200 shadow-lg shadow-indigo-100/50 ring-2 ring-indigo-500/20' : 'bg-white border-slate-200/90 shadow-xs hover:border-indigo-200 hover:shadow-md'}">
+            <button onclick="toggleBrand('${escapeHtml(brand)}', this)" 
                     class="w-full flex justify-between items-center p-4 text-left transition-colors ${isBrandOpen ? 'bg-indigo-50/40' : 'hover:bg-slate-50/80'}">
               <div class="flex items-center gap-3.5 min-w-0 pr-2">
-                <div class="w-11 h-11 rounded-2xl flex items-center justify-center text-[15px] font-black flex-shrink-0 transition-transform active:scale-95 shadow-xs ${isBrandOpen ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 border border-slate-200/80'}">
+                <div class="brand-avatar w-11 h-11 rounded-2xl flex items-center justify-center text-[15px] font-black flex-shrink-0 transition-transform active:scale-95 shadow-xs ${isBrandOpen ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 border border-slate-200/80'}">
                   ${escapeHtml(initials)}
                 </div>
                 <div class="truncate">
@@ -824,109 +853,105 @@ function rerenderCurrentState() {
                 </div>
               </div>
               <div class="flex items-center gap-2.5 flex-shrink-0">
-                <span class="font-bold text-[11px] px-3 py-1 rounded-xl transition-colors ${isBrandOpen ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200/70'}">
+                <span class="brand-count font-bold text-[11px] px-3 py-1 rounded-xl transition-colors ${isBrandOpen ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200/70'}">
                   ${items.length} <span class="hidden sm:inline font-medium text-[11px] opacity-80">items</span>
                 </span>
-                <div class="w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold transition-all ${isBrandOpen ? 'bg-indigo-100 text-indigo-700 rotate-180' : 'bg-slate-100 text-slate-400'}">
+                <div class="brand-arrow w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold transition-all ${isBrandOpen ? 'bg-indigo-100 text-indigo-700 rotate-180' : 'bg-slate-100 text-slate-400'}">
                   ▼
                 </div>
               </div>
             </button>
 
-            <div class="${isBrandOpen ? 'border-t border-slate-100 bg-slate-50/50 p-3 space-y-3' : 'hidden'}">
+            <div class="brand-content ${isBrandOpen ? '' : 'hidden'} border-t border-slate-100 bg-slate-50/50 p-3 space-y-3">
         `;
 
-        if (isBrandOpen) {
-          items.forEach(group => {
-            const itemKey = group.itemNo;
-            const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
+        items.forEach(group => {
+          const itemKey = group.itemNo;
+          const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
 
-            html += `
-              <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition hover:border-slate-300">
-                <button onclick="toggleItem('${escapeHtml(itemKey)}')" 
-                        class="w-full p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition text-left">
-                  <div class="flex-1 min-w-0 pr-1 space-y-0.5">
-                    <span class="font-extrabold text-slate-900 text-lg tracking-tight block truncate">${escapeHtml(group.itemNo)}</span>
-                    <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
-                  </div>
-                  <div class="flex items-center justify-end gap-2 flex-shrink-0 w-28 text-right">
-                    <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-200/80 whitespace-nowrap">${group.warehouses.length} WH</span>
-                    <span class="text-[11px] text-indigo-600 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
-                  </div>
-                </button>
+          html += `
+            <div class="item-card bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition hover:border-slate-300">
+              <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
+                      class="w-full p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition text-left">
+                <div class="flex-1 min-w-0 pr-1 space-y-0.5">
+                  <span class="font-extrabold text-slate-900 text-lg tracking-tight block truncate">${escapeHtml(group.itemNo)}</span>
+                  <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
+                </div>
+                <div class="flex items-center justify-end gap-2 flex-shrink-0 w-28 text-right">
+                  <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-200/80 whitespace-nowrap">${group.warehouses.length} WH</span>
+                  <span class="item-status-text text-[11px] text-indigo-600 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
+                </div>
+              </button>
 
-                ${isItemOpen ? `
-                <div class="p-4 pt-0 border-t border-slate-100 space-y-3 mt-1 bg-white">
-                  <div class="flex justify-end items-center text-[11px] font-bold text-slate-400 pt-2.5 px-0.5">
-                    <span>UoM: <b class="text-slate-700 font-bold text-[11px]">${escapeHtml(group.unit) || '-'}</b></span>
-                  </div>
-                  <div class="space-y-3">
-                    ${group.warehouses.map(w => {
-                      const whAvgPrice = Number(w.avgPrice) || 0;
-                      const calculatedTotalVal = (w.inStock || 0) * whAvgPrice;
-                      const isNegative = w.availableInStock < 0;
+              <div class="item-content ${isItemOpen ? '' : 'hidden'} p-4 pt-0 border-t border-slate-100 space-y-3 mt-1 bg-white">
+                <div class="flex justify-end items-center text-[11px] font-bold text-slate-400 pt-2.5 px-0.5">
+                  <span>UoM: <b class="text-slate-700 font-bold text-[11px]">${escapeHtml(group.unit) || '-'}</b></span>
+                </div>
+                <div class="space-y-3">
+                  ${group.warehouses.map(w => {
+                    const whAvgPrice = Number(w.avgPrice) || 0;
+                    const calculatedTotalVal = (w.inStock || 0) * whAvgPrice;
+                    const isNegative = w.availableInStock < 0;
 
-                      return `
-                        <div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-2.5 shadow-2xs">
-                          <div class="flex justify-between items-center">
-                            <span class="font-extrabold text-slate-900 text-[15px] tracking-tight">${w.wh}</span>
-                            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full badge-${w.color}">${w.statusText}</span>
+                    return `
+                      <div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-2.5 shadow-2xs">
+                        <div class="flex justify-between items-center">
+                          <span class="font-extrabold text-slate-900 text-[15px] tracking-tight">${w.wh}</span>
+                          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full badge-${w.color}">${w.statusText}</span>
+                        </div>
+                        
+                        <div class="w-full border-2 border-indigo-200/90 bg-white rounded-2xl p-3 space-y-2.5 shadow-sm">
+                          <div class="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 block">Available in Stock</span>
+                            <span class="text-3xl font-black tracking-tight ${isNegative ? 'text-red-600' : 'text-emerald-600'}">
+                              ${formatNumber(w.availableInStock)}
+                            </span>
                           </div>
-                          
-                          <div class="w-full border-2 border-indigo-200/90 bg-white rounded-2xl p-3 space-y-2.5 shadow-sm">
-                            <div class="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
-                              <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 block">Available in Stock</span>
-                              <span class="text-3xl font-black tracking-tight ${isNegative ? 'text-red-600' : 'text-emerald-600'}">
-                                ${formatNumber(w.availableInStock)}
-                              </span>
+                          <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
+                              <span class="font-bold text-[15px] text-slate-800">${formatNumber(w.inStock)}</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-center">
-                              <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
-                                <span class="font-bold text-[15px] text-slate-800">${formatNumber(w.inStock)}</span>
-                              </div>
-                              <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Defined</span>
-                                <span class="font-bold text-[15px] text-orange-600">${formatNumber(w.defined)}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
-                            <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
-                              <div class="px-1">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ordered (PO)</span>
-                                <span class="font-bold text-[15px] text-indigo-600 mt-0.5 block">${formatNumber(w.ordered)}</span>
-                              </div>
-                              <div class="px-1">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Balance</span>
-                                <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">${formatNumber(w.availableInStock + w.ordered)}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
-                            <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
-                              <div class="px-1">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg. Price</span>
-                                <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">฿${formatCurrency(whAvgPrice)}</span>
-                              </div>
-                              <div class="px-1">
-                                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Val</span>
-                                <span class="font-bold text-[15px] text-indigo-700 mt-0.5 block">฿${formatCurrency(calculatedTotalVal)}</span>
-                              </div>
+                            <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Defined</span>
+                              <span class="font-bold text-[15px] text-orange-600">${formatNumber(w.defined)}</span>
                             </div>
                           </div>
                         </div>
-                      `;
-                    }).join('')}
-                  </div>
+
+                        <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
+                          <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
+                            <div class="px-1">
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ordered (PO)</span>
+                              <span class="font-bold text-[15px] text-indigo-600 mt-0.5 block">${formatNumber(w.ordered)}</span>
+                            </div>
+                            <div class="px-1">
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Balance</span>
+                              <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">${formatNumber(w.availableInStock + w.ordered)}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
+                          <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
+                            <div class="px-1">
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg. Price</span>
+                              <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">฿${formatCurrency(whAvgPrice)}</span>
+                            </div>
+                            <div class="px-1">
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Val</span>
+                              <span class="font-bold text-[15px] text-indigo-700 mt-0.5 block">฿${formatCurrency(calculatedTotalVal)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
-                ` : ''}
               </div>
-            `;
-          });
-        }
+            </div>
+          `;
+        });
 
         html += `
             </div>
