@@ -1,4 +1,4 @@
-const CACHE_NAME = 'inv-app-v3';
+const CACHE_NAME = 'inv-app-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -8,12 +8,28 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
 });
 
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
+  );
+});
+
 self.addEventListener('fetch', (e) => {
+  // หากเป็นคำขอวิ่งไปหา Google Apps Script ให้ปล่อยผ่านตรงๆ ห้ามดักแคชเด็ดขาด
+  if (e.request.url.includes('script.google.com')) {
+    return;
+  }
+
   e.respondWith(
     caches.match(e.request).then((res) => res || fetch(e.request))
   );
