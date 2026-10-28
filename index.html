@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>Inventory Checker</title>
   
+  <!-- บังคับ Scale ขนาดหน้าจอมือถือ (Mobile Responsive Viewport) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  
+  <!-- Meta Tags สำหรับ PWA / Web App -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -58,7 +62,7 @@
         </button>
       </div>
 
-      <!-- Step 2A: Normal Login -->
+      <!-- Step 2A: Normal Login (ผู้ใช้มี PIN แล้ว) -->
       <div id="stepPin" class="space-y-3.5 hidden">
         <div>
           <div class="flex justify-between items-center mb-1.5">
@@ -75,7 +79,7 @@
         </button>
       </div>
 
-      <!-- Step 2B: First-Time Setup -->
+      <!-- Step 2B: First-Time Setup (ตั้ง PIN ครั้งแรก) -->
       <div id="stepCreatePin" class="space-y-3.5 hidden">
         <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
           👋 First time sign-in: Please create a 4–8 digit PIN to protect your account.
@@ -175,8 +179,8 @@
   </div>
 
   <script>
-    // ⚠️ วาง Web app URL ที่ได้จากขั้นตอนที่ 2 ตรงนี้
-    const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
+    // URL ของ Google Apps Script ที่ Deploy เป็น API เรียบร้อยแล้ว[cite: 2]
+    const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPHOReV0yhnJgN-r745uT6j1uJvh_5VfK90r_2qQ/exec";
     const SYSTEM_KEY = "INV_SECURE_TOKEN_2026_X9#kL";
 
     let currentEmail = localStorage.getItem('inv_user_email') || null;
