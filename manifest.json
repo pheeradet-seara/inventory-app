@@ -1,6 +1,6 @@
 {
-  "name": "Inventory Checker",
-  "short_name": "InvChecker",
+  "name": "SEARA",
+  "short_name": "SEARA",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8fafc",
