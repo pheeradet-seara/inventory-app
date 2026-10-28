@@ -450,24 +450,28 @@
         }
       }
 
-      fetch(`${API_URL}?action=getData&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(currentEmail)}&pin=${encodeURIComponent(currentPin)}`, {
-        method: 'GET',
-        redirect: 'follow'
-      })
-      .then(res => res.json())
-      .then(async data => {
-        if (data.error) {
-          alert(data.error);
-          logoutApp();
-          return;
-        }
-        renderApp(data);
-        document.getElementById('loading').style.display = 'none';
-        await setCache('cached_' + currentEmail, data);
-      })
-      .catch(() => {
-        document.getElementById('loading').innerHTML = '⚠️ Using offline cache';
-      });
+      // ดึงข้อมูลตรงจาก data.json (ใส่ timestamp เพื่อข้าม Browser Cache)
+      fetch('./data.json?t=' + new Date().getTime())
+        .then(res => {
+          if (!res.ok) throw new Error('Data file not found');
+          return res.json();
+        })
+        .then(async data => {
+          data.userEmail = currentEmail;
+          data.role = 'USER';
+          
+          // ดึงรายชื่อ Warehouse ทั้งหมดในไฟล์อัตโนมัติ
+          const allWh = [...new Set(data.items.map(item => item.wh))].filter(Boolean);
+          data.userWarehouses = allWh;
+
+          renderApp(data);
+          document.getElementById('loading').style.display = 'none';
+          await setCache('cached_' + currentEmail, data);
+        })
+        .catch((err) => {
+          console.error(err);
+          document.getElementById('loading').innerHTML = '⚠️ Using offline cache (Sync failed)';
+        });
     }
 
     function renderApp(data) {
@@ -709,6 +713,7 @@
       renderView();
     }
 
+    // สลับเปิด/ปิด Brand แบบ DOM Direct (ไม่สั่ง Re-render ทั้งหน้า)
     function toggleBrand(brandName, btnElement) {
       openBrands[brandName] = !openBrands[brandName];
       const isOpen = openBrands[brandName];
@@ -739,6 +744,7 @@
       }
     }
 
+    // สลับเปิด/ปิด Item แบบ DOM Direct
     function toggleItem(itemKey, btnElement) {
       openItems[itemKey] = !openItems[itemKey];
       const isOpen = openItems[itemKey];
