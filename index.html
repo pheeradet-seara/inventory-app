@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>SEARA</title>
   
-  <!-- บังคับสเกลหน้าจอมือถือ (Mobile Responsive Viewport) -->
+  <!-- Mobile Responsive Viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
   <meta name="mobile-web-app-capable" content="yes">
@@ -31,7 +31,7 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
   </script>
 </head>
@@ -54,7 +54,7 @@
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Work Email</label>
           <input type="email" id="loginEmailInput" 
-                 placeholder="name@company.com" 
+                 placeholder="name@searasports.com" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition"
                  onkeydown="if(event.key === 'Enter') handleCheckEmail()">
         </div>
@@ -72,7 +72,7 @@
           </div>
           <input type="password" id="loginPinInput" maxlength="8"
                  placeholder="••••" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest"
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleLogin()">
         </div>
         <button onclick="handleLogin()" id="loginBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
@@ -89,13 +89,13 @@
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Create New PIN</label>
           <input type="password" id="newPinInput" maxlength="8"
                  placeholder="New 4-8 digit PIN" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest">
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Confirm PIN</label>
           <input type="password" id="confirmPinInput" maxlength="8"
                  placeholder="Confirm PIN" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest"
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleSetupPin()">
         </div>
         <button onclick="handleSetupPin()" id="setupPinBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-emerald-200">
@@ -180,13 +180,17 @@
   </div>
 
   <script>
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    // เชื่อมต่อตรงกับ Google Apps Script สำหรับระบบล็อกอิน
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
-    const SYSTEM_KEY = "INV_SECURE_TOKEN_2026_X9#kL";
+    const DATA_URL = "./data.json";
 
     let currentEmail = localStorage.getItem('inv_user_email') || null;
     let currentPin = localStorage.getItem('inv_user_pin') || null;
     let pendingEmail = '';
-    let appData = { items: [], userWarehouses: [] };
+    let appData = { items: [], userWarehouses: [], userEmail: '', role: 'USER', syncTime: '' };
     let selectedWarehouses = new Set(['ALL']);
     let openBrands = {};
     let openItems = {};
@@ -279,7 +283,7 @@
       btn.innerText = 'Checking...';
       btn.disabled = true;
 
-      fetch(`${API_URL}?action=checkEmail&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(email)}`, {
+      fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(email)}`, {
         method: 'GET',
         redirect: 'follow'
       })
@@ -339,7 +343,7 @@
       btn.innerText = 'Setting PIN...';
       btn.disabled = true;
 
-      fetch(`${API_URL}?action=setupPin&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`, {
+      fetch(`${API_URL}?action=setupPin&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`, {
         method: 'GET',
         redirect: 'follow'
       })
@@ -383,7 +387,7 @@
       btn.innerText = 'Verifying...';
       btn.disabled = true;
 
-      fetch(`${API_URL}?action=auth&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`, {
+      fetch(`${API_URL}?action=auth&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`, {
         method: 'GET',
         redirect: 'follow'
       })
@@ -450,23 +454,33 @@
         }
       }
 
-      fetch(`${API_URL}?action=getData&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(currentEmail)}&pin=${encodeURIComponent(currentPin)}`, {
-        method: 'GET',
-        redirect: 'follow'
+      // ดึงตรงจาก data.json บน GitHub Pages
+      const fetchUrl = forceSync ? `${DATA_URL}?t=${new Date().getTime()}` : `${DATA_URL}?t=${Math.floor(Date.now() / 60000)}`;
+
+      fetch(fetchUrl)
+      .then(res => {
+        if (!res.ok) throw new Error('Data file not found');
+        return res.json();
       })
-      .then(res => res.json())
-      .then(async data => {
-        if (data.error) {
-          alert(data.error);
-          logoutApp();
-          return;
-        }
-        renderApp(data);
+      .then(async json => {
+        // ดึงรายการคลังทั้งหมดจากข้อมูล
+        const whSet = new Set();
+        (json.items || []).forEach(i => { if (i.wh) whSet.add(i.wh); });
+
+        const constructedData = {
+          items: json.items || [],
+          userEmail: currentEmail,
+          role: 'STAFF',
+          syncTime: json.syncTime || '',
+          userWarehouses: Array.from(whSet).sort()
+        };
+
+        renderApp(constructedData);
         document.getElementById('loading').style.display = 'none';
-        await setCache('cached_' + currentEmail, data);
+        await setCache('cached_' + currentEmail, constructedData);
       })
       .catch(() => {
-        document.getElementById('loading').innerHTML = '⚠️ Using offline cache';
+        document.getElementById('loading').innerHTML = '⚠️ Offline cache active / Data sync error';
       });
     }
 
@@ -474,7 +488,7 @@
       if (!data) return;
       appData = data;
 
-      document.getElementById('hubUserEmail').innerText = data.userEmail || '-';
+      document.getElementById('hubUserEmail').innerText = data.userEmail || currentEmail || '-';
       document.getElementById('hubUserRole').innerText = `${data.role || 'USER'} ACCESS`;
       document.getElementById('hubSyncTime').innerText = `Synced: ${data.syncTime || ''}`;
 
