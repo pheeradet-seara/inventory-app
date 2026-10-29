@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <title>SEARA</title>
   
-  <!-- Mobile Responsive Viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -47,7 +45,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.1</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -127,7 +125,7 @@
         </div>
         <!-- Version Badge Top Bar -->
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5
+          v1.5.1
         </span>
       </div>
     </div>
@@ -160,7 +158,7 @@
           
           <!-- Database Update Text & Version Indicator -->
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5</b></span>
+            <span>Version: <b class="text-slate-600">1.5.1</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -213,7 +211,6 @@
     <div id="userModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm p-3.5 flex flex-col justify-start pt-8 overflow-y-auto">
       <div class="bg-white w-full max-w-lg mx-auto rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-3.5 p-4 sm:p-5 mb-8">
         
-        <!-- Header -->
         <div class="flex justify-between items-center pb-2 border-b border-slate-100">
           <div>
             <h3 class="font-extrabold text-slate-900 text-base">User Management</h3>
@@ -224,7 +221,6 @@
           </button>
         </div>
 
-        <!-- Segmented Tab Navigation -->
         <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-2xl text-[11px] font-bold">
           <button id="tabBtnList" onclick="switchUserTab('list')" class="py-2 rounded-xl transition shadow-xs bg-white text-slate-900">
             👥 Registered Users
@@ -234,7 +230,6 @@
           </button>
         </div>
 
-        <!-- TAB 1: REGISTERED USERS -->
         <div id="tabContentList" class="space-y-2.5">
           <div class="flex justify-between items-center px-0.5">
             <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Member List</span>
@@ -245,7 +240,6 @@
           </div>
         </div>
 
-        <!-- TAB 2: ADD / EDIT USER -->
         <div id="tabContentForm" class="hidden space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
           <div class="flex justify-between items-center">
             <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider" id="formHeaderTitle">Add New User</span>
@@ -294,9 +288,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5
+    // CONFIGURATION - VERSION 1.5.1
     // ==========================================
-    const APP_VERSION = "1.5";
+    const APP_VERSION = "1.5.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -305,7 +299,9 @@
     let pendingEmail = '';
     let appData = { items: [], userWarehouses: [], userEmail: '', role: 'USER', syncTime: '' };
     let selectedWarehouses = new Set(['ALL']);
-    let openBrands = {};
+    
+    // บันทึกเฉพาะแบรนด์ที่กำลังเปิดอยู่เพียงแบรนด์เดียว (Single Active Accordion)
+    let activeBrandName = null;
     let openItems = {};
     let activeKeyword = '';
 
@@ -314,7 +310,7 @@
     let searchDebounceTimer = null;
     let currentRenderList = [];
     let displayedCount = 0;
-    const BATCH_SIZE = 30;
+    const BATCH_SIZE = 40;
 
     const DB_NAME = 'InventoryAppDB';
     const STORE_NAME = 'inventory_store';
@@ -764,7 +760,7 @@
       clearSearch();
       selectedWarehouses.clear();
       selectedWarehouses.add('ALL');
-      openBrands = {};
+      activeBrandName = null;
       openItems = {};
       renderWarehouseTabs();
       renderApp(appData);
@@ -874,9 +870,9 @@
       badge.classList.remove('hidden');
 
       if (isBrandOnly) {
-        openBrands[val] = true;
+        activeBrandName = val;
       } else {
-        if (brand) openBrands[brand] = true;
+        if (brand) activeBrandName = brand;
         openItems[val] = true;
       }
 
@@ -889,9 +885,27 @@
       renderView();
     }
 
+    // ==========================================
+    // SINGLE ACTIVE ACCORDION LOGIC
+    // คลิกอันใหม่ -> อันเก่าจะปิดทันที
+    // ==========================================
     function toggleBrand(brandName) {
-      openBrands[brandName] = !openBrands[brandName];
+      if (activeBrandName === brandName) {
+        activeBrandName = null; // ถ้าคลิกตัวเดิม ให้พับปิด
+      } else {
+        activeBrandName = brandName; // เปิดตัวใหม่ และปิดตัวอื่นทั้งหมด
+      }
       renderView();
+
+      // เลื่อนจอไปยังแผงสินค้าที่กางออกมาโดยอัตโนมัติ
+      if (activeBrandName) {
+        setTimeout(() => {
+          const panel = document.getElementById('activeBrandPanel');
+          if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
+      }
     }
 
     function toggleItem(itemKey, btnElement) {
@@ -984,25 +998,23 @@
       }
     }
 
-    // ========================================================
-    // RENDER BATCH: 2-COLUMN GRID + INLINE FULL-WIDTH EXPAND
-    // ========================================================
     function renderBatch(count, isSingleMatch, keyword) {
       const container = document.getElementById('contentList');
       const nextCount = Math.min(displayedCount + count, currentRenderList.length);
 
       let gridHtml = '<div class="grid grid-cols-2 gap-3">';
-      let expandedSectionsHtml = '';
+      let activePanelHtml = '';
 
       for (let i = displayedCount; i < nextCount; i++) {
         const { brand, items } = currentRenderList[i];
-        const isBrandOpen = keyword.length > 0 ? true : (openBrands[brand] === true);
+        
+        // ถ้ากำลังค้นหา ให้เปิดตัวที่ค้นหาเจอ แต่ถ้าปกติ เปิดได้เฉพาะตัวที่ตรงกับ activeBrandName เท่านั้น
+        const isBrandOpen = keyword.length > 0 ? (activeBrandName === brand || uniqueItemsIsOne(currentRenderList)) : (activeBrandName === brand);
         const initials = getBrandInitials(brand);
 
-        // 1. BRAND CARD (2 คอลัมน์)
         gridHtml += `
           <div onclick="toggleBrand('${escapeHtml(brand)}')" 
-               class="cursor-pointer p-4 rounded-3xl border transition-all duration-200 select-none flex flex-col justify-between ${isBrandOpen ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/20 ring-2 ring-slate-800' : 'bg-white text-slate-800 border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md'}">
+               class="cursor-pointer p-3.5 sm:p-4 rounded-3xl border transition-all duration-200 select-none flex flex-col justify-between ${isBrandOpen ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-800' : 'bg-white text-slate-800 border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md'}">
             
             <div class="flex items-start justify-between gap-2 mb-3">
               <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-[13px] font-black tracking-tight ${isBrandOpen ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700'}">
@@ -1024,18 +1036,18 @@
           </div>
         `;
 
-        // 2. FULL-WIDTH ITEM LIST SECTION (กางคลี่เต็มขอบจอเมื่อคลิก)
+        // สร้างข้อมูลของแบรนด์ที่กำลัง Active
         if (isBrandOpen) {
-          let itemsHtml = `
-            <div class="brand-items-panel bg-white/90 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-md p-3.5 space-y-3 mt-2">
-              <div class="flex items-center justify-between px-1 border-b border-slate-100 pb-2">
+          activePanelHtml = `
+            <div id="activeBrandPanel" class="bg-white rounded-3xl border border-slate-200/90 shadow-md p-3.5 sm:p-4 space-y-3 transition-all duration-300">
+              <div class="flex items-center justify-between px-1 border-b border-slate-100 pb-2.5">
                 <div class="flex items-center gap-2">
                   <span class="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
-                  <span class="font-extrabold text-slate-900 text-sm">${escapeHtml(brand)}</span>
-                  <span class="text-[10px] font-bold text-slate-400">(${items.length} items)</span>
+                  <span class="font-extrabold text-slate-900 text-base">${escapeHtml(brand)}</span>
+                  <span class="text-[11px] font-bold text-slate-400">(${items.length} items)</span>
                 </div>
-                <button onclick="toggleBrand('${escapeHtml(brand)}')" class="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
-                  ✕ Close Catalog
+                <button onclick="toggleBrand('${escapeHtml(brand)}')" class="text-[11px] font-bold px-3 py-1 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
+                  ✕ Close
                 </button>
               </div>
               <div class="space-y-2.5">
@@ -1045,11 +1057,10 @@
             const itemKey = group.itemNo;
             const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
 
-            itemsHtml += `
-              <div class="item-card bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden transition">
+            activePanelHtml += `
+              <div class="item-card bg-slate-50/90 rounded-2xl border border-slate-200 shadow-2xs overflow-hidden transition">
                 <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
                         class="w-full p-3.5 space-y-1.5 hover:bg-slate-100/70 transition text-left">
-                  <!-- แถวบน: รหัสสินค้า + ป้าย WH + View/Close -->
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-extrabold text-slate-900 text-[14px] tracking-tight truncate flex-1 min-w-0">${escapeHtml(group.itemNo)}</span>
                     <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -1057,13 +1068,12 @@
                       <span class="item-status-text text-[11px] text-slate-800 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
                     </div>
                   </div>
-                  <!-- แถวล่าง: Description กว้างสุดขอบจอ -->
                   <div class="w-full">
                     <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
                   </div>
                 </button>
 
-                <div class="item-content ${isItemOpen ? '' : 'hidden'} p-3.5 pt-0 border-t border-slate-200/60 space-y-2.5 mt-1 bg-white">
+                <div class="item-content ${isItemOpen ? '' : 'hidden'} p-3.5 pt-0 border-t border-slate-200 space-y-2.5 mt-1 bg-white">
                   <div class="flex justify-end items-center text-[10px] font-bold text-slate-400 pt-2 px-0.5">
                     <span>UoM: <b class="text-slate-700 font-bold text-[10px]">${escapeHtml(group.unit) || '-'}</b></span>
                   </div>
@@ -1161,14 +1171,14 @@
             `;
           });
 
-          itemsHtml += `</div></div>`;
-          expandedSectionsHtml += itemsHtml;
+          activePanelHtml += `</div></div>`;
         }
       }
 
       gridHtml += '</div>';
 
-      container.innerHTML = gridHtml + (expandedSectionsHtml ? `<div class="space-y-4 pt-1">${expandedSectionsHtml}</div>` : '');
+      // นำแผงแสดงสินค้าของแบรนด์ที่คลิกมาวางแทรกด้านบนอย่างเด่นชัดทันที
+      container.innerHTML = (activePanelHtml ? `<div class="mb-4">${activePanelHtml}</div>` : '') + gridHtml;
       displayedCount = nextCount;
 
       const loadMoreBtn = document.getElementById('loadMoreContainer');
@@ -1179,12 +1189,16 @@
       }
     }
 
+    function uniqueItemsIsOne(list) {
+      return list && list.length === 1;
+    }
+
     function renderNextBatch() {
       renderBatch(BATCH_SIZE, false, '');
     }
 
     // ==========================================
-    // ADMIN USER MANAGEMENT (V1.5 - KEPT 100% AS V1.4.2)
+    // ADMIN USER MANAGEMENT
     // ==========================================
     function openUserModal() {
       document.getElementById('userModal').classList.remove('hidden');
