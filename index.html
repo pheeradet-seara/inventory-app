@@ -70,7 +70,7 @@
             <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
             <button onclick="resetToEmailStep()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Change Email</button>
           </div>
-          <input type="password" id="loginPinInput" maxlength="8"
+          <input type="password" id="loginPinInput" maxlength="8" inputmode="numeric" pattern="[0-9]*"
                  placeholder="••••" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleLogin()">
@@ -87,13 +87,13 @@
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Create New PIN</label>
-          <input type="password" id="newPinInput" maxlength="8"
+          <input type="password" id="newPinInput" maxlength="8" inputmode="numeric" pattern="[0-9]*"
                  placeholder="New 4-8 digit PIN" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Confirm PIN</label>
-          <input type="password" id="confirmPinInput" maxlength="8"
+          <input type="password" id="confirmPinInput" maxlength="8" inputmode="numeric" pattern="[0-9]*"
                  placeholder="Confirm PIN" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleSetupPin()">
