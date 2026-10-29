@@ -1,36 +1,31 @@
-const CACHE_NAME = 'inv-app-v4';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'
-];
+const CACHE_NAME = 'seara-inventory-v1.5.5';
 
-self.addEventListener('install', (e) => {
+self.addEventListener('install', (event) => {
   self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => {
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            return caches.delete(cache);
+          }
+        })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  self.clients.claim();
 });
 
-self.addEventListener('fetch', (e) => {
-  // บังคับปล่อยผ่านคำขอที่ไปหา Google Script เพื่อไม่ให้ Service Worker ดักตัดการเชื่อมต่อบนมือถือ
-  if (e.request.url.includes('script.google.com')) {
+// data.json วิ่งตรงออก Network เสมอ ไม่กักแคช
+self.addEventListener('fetch', (event) => {
+  if (event.request.url.includes('data.json')) {
+    event.respondWith(fetch(event.request));
     return;
   }
-
-  e.respondWith(
-    caches.match(e.request).then((res) => res || fetch(e.request))
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
