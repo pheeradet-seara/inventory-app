@@ -45,7 +45,10 @@
         <div class="flex justify-center mb-2">
           <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
         </div>
-        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
+        <div class="flex items-center justify-center gap-1.5">
+          <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">v1.3</span>
+        </div>
         <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
       </div>
 
@@ -112,11 +115,20 @@
 
   <!-- ================= MAIN APP SCREEN ================= -->
   <div id="appScreen" class="hidden">
+    <!-- Top Header Sticky -->
     <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/70 shadow-xs flex items-center justify-between gap-2">
       <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
-      <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer flex-shrink-0">
-        <span id="searchBadgeText"></span>
-        <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
+      
+      <!-- Version Tag & Search Badge Container -->
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
+          <span id="searchBadgeText"></span>
+          <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
+        </div>
+        <!-- Version Badge Top Bar -->
+        <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200/80 select-none">
+          v1.3
+        </span>
       </div>
     </div>
 
@@ -144,9 +156,11 @@
             <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700" id="hubUserRole">USER</span>
             <button onclick="logoutApp()" class="text-[11px] font-bold text-red-600 hover:underline">Log out</button>
           </div>
-          <!-- Database Update Text (เล็ก เรียบง่าย ไม่เด่น) -->
-          <div class="mt-2 pt-2 border-t border-slate-100 text-[10px] font-medium text-slate-400 leading-tight">
-            Database: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span>
+          
+          <!-- Database Update Text & Version Indicator -->
+          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
+            <span>Version: <b class="text-slate-600">1.3</b></span>
+            <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
 
@@ -192,8 +206,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.2
+    // CONFIGURATION - VERSION 1.3
     // ==========================================
+    const APP_VERSION = "1.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -504,14 +519,12 @@
         const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
         const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
 
-        // 1. ดึงคลังทั้งหมดที่มีใน data.json
         const allWhSet = new Set();
         (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh.trim()); });
         const allWhList = Array.from(allWhSet).sort();
 
         let accessibleWarehouses = [];
 
-        // 2. ตรวจสอบสิทธิ์คลังสินค้า
         if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL') {
           accessibleWarehouses = allWhList;
         } else {
@@ -519,7 +532,6 @@
           accessibleWarehouses = allWhList.filter(wh => allowedList.includes(wh.toUpperCase()));
         }
 
-        // 3. กรองสินค้าให้เหลือเฉพาะคลังที่ได้รับอนุญาต
         const accessibleItems = (json.items || []).filter(item => {
           return accessibleWarehouses.includes((item.wh || '').trim());
         });
