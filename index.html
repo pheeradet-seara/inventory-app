@@ -67,7 +67,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.8</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.9</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
         </div>
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5.8
+          v1.5.9
         </span>
       </div>
     </div>
@@ -170,7 +170,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5.8</b></span>
+            <span>Version: <b class="text-slate-600">1.5.9</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -299,9 +299,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5.8
+    // CONFIGURATION - VERSION 1.5.9
     // ==========================================
-    const APP_VERSION = "1.5.8";
+    const APP_VERSION = "1.5.9";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -997,13 +997,14 @@
         .replace(/'/g, "&#039;");
     }
 
-    // ==========================================
-    // BUNDLE DETECTION LOGIC
-    // ==========================================
+    // ========================================================
+    // BUNDLE DETECTION LOGIC - VERSION 1.5.9
+    // รองรับทั้ง -X/Y (เช่น S14629-2/9) และ (X/Y) (เช่น S12350-01 (2/4))
+    // ========================================================
     function getParentItemNo(itemNo) {
       if (!itemNo) return '';
       const clean = itemNo.trim();
-      const match = clean.match(/^(.*?)(?:-\d+\/\d+)$/);
+      const match = clean.match(/^(.*?)(?:\s*[-_]?\s*\(\d+\/\d+\)|-\d+\/\d+)$/);
       return match ? match[1].trim() : clean;
     }
 
@@ -1049,8 +1050,8 @@
             isBundle: false,
             warehouses: [],
             partsMap: {},
-            parentWhStock: {}, // บันทึก inStock ของแม่แยกตามคลัง
-            hasShortage: false // มีชิ้นส่วนลูกไม่ครบชุดหรือไม่
+            parentWhStock: {},
+            hasShortage: false
           };
         }
 
@@ -1059,7 +1060,7 @@
             itemNo: rawCode,
             desc: item.desc,
             isParent: !isSubPart,
-            whStocks: {} // เก็บสต็อกจริงของชิ้นนี้แยกตามคลัง
+            whStocks: {}
           };
         }
         itemMap[parentCode].partsMap[rawCode].whStocks[currentWh] = itemStockQty;
@@ -1083,7 +1084,6 @@
 
         if (group.isBundle) {
           const partsArray = Object.values(group.partsMap);
-          // เช็กในแต่ละคลังที่แม่มีของ
           Object.keys(group.parentWhStock).forEach(wh => {
             const parentQty = group.parentWhStock[wh] || 0;
             if (parentQty > 0) {
@@ -1190,7 +1190,6 @@
         const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
         const partsList = Object.values(group.partsMap || {}).sort((a, b) => a.itemNo.localeCompare(b.itemNo, undefined, { numeric: true }));
 
-        // ป้าย Bundle Badge: สีแดงเตือนเมื่อมีของไม่ครบชุด (hasShortage)
         let bundleBadgeHtml = '';
         if (group.isBundle) {
           if (group.hasShortage) {
@@ -1327,7 +1326,6 @@
                   </div>
                   <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-200/70">
                     ${partsList.map((part, pIdx) => {
-                      // ตรวจสอบสต็อกของชิ้นส่วนลูกในคลังแรกที่มีแม่
                       const activeWh = group.warehouses.length > 0 ? group.warehouses[0].wh : null;
                       const parentQty = activeWh ? (group.parentWhStock[activeWh] || 0) : 0;
                       const partQty = activeWh ? (part.whStocks[activeWh] || 0) : 0;
