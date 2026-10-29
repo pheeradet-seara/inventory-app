@@ -30,12 +30,35 @@
   </style>
 
   <script>
+    // ลงทะเบียน Service Worker พร้อมระบบ Auto Reload เมื่อตรวจพบคอนโทรลเลอร์ใหม่
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        // สั่งให้อัปเดตตรวจสอบ Service Worker ใหม่เสมอทุกครั้งที่เข้าหน้าเว็บ
+        reg.update();
+      }).catch(() => {});
     }
   </script>
 </head>
 <body class="max-w-xl mx-auto min-h-screen bg-slate-100/90 pb-28 text-slate-800 antialiased relative">
+
+  <!-- ================= UPDATE TOAST BANNER ================= -->
+  <div id="updateBanner" class="hidden fixed top-3 left-4 right-4 z-50 max-w-sm mx-auto bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300">
+    <div class="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 animate-spin text-sm">
+      🔄
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="text-[12px] font-bold text-white leading-tight">Updating App...</p>
+      <p class="text-[10px] text-slate-300 mt-0.5 truncate" id="updateBannerText">Loading latest version...</p>
+    </div>
+  </div>
 
   <!-- ================= DYNAMIC AUTH SCREEN ================= -->
   <div id="loginScreen" class="min-h-screen flex items-center justify-center p-5">
@@ -48,7 +71,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.5</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.6</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -126,7 +149,7 @@
           <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
         </div>
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5.5
+          v1.5.6
         </span>
       </div>
     </div>
@@ -151,7 +174,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5.5</b></span>
+            <span>Version: <b class="text-slate-600">1.5.6</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -281,9 +304,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5.5
+    // CONFIGURATION - VERSION 1.5.6
     // ==========================================
-    const APP_VERSION = "1.5.5";
+    const APP_VERSION = "1.5.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -358,6 +381,52 @@
       } catch (e) {}
     }
 
+    // ========================================================
+    // AUTO-VERSION CHECK & ENFORCEMENT
+    // ========================================================
+    async function checkForAppUpdates() {
+      try {
+        // ยิงเช็ก index.html ตัวล่าสุดจาก Server แบบไม่ผ่านแคช
+        const res = await fetch(`./index.html?v_check=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) return;
+        const html = await res.text();
+        
+        // ค้นหาเลขเวอร์ชันที่ระบุใน APP_VERSION
+        const match = html.match(/const\s+APP_VERSION\s*=\s*["']([^"']+)["']/);
+        if (match && match[1]) {
+          const serverVersion = match[1].trim();
+          if (serverVersion !== APP_VERSION) {
+            triggerForceUpdate(serverVersion);
+          }
+        }
+      } catch (e) {}
+    }
+
+    function triggerForceUpdate(newVersion) {
+      const banner = document.getElementById('updateBanner');
+      const text = document.getElementById('updateBannerText');
+      if (banner && text) {
+        text.innerText = `New version detected. Updating to v${newVersion}...`;
+        banner.classList.remove('hidden');
+      }
+
+      setTimeout(async () => {
+        await clearLocalDatabase();
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.map(name => caches.delete(name)));
+        }
+        window.location.reload();
+      }, 1000);
+    }
+
+    // ตรวจสอบเวอร์ชันเมื่อสลับแท็บกลับเข้ามาที่แอป
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkForAppUpdates();
+      }
+    });
+
     async function clearCacheAndReload() {
       const btn = document.getElementById('clearCacheBtn');
       const originalText = btn.innerHTML;
@@ -365,6 +434,10 @@
       btn.disabled = true;
 
       await clearLocalDatabase();
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(name => caches.delete(name)));
+      }
       await loadData(true);
 
       btn.innerHTML = '<span>✅ Updated!</span>';
@@ -589,7 +662,7 @@
         document.getElementById('loading').style.display = 'block';
       }
 
-      // 2. ยิงไปดึงข้อมูลสดจาก Server เสมอ (Always Background Sync) โดยใช้ timestamp ใหม่ตลอด
+      // 2. ดึงข้อมูลสดจาก Server เสมอ (Always Background Sync)
       const freshUrl = `${DATA_URL}?t=${Date.now()}`;
 
       fetch(freshUrl, { cache: 'no-store' })
@@ -626,13 +699,11 @@
           userWarehouses: accessibleWarehouses
         };
 
-        // แสดงผลข้อมูลเวอร์ชันใหม่และบันทึกทับแคช
         renderApp(constructedData);
         document.getElementById('loading').style.display = 'none';
         await setCache('cached_' + currentEmail, constructedData);
       })
       .catch(() => {
-        // หากไม่มีเน็ต แต่มีข้อมูลแคชอยู่แล้ว ก็ให้ใช้งานต่อได้แบบ Offline
         const loadingEl = document.getElementById('loading');
         if (appData && appData.items && appData.items.length > 0) {
           loadingEl.style.display = 'none';
@@ -1422,6 +1493,9 @@
     }
 
     window.onload = () => {
+      // ตรวจสอบเวอร์ชันล่าสุดทันทีเมื่อเปิดแอป
+      checkForAppUpdates();
+
       if (currentEmail && currentPin) {
         loadData();
       } else {
