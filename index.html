@@ -30,7 +30,6 @@
   </style>
 
   <script>
-    // ลงทะเบียน Service Worker พร้อมระบบ Auto Reload เมื่อตรวจพบคอนโทรลเลอร์ใหม่
     if ('serviceWorker' in navigator) {
       let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -41,7 +40,6 @@
       });
 
       navigator.serviceWorker.register('./sw.js').then(reg => {
-        // สั่งให้อัปเดตตรวจสอบ Service Worker ใหม่เสมอทุกครั้งที่เข้าหน้าเว็บ
         reg.update();
       }).catch(() => {});
     }
@@ -71,7 +69,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.6</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.7</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -149,7 +147,7 @@
           <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
         </div>
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5.6
+          v1.5.7
         </span>
       </div>
     </div>
@@ -174,7 +172,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5.6</b></span>
+            <span>Version: <b class="text-slate-600">1.5.7</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -304,9 +302,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5.6
+    // CONFIGURATION - VERSION 1.5.7
     // ==========================================
-    const APP_VERSION = "1.5.6";
+    const APP_VERSION = "1.5.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -381,17 +379,15 @@
       } catch (e) {}
     }
 
-    // ========================================================
+    // ==========================================
     // AUTO-VERSION CHECK & ENFORCEMENT
-    // ========================================================
+    // ==========================================
     async function checkForAppUpdates() {
       try {
-        // ยิงเช็ก index.html ตัวล่าสุดจาก Server แบบไม่ผ่านแคช
         const res = await fetch(`./index.html?v_check=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) return;
         const html = await res.text();
         
-        // ค้นหาเลขเวอร์ชันที่ระบุใน APP_VERSION
         const match = html.match(/const\s+APP_VERSION\s*=\s*["']([^"']+)["']/);
         if (match && match[1]) {
           const serverVersion = match[1].trim();
@@ -420,7 +416,6 @@
       }, 1000);
     }
 
-    // ตรวจสอบเวอร์ชันเมื่อสลับแท็บกลับเข้ามาที่แอป
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         checkForAppUpdates();
@@ -638,7 +633,7 @@
     }
 
     // ========================================================
-    // LOAD DATA: STALE-WHILE-REVALIDATE (เปิดปุ๊บติดปั๊บ + ดึงสดเบื้องหลัง)
+    // LOAD DATA: STALE-WHILE-REVALIDATE
     // ========================================================
     async function loadData(forceSync = false) {
       if (!currentEmail || !currentPin) {
@@ -649,7 +644,6 @@
 
       showAppScreen();
 
-      // 1. นำข้อมูลจากแคชในเครื่องขึ้นมาแสดงผลทันทีภายในเสี้ยววินาที
       if (!forceSync) {
         const cached = await getCache('cached_' + currentEmail);
         if (cached && cached.items && cached.items.length > 0) {
@@ -662,7 +656,6 @@
         document.getElementById('loading').style.display = 'block';
       }
 
-      // 2. ดึงข้อมูลสดจาก Server เสมอ (Always Background Sync)
       const freshUrl = `${DATA_URL}?t=${Date.now()}`;
 
       fetch(freshUrl, { cache: 'no-store' })
@@ -815,9 +808,6 @@
       }, { passive: false });
     }
 
-    // ==========================================
-    // FLOATING BUTTON LOGO TOGGLE
-    // ==========================================
     function toggleHubMenu() {
       const menu = document.getElementById('hubActionsMenu');
       const logoImg = document.getElementById('hubToggleImg');
@@ -952,7 +942,9 @@
         activeBrandName = val;
       } else {
         if (brand) activeBrandName = brand;
-        openItems[val] = true;
+        // หากค้นหาเจอรหัสลูก ให้ไปเปิดการ์ดรหัสแม่
+        const parentKey = getParentItemNo(val);
+        openItems[parentKey] = true;
       }
 
       renderView();
@@ -1009,6 +1001,17 @@
         .replace(/'/g, "&#039;");
     }
 
+    // ==========================================
+    // BUNDLE DETECTION LOGIC
+    // ==========================================
+    // ตรวจจับ Pattern เช่น "-2/9", "-3/9" เพื่อดึง Parent Item No ออกมา
+    function getParentItemNo(itemNo) {
+      if (!itemNo) return '';
+      const clean = itemNo.trim();
+      const match = clean.match(/^(.*?)(?:-\d+\/\d+)$/);
+      return match ? match[1].trim() : clean;
+    }
+
     function renderView() {
       const keyword = (activeKeyword || '').toLowerCase().trim();
       const container = document.getElementById('contentList');
@@ -1033,19 +1036,50 @@
         return;
       }
 
+      // Grouping with Bundle Logic
       const itemMap = {};
       filteredRaw.forEach(item => {
-        const key = item.itemNo;
-        if (!itemMap[key]) {
-          itemMap[key] = {
-            itemNo: item.itemNo,
+        const rawCode = (item.itemNo || '').trim();
+        const parentCode = getParentItemNo(rawCode);
+        const isSubPart = (parentCode !== rawCode);
+
+        if (!itemMap[parentCode]) {
+          itemMap[parentCode] = {
+            itemNo: parentCode,
             desc: item.desc,
             brand: (item.brand || 'Unbranded').trim(),
             unit: item.unit,
-            warehouses: []
+            isBundle: false,
+            warehouses: [], // สต็อกเฉพาะรหัสแม่
+            partsMap: {}    // ชิ้นส่วนย่อยทั้งหมดใน Bundle
           };
         }
-        itemMap[key].warehouses.push(item);
+
+        // บันทึกชิ้นส่วนย่อย
+        if (!itemMap[parentCode].partsMap[rawCode]) {
+          itemMap[parentCode].partsMap[rawCode] = {
+            itemNo: rawCode,
+            desc: item.desc,
+            isParent: !isSubPart
+          };
+        }
+
+        if (isSubPart) {
+          itemMap[parentCode].isBundle = true;
+        } else {
+          // เก็บข้อมูลคำอธิบายและหน่วยจากรหัสแม่โดยตรง
+          itemMap[parentCode].desc = item.desc;
+          itemMap[parentCode].unit = item.unit;
+          itemMap[parentCode].warehouses.push(item);
+        }
+      });
+
+      // ตรวจสอบ Bundle: หากมีชิ้นส่วนย่อยมากกว่า 1 ชิ้น ให้ถือว่าเป็น Bundle
+      Object.values(itemMap).forEach(group => {
+        const partsCount = Object.keys(group.partsMap).length;
+        if (partsCount > 1) {
+          group.isBundle = true;
+        }
       });
 
       const uniqueItems = Object.values(itemMap);
@@ -1138,13 +1172,17 @@
       brandObj.items.forEach(group => {
         const itemKey = group.itemNo;
         const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
+        const partsList = Object.values(group.partsMap || {}).sort((a, b) => a.itemNo.localeCompare(b.itemNo, undefined, { numeric: true }));
 
         html += `
           <div class="item-card bg-slate-50/90 rounded-2xl border border-slate-200 shadow-2xs overflow-hidden transition">
             <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
                     class="w-full p-3.5 space-y-1.5 hover:bg-slate-100/70 transition text-left">
               <div class="flex items-center justify-between gap-2">
-                <span class="font-extrabold text-slate-900 text-[14px] tracking-tight truncate flex-1 min-w-0">${escapeHtml(group.itemNo)}</span>
+                <div class="flex items-center gap-1.5 truncate flex-1 min-w-0">
+                  <span class="font-extrabold text-slate-900 text-[14px] tracking-tight truncate">${escapeHtml(group.itemNo)}</span>
+                  ${group.isBundle ? `<span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-indigo-200 whitespace-nowrap">📦 BUNDLE (${partsList.length} Parts)</span>` : ''}
+                </div>
                 <div class="flex items-center gap-1.5 flex-shrink-0">
                   <span class="bg-white text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap">${group.warehouses.length} WH</span>
                   <span class="item-status-text text-[11px] text-slate-800 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
@@ -1155,14 +1193,20 @@
               </div>
             </button>
 
-            <div class="item-content ${isItemOpen ? '' : 'hidden'} p-3.5 pt-0 border-t border-slate-200 space-y-2.5 mt-1 bg-white">
+            <div class="item-content ${isItemOpen ? '' : 'hidden'} p-3.5 pt-0 border-t border-slate-200 space-y-3 mt-1 bg-white">
               
-              <div class="flex justify-end items-center text-[12px] font-bold text-slate-500 pt-2 px-0.5">
+              <div class="flex justify-between items-center text-[12px] font-bold text-slate-500 pt-2 px-0.5">
+                <span>${group.isBundle ? '<span class="text-[11px] text-indigo-600 font-extrabold">● Parent Stock Only</span>' : ''}</span>
                 <span>UoM: <b class="text-slate-900 font-extrabold text-[12px]">${escapeHtml(group.unit) || '-'}</b></span>
               </div>
 
+              <!-- รายการสต็อกคลัง (อ้างอิงรหัสแม่เท่านั้น) -->
               <div class="space-y-2.5">
-                ${group.warehouses.map(w => {
+                ${group.warehouses.length === 0 ? `
+                  <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-center text-amber-800 text-[11px] font-semibold">
+                    ⚠️ Parent code not found in current warehouse filter.
+                  </div>
+                ` : group.warehouses.map(w => {
                   const physicalInStock = Number(w.inStock) || 0;
                   const defined = Number(w.defined) || 0;
                   const ordered = Number(w.ordered) || 0;
@@ -1247,6 +1291,33 @@
                   `;
                 }).join('')}
               </div>
+
+              <!-- ตารางแจกแจงชิ้นส่วนย่อยของ Bundle (Parts Breakdown) -->
+              ${group.isBundle ? `
+                <div class="pt-2 border-t border-slate-200 space-y-2">
+                  <div class="flex items-center justify-between px-1">
+                    <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">📦 Bundle Parts Checklist</span>
+                    <span class="text-[10px] font-bold text-slate-400">${partsList.length} Items Included</span>
+                  </div>
+                  <div class="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden divide-y divide-slate-200/70">
+                    ${partsList.map((part, pIdx) => `
+                      <div class="p-2.5 flex items-start gap-2 text-left">
+                        <span class="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center text-[10px] font-bold ${part.isParent ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}">
+                          ${pIdx + 1}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                          <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-900 text-[12px] truncate">${escapeHtml(part.itemNo)}</span>
+                            ${part.isParent ? '<span class="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-700">Main Parent</span>' : ''}
+                          </div>
+                          <span class="text-[10px] text-slate-500 block truncate mt-0.5">${escapeHtml(part.desc)}</span>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
             </div>
           </div>
         `;
@@ -1493,7 +1564,6 @@
     }
 
     window.onload = () => {
-      // ตรวจสอบเวอร์ชันล่าสุดทันทีเมื่อเปิดแอป
       checkForAppUpdates();
 
       if (currentEmail && currentPin) {
