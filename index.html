@@ -63,7 +63,7 @@
         </button>
       </div>
 
-      <!-- Step 2A: Normal Login (ผู้ใช้มี PIN แล้ว) -->
+      <!-- Step 2A: Normal Login -->
       <div id="stepPin" class="space-y-3.5 hidden">
         <div>
           <div class="flex justify-between items-center mb-1.5">
@@ -81,7 +81,7 @@
         </button>
       </div>
 
-      <!-- Step 2B: First-Time Setup (ตั้ง PIN ครั้งแรก) -->
+      <!-- Step 2B: First-Time Setup -->
       <div id="stepCreatePin" class="space-y-3.5 hidden">
         <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
           👋 First time sign-in: Please create a 4–8 digit PIN to protect your account.
@@ -183,9 +183,6 @@
   </div>
 
   <script>
-    // ==========================================
-    // CONFIGURATION
-    // ==========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -301,12 +298,8 @@
         }
 
         pendingEmail = res.userEmail;
-        if (res.role) {
-          localStorage.setItem('inv_user_role', res.role);
-        }
-        if (res.allowedWarehouses !== undefined) {
-          localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-        }
+        if (res.role) localStorage.setItem('inv_user_role', res.role);
+        if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
 
         document.getElementById('stepEmail').classList.add('hidden');
 
@@ -367,9 +360,7 @@
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
-          if (res.allowedWarehouses !== undefined) {
-            localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-          }
+          if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -415,9 +406,7 @@
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
-          if (res.allowedWarehouses !== undefined) {
-            localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-          }
+          if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -486,23 +475,19 @@
         const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
         const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
 
-        // 1. ดึงคลังทั้งหมดที่มีใน data.json
         const allWhSet = new Set();
         (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh.trim()); });
         const allWhList = Array.from(allWhSet).sort();
 
         let accessibleWarehouses = [];
 
-        // 2. ถ้าเป็น ADMIN หรือชีตระบุคำว่า ALL ให้เห็นทุกคลัง
         if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL') {
           accessibleWarehouses = allWhList;
         } else {
-          // คัดกรองเฉพาะคลังที่ระบุในคอลัมน์ C (รองรับการคั่นด้วยวรรค, คอมม่า, หรือขึ้นบรรทัดใหม่)
           const allowedList = rawAllowedWH.split(/[\s,]+/).map(w => w.trim().toUpperCase()).filter(Boolean);
           accessibleWarehouses = allWhList.filter(wh => allowedList.includes(wh.toUpperCase()));
         }
 
-        // 3. กรองสินค้าให้เหลือเฉพาะคลังที่ได้รับอนุญาต
         const accessibleItems = (json.items || []).filter(item => {
           return accessibleWarehouses.includes((item.wh || '').trim());
         });
@@ -943,32 +928,58 @@
                 </div>
                 <div class="space-y-3">
                   ${group.warehouses.map(w => {
+                    // คำนวณตามสูตรคลังสินค้าที่ถูกต้อง
+                    const physicalInStock = Number(w.inStock) || 0;
+                    const defined = Number(w.defined) || 0;
+                    const ordered = Number(w.ordered) || 0;
                     const whAvgPrice = Number(w.avgPrice) || 0;
-                    const calculatedTotalVal = (w.inStock || 0) * whAvgPrice;
-                    const isNegative = w.availableInStock < 0;
+
+                    const realAvailable = physicalInStock - defined;
+                    const projectedBalance = realAvailable + ordered;
+                    const calculatedTotalVal = physicalInStock * whAvgPrice;
+
+                    const isAvailableNegative = realAvailable < 0;
+                    let displayBadgeColor = 'badge-green';
+                    let displayStatusText = 'In Stock';
+
+                    if (physicalInStock <= 0) {
+                      if (ordered > 0) {
+                        displayBadgeColor = 'badge-yellow';
+                        displayStatusText = 'Ordered (PO)';
+                      } else {
+                        displayBadgeColor = 'badge-red';
+                        displayStatusText = 'Out of Stock';
+                      }
+                    } else if (isAvailableNegative) {
+                      displayBadgeColor = 'badge-yellow';
+                      displayStatusText = 'Shortage / Overcommitted';
+                    }
 
                     return `
                       <div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-2.5 shadow-2xs">
                         <div class="flex justify-between items-center">
                           <span class="font-extrabold text-slate-900 text-[15px] tracking-tight">${w.wh}</span>
-                          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full badge-${w.color}">${w.statusText}</span>
+                          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${displayBadgeColor}">${displayStatusText}</span>
                         </div>
                         
-                        <div class="w-full border-2 border-indigo-200/90 bg-white rounded-2xl p-3 space-y-2.5 shadow-sm">
+                        <div class="w-full border-2 ${isAvailableNegative ? 'border-rose-200 bg-rose-50/20' : 'border-indigo-200/90 bg-white'} rounded-2xl p-3 space-y-2.5 shadow-sm">
                           <div class="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 block">Available in Stock</span>
-                            <span class="text-3xl font-black tracking-tight ${isNegative ? 'text-red-600' : 'text-emerald-600'}">
-                              ${formatNumber(w.availableInStock)}
+                            <div>
+                              <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 block">Available in Stock</span>
+                              <span class="text-[9px] font-semibold text-slate-400 block">(In Stock - Defined)</span>
+                            </div>
+                            <span class="text-3xl font-black tracking-tight ${isAvailableNegative ? 'text-red-600' : 'text-emerald-600'}">
+                              ${formatNumber(realAvailable)}
                             </span>
                           </div>
                           <div class="grid grid-cols-2 gap-2 text-center">
                             <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
                               <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
-                              <span class="font-bold text-[15px] text-slate-800">${formatNumber(w.inStock)}</span>
+                              <span class="font-bold text-[15px] text-slate-800">${formatNumber(physicalInStock)}</span>
                             </div>
                             <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
                               <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Defined</span>
-                              <span class="font-bold text-[15px] text-orange-600">${formatNumber(w.defined)}</span>
+                              <span class="font-bold text-[15px] text-orange-600">${formatNumber(defined)}</span>
                             </div>
                           </div>
                         </div>
@@ -977,11 +988,11 @@
                           <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
                             <div class="px-1">
                               <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ordered (PO)</span>
-                              <span class="font-bold text-[15px] text-indigo-600 mt-0.5 block">${formatNumber(w.ordered)}</span>
+                              <span class="font-bold text-[15px] text-indigo-600 mt-0.5 block">${formatNumber(ordered)}</span>
                             </div>
                             <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Balance</span>
-                              <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">${formatNumber(w.availableInStock + w.ordered)}</span>
+                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Balance (Proj.)</span>
+                              <span class="font-bold text-[15px] ${projectedBalance < 0 ? 'text-red-600' : 'text-slate-800'} mt-0.5 block">${formatNumber(projectedBalance)}</span>
                             </div>
                           </div>
                         </div>
