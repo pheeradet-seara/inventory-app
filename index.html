@@ -12,8 +12,10 @@
   <meta name="theme-color" content="#0f172a">
 
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./logo.png">
-  <link rel="icon" type="image/png" href="./logo.png">
+  
+  <!-- ไอคอน Application สำหรับ Mobile Home Screen และ Favicon (ใช้ icon.png) -->
+  <link rel="apple-touch-icon" href="./icon.png">
+  <link rel="icon" type="image/png" href="./icon.png">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -41,11 +43,12 @@
       
       <div class="text-center space-y-1.5">
         <div class="flex justify-center mb-2">
+          <!-- โลโก้หลักของแอปพลิเคชัน (ใช้ logo.png) -->
           <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.3</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.4</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -64,7 +67,7 @@
         </button>
       </div>
 
-      <!-- Step 2A: Normal Login (ผู้ใช้มี PIN แล้ว) -->
+      <!-- Step 2A: Normal Login -->
       <div id="stepPin" class="space-y-3.5 hidden">
         <div>
           <div class="flex justify-between items-center mb-1.5">
@@ -82,7 +85,7 @@
         </button>
       </div>
 
-      <!-- Step 2B: First-Time Setup (ตั้ง PIN ครั้งแรก) -->
+      <!-- Step 2B: First-Time Setup -->
       <div id="stepCreatePin" class="space-y-3.5 hidden">
         <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
           👋 First time sign-in: Please create a 4–8 digit PIN to protect your account.
@@ -117,15 +120,13 @@
     <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs flex items-center justify-between gap-2">
       <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
       
-      <!-- Version Tag & Search Badge Container -->
       <div class="flex items-center gap-1.5 flex-shrink-0">
         <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
           <span id="searchBadgeText"></span>
           <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
         </div>
-        <!-- Version Badge Top Bar -->
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5.3
+          v1.5.4
         </span>
       </div>
     </div>
@@ -141,7 +142,6 @@
     <div class="fixed right-5 bottom-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
       <div id="hubActionsMenu" class="hidden flex flex-col items-end gap-2.5 pointer-events-auto transition-all duration-200 scale-95 origin-bottom-right mb-1">
         
-        <!-- User Info Card -->
         <div class="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-3.5 text-right min-w-[210px] max-w-[250px]">
           <span class="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
           <p class="text-[14px] font-bold text-slate-900 truncate" id="hubUserEmail">-</p>
@@ -150,19 +150,16 @@
             <button onclick="logoutApp()" class="text-[11px] font-bold text-red-600 hover:underline">Log out</button>
           </div>
           
-          <!-- Database Update Text & Version Indicator -->
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5.3</b></span>
+            <span>Version: <b class="text-slate-600">1.5.4</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
 
-        <!-- ADMIN ONLY: ปุ่มจัดการระบบ User -->
         <button id="adminUserMgmtBtn" onclick="openUserModal(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-700 active:scale-95 transition border border-slate-700">
           <span>👥 Manage Users</span>
         </button>
 
-        <!-- Action Buttons -->
         <button onclick="clearCacheAndReload()" id="clearCacheBtn" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
           <span>🧹 Clear Cache & Reload</span>
         </button>
@@ -177,9 +174,11 @@
                 class="w-13 h-13 p-3.5 bg-white text-slate-700 rounded-2xl shadow-xl shadow-slate-200 border border-slate-200 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
           🔍
         </button>
+        <!-- ปุ่ม Toggle Menu: แสดงเป็น logo.png และสลับเป็น ✕ เมื่อเปิดเมนู -->
         <button onclick="toggleHubMenu()" id="hubToggleBtn" title="Menu & Actions" 
-                class="w-13 h-13 p-3.5 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-900/30 border border-slate-700 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-800 transition">
-          ⚡
+                class="w-13 h-13 p-2 bg-white text-slate-800 rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-200/90 flex items-center justify-center active:scale-95 hover:bg-slate-50 transition overflow-hidden">
+          <img id="hubToggleImg" src="./logo.png" alt="Logo" class="w-8 h-8 object-contain">
+          <span id="hubToggleClose" class="hidden text-xl font-bold text-slate-700">✕</span>
         </button>
       </div>
     </div>
@@ -282,9 +281,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5.3
+    // CONFIGURATION - VERSION 1.5.4
     // ==========================================
-    const APP_VERSION = "1.5.3";
+    const APP_VERSION = "1.5.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -730,19 +729,23 @@
       }, { passive: false });
     }
 
+    // ==========================================
+    // FLOATING BUTTON LOGO TOGGLE
+    // ==========================================
     function toggleHubMenu() {
       const menu = document.getElementById('hubActionsMenu');
-      const btn = document.getElementById('hubToggleBtn');
+      const logoImg = document.getElementById('hubToggleImg');
+      const closeIcon = document.getElementById('hubToggleClose');
       const isClosed = menu.classList.contains('hidden');
 
       if (isClosed) {
         menu.classList.remove('hidden');
-        btn.innerText = '✕';
-        btn.classList.add('bg-slate-800');
+        if (logoImg) logoImg.classList.add('hidden');
+        if (closeIcon) closeIcon.classList.remove('hidden');
       } else {
         menu.classList.add('hidden');
-        btn.innerText = '⚡';
-        btn.classList.remove('bg-slate-800');
+        if (logoImg) logoImg.classList.remove('hidden');
+        if (closeIcon) closeIcon.classList.add('hidden');
       }
     }
 
@@ -875,9 +878,6 @@
       renderView();
     }
 
-    // ==========================================
-    // SINGLE ACTIVE ACCORDION WITH INLINE SCROLL
-    // ==========================================
     function toggleBrand(brandName) {
       if (activeBrandName === brandName) {
         activeBrandName = null;
@@ -975,13 +975,9 @@
       const sortedBrands = Object.keys(brandGroups).sort();
       currentRenderList = sortedBrands.map(b => ({ brand: b, items: brandGroups[b] }));
 
-      // เรนเดอร์แบรนด์ทั้งหมดต่อเนื่องตั้งแต่ต้น ไม่ตัดขาด
       renderAllBrands(isSingleMatch, keyword);
     }
 
-    // ========================================================
-    // RENDER ALL BRANDS INLINE (NO SCROLL CUTOFF)
-    // ========================================================
     function renderAllBrands(isSingleMatch, keyword) {
       const container = document.getElementById('contentList');
       let gridHtml = '<div class="grid grid-cols-2 gap-3">';
@@ -993,15 +989,12 @@
         const isBrand1Open = keyword.length > 0 ? (activeBrandName === brand1.brand || uniqueItemsIsOne(currentRenderList)) : (activeBrandName === brand1.brand);
         const isBrand2Open = brand2 ? (keyword.length > 0 ? (activeBrandName === brand2.brand || uniqueItemsIsOne(currentRenderList)) : (activeBrandName === brand2.brand)) : false;
 
-        // การ์ดที่ 1
         gridHtml += renderBrandCardHtml(brand1, isBrand1Open);
 
-        // การ์ดที่ 2 (ถ้ามี)
         if (brand2) {
           gridHtml += renderBrandCardHtml(brand2, isBrand2Open);
         }
 
-        // แทรกรายการสินค้าเต็มความกว้าง (col-span-2) ใต้แถวของคู่นั้นทันที
         if (isBrand1Open) {
           gridHtml += renderActiveItemsPanelHtml(brand1, isSingleMatch);
         } else if (isBrand2Open && brand2) {
@@ -1078,7 +1071,6 @@
 
             <div class="item-content ${isItemOpen ? '' : 'hidden'} p-3.5 pt-0 border-t border-slate-200 space-y-2.5 mt-1 bg-white">
               
-              <!-- UoM: เพิ่มขนาด 20% เป็น text-[12px] -->
               <div class="flex justify-end items-center text-[12px] font-bold text-slate-500 pt-2 px-0.5">
                 <span>UoM: <b class="text-slate-900 font-extrabold text-[12px]">${escapeHtml(group.unit) || '-'}</b></span>
               </div>
@@ -1118,7 +1110,6 @@
                         <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${displayBadgeColor}">${displayStatusText}</span>
                       </div>
                       
-                      <!-- Main Available Card: ตัวเลขใหญ่ขึ้น 20% (text-3xl) -->
                       <div class="w-full border-2 ${isAvailableNegative ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200 bg-white'} rounded-2xl p-2.5 space-y-2 shadow-xs">
                         <div class="flex justify-between items-center pb-1.5 border-b border-dashed border-slate-200">
                           <div>
@@ -1129,7 +1120,6 @@
                             ${formatNumber(realAvailable)}
                           </span>
                         </div>
-                        <!-- In Stock / Defined: เพิ่มขนาดตัวเลข 20% เป็น text-[16px] -->
                         <div class="grid grid-cols-2 gap-2 text-center">
                           <div class="bg-slate-50 py-1.5 px-2 rounded-xl border border-slate-200">
                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
@@ -1142,7 +1132,6 @@
                         </div>
                       </div>
 
-                      <!-- Ordered & Balance Card: เพิ่มขนาดตัวเลข 20% เป็น text-[16px] -->
                       <div class="w-full bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs">
                         <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
                           <div class="px-1">
@@ -1156,7 +1145,6 @@
                         </div>
                       </div>
 
-                      <!-- Price & Total Value Card: เพิ่มขนาดตัวเลข 20% เป็น text-[16px] -->
                       <div class="w-full bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs">
                         <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
                           <div class="px-1">
