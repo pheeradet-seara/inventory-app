@@ -47,7 +47,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">v1.3</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">v1.4</span>
         </div>
         <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -127,7 +127,7 @@
         </div>
         <!-- Version Badge Top Bar -->
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200/80 select-none">
-          v1.3
+          v1.4
         </span>
       </div>
     </div>
@@ -159,7 +159,7 @@
           
           <!-- Database Update Text & Version Indicator -->
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.3</b></span>
+            <span>Version: <b class="text-slate-600">1.4</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -206,9 +206,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.3
+    // CONFIGURATION - VERSION 1.4
     // ==========================================
-    const APP_VERSION = "1.3";
+    const APP_VERSION = "1.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -283,7 +283,6 @@
       } catch (e) {}
     }
 
-    // ล้างแคชแล้วดึงข้อมูลใหม่ทันทีโดยไม่ต้อง Logout
     async function clearCacheAndReload() {
       const btn = document.getElementById('clearCacheBtn');
       const originalText = btn.innerHTML;
@@ -952,17 +951,24 @@
           const itemKey = group.itemNo;
           const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
 
+          // ==========================================
+          // LAYOUT 2 แถว: รหัสสินค้าแถวบน / Description แถวล่างเต็มขอบจอ
+          // ==========================================
           html += `
             <div class="item-card bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition hover:border-slate-300">
               <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
-                      class="w-full p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition text-left">
-                <div class="flex-1 min-w-0 pr-1 space-y-0.5">
-                  <span class="font-extrabold text-slate-900 text-lg tracking-tight block truncate">${escapeHtml(group.itemNo)}</span>
-                  <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
+                      class="w-full p-3.5 space-y-1.5 hover:bg-slate-50/80 transition text-left">
+                <!-- แถวบน: Item Code + WH Count + View Action -->
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-extrabold text-slate-900 text-base tracking-tight truncate flex-1 min-w-0">${escapeHtml(group.itemNo)}</span>
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-slate-200/80 whitespace-nowrap">${group.warehouses.length} WH</span>
+                    <span class="item-status-text text-[11px] text-indigo-600 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
+                  </div>
                 </div>
-                <div class="flex items-center justify-end gap-2 flex-shrink-0 w-28 text-right">
-                  <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-200/80 whitespace-nowrap">${group.warehouses.length} WH</span>
-                  <span class="item-status-text text-[11px] text-indigo-600 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
+                <!-- แถวล่าง: Description แบบเต็มความกว้างสุดขอบจอ -->
+                <div class="w-full">
+                  <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
                 </div>
               </button>
 
