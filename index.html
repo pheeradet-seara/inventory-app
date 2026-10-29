@@ -2,490 +2,231 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>SEARA Stock Portal</title>
+  <title>SEARA - Stock Uploader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Library สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="min-h-screen flex items-center justify-center p-4">
 
-  <!-- ==================== LOGIN SCREEN ==================== -->
-  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4 bg-slate-100">
-    <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-xl p-7 w-full max-w-sm space-y-6">
-      <div class="text-center space-y-2">
-        <div class="flex justify-center mb-1">
-          <img src="./logo.png" alt="SEARA" class="h-12 w-auto object-contain">
-        </div>
-        <h2 id="loginTitle" class="text-xl font-extrabold text-slate-900 tracking-tight">Sign In</h2>
-        <p id="loginSubtitle" class="text-xs text-slate-400 font-medium">Enter your work email to continue</p>
-      </div>
-
-      <!-- Step 1: Email Form -->
-      <form id="emailForm" onsubmit="handleEmailSubmit(event)" class="space-y-4">
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Work Email</label>
-          <input type="email" id="emailInput" required placeholder="name@searasports.com" 
-                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
-        </div>
-        <button type="submit" id="emailSubmitBtn" 
-                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-600/30 transition">
-          Next →
-        </button>
-      </form>
-
-      <!-- Step 2: PIN Form -->
-      <form id="pinForm" onsubmit="handlePinSubmit(event)" class="space-y-4 hidden">
-        <div>
-          <div class="flex justify-between items-center mb-1.5">
-            <label id="pinLabel" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
-            <span id="userEmailBadge" class="text-[11px] text-indigo-600 font-semibold truncate max-w-[170px]"></span>
-          </div>
-          <input type="password" id="pinInput" maxlength="6" inputmode="numeric" required placeholder="••••" 
-                 class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 text-center text-2xl tracking-widest font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
-        </div>
-        <button type="submit" id="pinSubmitBtn" 
-                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-sm shadow-lg shadow-indigo-600/30 transition">
-          Sign In
-        </button>
-        <button type="button" onclick="backToEmail()" class="w-full text-center text-xs text-slate-400 font-bold hover:text-slate-600 py-1">
-          ← Switch Account
-        </button>
-      </form>
-
-      <div id="loginStatus" class="hidden rounded-2xl p-3 text-center text-xs font-semibold"></div>
-    </div>
-  </div>
-
-  <!-- ==================== APP SCREEN ==================== -->
-  <div id="appScreen" class="hidden pb-24">
+  <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl p-6 md:p-8 w-full max-w-lg space-y-6">
     
-    <!-- Top Bar Sticky Header -->
-    <header class="glass sticky top-0 z-30 border-b border-slate-200/80 shadow-xs">
-      <div class="max-w-4xl mx-auto px-4 py-3 space-y-2.5">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center space-x-2.5">
-            <img src="./logo.png" alt="SEARA" class="h-8 w-auto object-contain">
-            <div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-sm font-extrabold text-slate-900 tracking-tight leading-none">Stock Check</span>
-                <span id="headerUserEmail" class="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md truncate max-w-[140px]"></span>
-              </div>
-              <p id="syncTimeText" class="text-[10px] text-slate-400 font-semibold mt-0.5">Sync: -</p>
-            </div>
-          </div>
-          
-          <div class="flex items-center space-x-1.5">
-            <button onclick="loadData(true)" title="Sync Data" 
-                    class="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            </button>
-            <button onclick="handleSignOut()" title="Sign Out" 
-                    class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="relative">
-          <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search Part No, Model, Brand..." 
-                 class="w-full pl-10 pr-9 py-2.5 bg-slate-100 border border-slate-200/80 rounded-2xl text-[13px] font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition">
-          <span class="absolute left-3.5 top-2.5 text-slate-400">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          </span>
-          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-2 text-slate-400 hover:text-slate-600 text-sm p-1">✕</button>
-        </div>
-
-        <!-- Filters Row -->
-        <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-1">
-          <select id="warehouseFilter" onchange="filterAndRender()" 
-                  class="bg-white border border-slate-200 text-[11px] font-bold text-slate-700 px-3 py-1.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 shrink-0">
-            <option value="ALL">All Warehouses</option>
-          </select>
-          <select id="brandFilter" onchange="filterAndRender()" 
-                  class="bg-white border border-slate-200 text-[11px] font-bold text-slate-700 px-3 py-1.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 shrink-0">
-            <option value="ALL">All Brands</option>
-          </select>
-          <select id="statusFilter" onchange="filterAndRender()" 
-                  class="bg-white border border-slate-200 text-[11px] font-bold text-slate-700 px-3 py-1.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 shrink-0">
-            <option value="ALL">All Status</option>
-            <option value="In Stock">In Stock (>0)</option>
-            <option value="Ordered">Ordered (PO)</option>
-            <option value="Out of Stock">Out of Stock</option>
-          </select>
-        </div>
+    <div class="text-center space-y-2">
+      <div class="flex justify-center mb-1">
+        <img src="./logo.png" alt="Company Logo" class="h-14 w-auto object-contain">
       </div>
-    </header>
-
-    <!-- Main Content Area -->
-    <main class="max-w-4xl mx-auto p-4 space-y-3">
-      <div class="flex justify-between items-center px-1">
-        <span id="resultCount" class="text-xs font-bold text-slate-500">Showing 0 items</span>
-      </div>
-
-      <!-- Loading Placeholder -->
-      <div id="loadingIndicator" class="text-center py-20 space-y-3">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
-        <p class="text-xs font-bold text-slate-500">Loading stock data...</p>
-      </div>
-
-      <!-- Cards Container -->
-      <div id="itemsContainer" class="space-y-3"></div>
-
-      <!-- Empty State -->
-      <div id="emptyState" class="hidden text-center py-20 space-y-2">
-        <div class="text-4xl">📦</div>
-        <p class="text-sm font-extrabold text-slate-800">No items found</p>
-        <p class="text-xs text-slate-400">Try adjusting your search or filters</p>
-      </div>
-    </main>
-
-  </div>
-
-  <!-- Detail Modal -->
-  <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-    <div class="bg-white rounded-[28px] max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-      <button onclick="closeModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-2">✕</button>
-      <div id="modalContent"></div>
+      <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">Stock Data Uploader</h2>
+      <p class="text-[12px] text-slate-400 font-medium">ลากไฟล์ Excel จาก SAP มาวางเพื่ออัปเดตสต็อกขึ้นเว็บทันที</p>
     </div>
+
+    <!-- โซนบันทึก Token -->
+    <div class="bg-slate-50 border border-slate-200/70 p-4 rounded-2xl space-y-2">
+      <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">GitHub Token (บันทึกอัตโนมัติในเครื่อง)</label>
+      <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxx" 
+             class="w-full px-3 py-2 border border-slate-200 rounded-xl text-[13px] bg-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600">
+      <div class="flex justify-between items-center text-[10px] text-slate-400">
+        <span>Repo: <b>pheeradet-seara/inventory-app</b></span>
+        <button onclick="saveToken()" class="text-indigo-600 font-bold hover:underline">บันทึกรหัส</button>
+      </div>
+    </div>
+
+    <!-- Drop Zone -->
+    <div id="dropZone" 
+         ondragover="event.preventDefault(); this.classList.add('border-indigo-600', 'bg-indigo-50/30');"
+         ondragleave="this.classList.remove('border-indigo-600', 'bg-indigo-50/30');"
+         ondrop="handleDrop(event)"
+         onclick="document.getElementById('fileInput').click()"
+         class="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center cursor-pointer hover:border-indigo-500 hover:bg-slate-50 transition group">
+      <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
+      <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">📊</div>
+      <p class="text-[14px] font-bold text-slate-700">คลิกเลือกไฟล์ หรือลากไฟล์ SAP มาวางที่นี่</p>
+      <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์ .xlsx, .xls, .csv</p>
+    </div>
+
+    <!-- Status Box -->
+    <div id="statusBox" class="hidden rounded-2xl p-4 text-[12px] font-semibold space-y-1"></div>
+
   </div>
 
   <script>
-    // ==========================================
-    // CONFIGURATION
-    // ==========================================
-    const DATA_URL = "./data.json";
-    
-    // วาง URL Web App ของ Apps Script ที่ลงท้ายด้วย /exec ตรงนี้
-    const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec"; 
-
-    let allItems = [];
-    let currentAuthMode = 'login';
-    let pendingEmail = '';
+    const REPO_NAME = "pheeradet-seara/inventory-app";
+    const TARGET_FILE = "data.json";
 
     window.onload = () => {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error', err));
-      }
-
-      const activeUser = localStorage.getItem('seara_user_email');
-      const currentPin = localStorage.getItem('seara_user_pin');
-
-      if (activeUser && currentPin) {
-        loadData();
-      } else {
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('appScreen').classList.add('hidden');
+      const savedToken = localStorage.getItem('seara_gh_token');
+      if (savedToken) {
+        document.getElementById('githubToken').value = savedToken;
       }
     };
 
-    function showLogin() {
-      document.getElementById('loginScreen').classList.remove('hidden');
-      document.getElementById('appScreen').classList.add('hidden');
+    function saveToken() {
+      const token = document.getElementById('githubToken').value.trim();
+      if (token) {
+        localStorage.setItem('seara_gh_token', token);
+        showStatus('✅ บันทึก Token ลงในเครื่องเรียบร้อยแล้ว', 'bg-emerald-50 text-emerald-700 border border-emerald-200');
+      }
     }
 
-    function showApp() {
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('appScreen').classList.remove('hidden');
-      document.getElementById('headerUserEmail').innerText = localStorage.getItem('seara_user_email') || '';
-    }
-
-    function showLoginError(msg) {
-      const status = document.getElementById('loginStatus');
-      status.className = 'rounded-2xl p-3 text-center text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200';
-      status.innerText = msg;
-      status.classList.remove('hidden');
-    }
-
-    async function handleEmailSubmit(e) {
+    function handleDrop(e) {
       e.preventDefault();
-      const email = document.getElementById('emailInput').value.trim().toLowerCase();
-      const btn = document.getElementById('emailSubmitBtn');
-      
-      btn.disabled = true;
-      btn.innerText = 'Checking...';
-      document.getElementById('loginStatus').classList.add('hidden');
+      document.getElementById('dropZone').classList.remove('border-indigo-600', 'bg-indigo-50/30');
+      if (e.dataTransfer.files.length > 0) {
+        processExcel(e.dataTransfer.files[0]);
+      }
+    }
 
-      try {
-        const res = await fetch(`${AUTH_API_URL}?action=checkEmail&email=${encodeURIComponent(email)}`);
-        const data = await res.json();
+    function handleFileSelect(e) {
+      if (e.target.files.length > 0) {
+        processExcel(e.target.files[0]);
+      }
+    }
 
-        if (data.success) {
-          pendingEmail = email;
-          document.getElementById('emailForm').classList.add('hidden');
-          document.getElementById('pinForm').classList.remove('hidden');
-          document.getElementById('userEmailBadge').innerText = email;
+    function showStatus(text, className) {
+      const box = document.getElementById('statusBox');
+      box.className = `rounded-2xl p-4 text-[12px] font-semibold ${className}`;
+      box.innerHTML = text;
+      box.classList.remove('hidden');
+    }
 
-          if (data.hasPin) {
-            currentAuthMode = 'login';
-            document.getElementById('loginTitle').innerText = 'Security PIN';
-            document.getElementById('loginSubtitle').innerText = 'Enter your 4-6 digit PIN';
-            document.getElementById('pinLabel').innerText = 'ENTER PIN';
-            document.getElementById('pinSubmitBtn').innerText = 'Sign In';
-          } else {
-            currentAuthMode = 'setup';
-            document.getElementById('loginTitle').innerText = 'Create PIN';
-            document.getElementById('loginSubtitle').innerText = 'Set a 4-6 digit PIN for first-time login';
-            document.getElementById('pinLabel').innerText = 'CREATE NEW PIN';
-            document.getElementById('pinSubmitBtn').innerText = 'Save & Sign In';
+    async function processExcel(file) {
+      const token = document.getElementById('githubToken').value.trim();
+      if (!token) {
+        showStatus('⚠️ กรุณากรอก GitHub Token ด้านบนก่อนดำเนินการ', 'bg-amber-50 text-amber-700 border border-amber-200');
+        return;
+      }
+      localStorage.setItem('seara_gh_token', token);
+
+      showStatus('⏳ กำลังอ่านและประมวลผลไฟล์ Excel...', 'bg-slate-100 text-slate-700 border border-slate-200');
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rawRows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+          if (!rawRows || rawRows.length === 0) {
+            showStatus('❌ ไม่พบข้อมูลในไฟล์ Excel ที่เลือก', 'bg-red-50 text-red-700 border border-red-200');
+            return;
           }
-          document.getElementById('pinInput').focus();
-        } else {
-          showLoginError(data.message || 'Email not authorized.');
+
+          showStatus(`⏳ กำลังแปลงและบีบอัดข้อมูล (${rawRows.length.toLocaleString()} รายการ)...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
+
+          const items = [];
+          for (let row of rawRows) {
+            const itemNo = String(row['Item No.'] || '').trim();
+            if (!itemNo || ['nan', 'none', '-', 'total'].includes(itemNo.toLowerCase())) continue;
+
+            const wh = String(row['Warehouse Code'] || '').trim();
+            const brand = String(row['Brand'] || 'Unbranded').trim();
+            const desc = String(row['Item Description'] || '-').trim();
+            const unit = String(row['Inventory UoM'] || '-').trim();
+
+            const inStock = Math.round((parseFloat(row['In Stock']) || 0) * 100) / 100;
+            const defined = Math.round((parseFloat(row['Defined']) || 0) * 100) / 100;
+            const ordered = Math.round((parseFloat(row['Ordered']) || 0) * 100) / 100;
+            
+            // ตรวจสอบค่า Available ให้แม่นยำแม้เป็นเลข 0
+            const rawAvail = row['Available'];
+            const parsedAvail = (rawAvail !== undefined && rawAvail !== '') ? parseFloat(rawAvail) : (inStock - defined);
+            const availableInStock = Math.round((isNaN(parsedAvail) ? 0 : parsedAvail) * 100) / 100;
+
+            const avgPrice = Math.round((parseFloat(row['Average Price']) || 0) * 100) / 100;
+
+            // กรองแถวที่ไม่มีสต็อกเลยออกเพื่อลดขนาดไฟล์
+            if (inStock === 0 && ordered === 0 && defined === 0 && availableInStock === 0) continue;
+
+            let statusText = 'Out of Stock';
+            let color = 'red';
+            if (availableInStock > 0) {
+              statusText = 'In Stock';
+              color = 'green';
+            } else if (availableInStock <= 0 && ordered > 0) {
+              statusText = 'Ordered';
+              color = 'yellow';
+            }
+
+            items.push({
+              wh, brand, itemNo, desc, unit,
+              inStock, defined, ordered, availableInStock, avgPrice,
+              statusText, color
+            });
+          }
+
+          const now = new Date();
+          const syncTime = `${now.toLocaleDateString('en-GB')}, ${now.toLocaleTimeString('en-GB')}`;
+          const finalPayload = {
+            syncTime: syncTime,
+            items: items
+          };
+
+          const jsonString = JSON.stringify(finalPayload);
+          const sizeMb = (new Blob([jsonString]).size / (1024 * 1024)).toFixed(2);
+
+          showStatus(`⏳ กำลังอัปโหลดข้อมูล ${items.length.toLocaleString()} รายการ (${sizeMb} MB) ขึ้น GitHub...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
+
+          await uploadToGitHub(token, jsonString, items.length);
+
+        } catch (err) {
+          console.error(err);
+          showStatus(`❌ เกิดข้อผิดพลาดในการประมวลผล: ${err.message}`, 'bg-red-50 text-red-700 border border-red-200');
         }
-      } catch (err) {
-        showLoginError('Connection error. Please try again.');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Next →';
-      }
+      };
+      reader.readAsArrayBuffer(file);
     }
 
-    async function handlePinSubmit(e) {
-      e.preventDefault();
-      const pin = document.getElementById('pinInput').value.trim();
-      const btn = document.getElementById('pinSubmitBtn');
-
-      if (pin.length < 4) {
-        showLoginError('PIN must be at least 4 digits');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = 'Verifying...';
-      document.getElementById('loginStatus').classList.add('hidden');
+    async function uploadToGitHub(token, contentStr, itemCount) {
+      const url = `https://api.github.com/repos/${REPO_NAME}/contents/${TARGET_FILE}`;
+      const headers = {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      };
 
       try {
-        const action = currentAuthMode === 'setup' ? 'setupPin' : 'auth';
-        const res = await fetch(`${AUTH_API_URL}?action=${action}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`);
-        const data = await res.json();
+        // ดึง SHA สดใหม่เสมอโดยเติม timestamp ป้องกัน Browser Cache
+        const getRes = await fetch(`${url}?t=${new Date().getTime()}`, { headers });
+        let sha = null;
+        if (getRes.ok) {
+          const getData = await getRes.json();
+          sha = getData.sha;
+        }
 
-        if (data.success) {
-          localStorage.setItem('seara_user_email', pendingEmail);
-          localStorage.setItem('seara_user_pin', pin);
-          loadData();
+        const utf8Bytes = new TextEncoder().encode(contentStr);
+        let binaryStr = '';
+        for (let i = 0; i < utf8Bytes.length; i++) {
+          binaryStr += String.fromCharCode(utf8Bytes[i]);
+        }
+        const b64Content = btoa(binaryStr);
+
+        const now = new Date();
+        const payload = {
+          message: `Update stock: ${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB')}`,
+          content: b64Content
+        };
+        if (sha) payload.sha = sha;
+
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (putRes.ok) {
+          showStatus(`🎉 สำเร็จ! อัปเดตข้อมูล ${itemCount.toLocaleString()} รายการขึ้นระบบเรียบร้อยแล้ว`, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
         } else {
-          showLoginError(data.message || 'Invalid PIN. Please try again.');
+          const errData = await putRes.json();
+          showStatus(`❌ อัปโหลดไม่สำเร็จ: ${errData.message || 'Token หรือสิทธิ์ไม่ถูกต้อง'}`, 'bg-red-50 text-red-700 border border-red-200');
         }
       } catch (err) {
-        showLoginError('Connection error. Please try again.');
-      } finally {
-        btn.disabled = false;
-        btn.innerText = currentAuthMode === 'setup' ? 'Save & Sign In' : 'Sign In';
+        showStatus(`❌ การเชื่อมต่อล้มเหลว: ${err.message}`, 'bg-red-50 text-red-700 border border-red-200');
       }
-    }
-
-    function backToEmail() {
-      document.getElementById('pinForm').classList.add('hidden');
-      document.getElementById('emailForm').classList.remove('hidden');
-      document.getElementById('loginTitle').innerText = 'Sign In';
-      document.getElementById('loginSubtitle').innerText = 'Enter your work email to continue';
-      document.getElementById('loginStatus').classList.add('hidden');
-      document.getElementById('pinInput').value = '';
-    }
-
-    function handleSignOut() {
-      if (confirm('Are you sure you want to sign out?')) {
-        localStorage.removeItem('seara_user_email');
-        localStorage.removeItem('seara_user_pin');
-        location.reload();
-      }
-    }
-
-    async function loadData(forceRefresh = false) {
-      showApp();
-      const loader = document.getElementById('loadingIndicator');
-      loader.classList.remove('hidden');
-
-      try {
-        const fetchUrl = forceRefresh ? `${DATA_URL}?t=${new Date().getTime()}` : `${DATA_URL}?t=${Math.floor(Date.now() / 60000)}`;
-        const res = await fetch(fetchUrl);
-        if (!res.ok) throw new Error('Failed to load data.json');
-
-        const json = await res.json();
-        allItems = json.items || [];
-        document.getElementById('syncTimeText').innerText = `Sync: ${json.syncTime || '-'}`;
-
-        populateFilterOptions();
-        filterAndRender();
-      } catch (err) {
-        console.error(err);
-      } finally {
-        loader.classList.add('hidden');
-      }
-    }
-
-    function populateFilterOptions() {
-      const warehouses = new Set();
-      const brands = new Set();
-
-      allItems.forEach(item => {
-        if (item.wh) warehouses.add(item.wh);
-        if (item.brand) brands.add(item.brand);
-      });
-
-      const whSelect = document.getElementById('warehouseFilter');
-      whSelect.innerHTML = '<option value="ALL">All Warehouses</option>';
-      Array.from(warehouses).sort().forEach(wh => {
-        whSelect.innerHTML += `<option value="${wh}">${wh}</option>`;
-      });
-
-      const brandSelect = document.getElementById('brandFilter');
-      brandSelect.innerHTML = '<option value="ALL">All Brands</option>';
-      Array.from(brands).sort().forEach(b => {
-        brandSelect.innerHTML += `<option value="${b}">${b}</option>`;
-      });
-    }
-
-    function filterAndRender() {
-      const search = document.getElementById('searchInput').value.trim().toLowerCase();
-      const selWh = document.getElementById('warehouseFilter').value;
-      const selBrand = document.getElementById('brandFilter').value;
-      const selStatus = document.getElementById('statusFilter').value;
-
-      const filtered = allItems.filter(item => {
-        const matchesSearch = !search || 
-          item.itemNo.toLowerCase().includes(search) || 
-          item.desc.toLowerCase().includes(search) || 
-          item.brand.toLowerCase().includes(search);
-
-        const matchesWh = selWh === 'ALL' || item.wh === selWh;
-        const matchesBrand = selBrand === 'ALL' || item.brand === selBrand;
-        const matchesStatus = selStatus === 'ALL' || item.statusText === selStatus;
-
-        return matchesSearch && matchesWh && matchesBrand && matchesStatus;
-      });
-
-      renderItems(filtered);
-    }
-
-    function renderItems(items) {
-      const container = document.getElementById('itemsContainer');
-      const empty = document.getElementById('emptyState');
-      const count = document.getElementById('resultCount');
-
-      container.innerHTML = '';
-      count.innerText = `Showing ${items.length.toLocaleString()} items`;
-
-      if (items.length === 0) {
-        empty.classList.remove('hidden');
-        return;
-      }
-      empty.classList.add('hidden');
-
-      const displayItems = items.slice(0, 150);
-
-      displayItems.forEach((item) => {
-        let badgeBg = 'bg-rose-50 text-rose-700 border-rose-200';
-        if (item.color === 'green') badgeBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-        else if (item.color === 'yellow') badgeBg = 'bg-amber-50 text-amber-700 border-amber-200';
-
-        const card = document.createElement('div');
-        card.className = 'bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm hover:shadow-md transition active:scale-[0.99] cursor-pointer';
-        card.onclick = () => openModal(item);
-        
-        card.innerHTML = `
-          <div class="flex justify-between items-start gap-2">
-            <div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md tracking-wider">${escapeHtml(item.wh)}</span>
-                <span class="text-[11px] font-bold text-slate-400 uppercase">${escapeHtml(item.brand)}</span>
-              </div>
-              <h3 class="text-sm font-extrabold text-slate-900 mt-1">${escapeHtml(item.itemNo)}</h3>
-            </div>
-            <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${badgeBg} shrink-0">
-              ${escapeHtml(item.statusText)}
-            </span>
-          </div>
-          <p class="text-xs text-slate-500 font-medium line-clamp-1 mt-1">${escapeHtml(item.desc)}</p>
-          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 text-center">
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">Available</p>
-              <p class="text-sm font-black ${item.availableInStock > 0 ? 'text-emerald-600' : 'text-slate-800'}">${item.availableInStock.toLocaleString()}</p>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">In Stock</p>
-              <p class="text-sm font-black text-slate-700">${item.inStock.toLocaleString()}</p>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">Ordered</p>
-              <p class="text-sm font-black text-amber-600">${item.ordered.toLocaleString()}</p>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function handleSearch(val) {
-      const clearBtn = document.getElementById('clearSearchBtn');
-      if (val.trim()) clearBtn.classList.remove('hidden');
-      else clearBtn.classList.add('hidden');
-      filterAndRender();
-    }
-
-    function clearSearch() {
-      const input = document.getElementById('searchInput');
-      input.value = '';
-      document.getElementById('clearSearchBtn').classList.add('hidden');
-      filterAndRender();
-      input.focus();
-    }
-
-    function openModal(item) {
-      const content = document.getElementById('modalContent');
-      content.innerHTML = `
-        <div class="space-y-4">
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md tracking-wider">${escapeHtml(item.wh)}</span>
-              <span class="text-[11px] font-bold text-slate-400 uppercase">${escapeHtml(item.brand)}</span>
-            </div>
-            <h2 class="text-lg font-extrabold text-slate-900">${escapeHtml(item.itemNo)}</h2>
-            <p class="text-xs text-slate-600 font-medium mt-0.5">${escapeHtml(item.desc)}</p>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">AVAILABLE</p>
-              <p class="text-xl font-black text-emerald-600">${item.availableInStock.toLocaleString()} <span class="text-xs font-semibold text-slate-400">${escapeHtml(item.unit)}</span></p>
-            </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">IN STOCK</p>
-              <p class="text-xl font-black text-slate-800">${item.inStock.toLocaleString()} <span class="text-xs font-semibold text-slate-400">${escapeHtml(item.unit)}</span></p>
-            </div>
-            <div class="mt-2">
-              <p class="text-[10px] font-bold text-slate-400 uppercase">COMMITTED / RESERVED</p>
-              <p class="text-base font-bold text-rose-500">${item.defined.toLocaleString()}</p>
-            </div>
-            <div class="mt-2">
-              <p class="text-[10px] font-bold text-slate-400 uppercase">ON ORDER (PO)</p>
-              <p class="text-base font-bold text-amber-500">${item.ordered.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-      `;
-      document.getElementById('detailModal').classList.remove('hidden');
-    }
-
-    function closeModal() {
-      document.getElementById('detailModal').classList.add('hidden');
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
     }
   </script>
 </body>
