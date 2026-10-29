@@ -304,6 +304,9 @@
         if (res.role) {
           localStorage.setItem('inv_user_role', res.role);
         }
+        if (res.allowedWarehouses !== undefined) {
+          localStorage.setItem('inv_user_wh', res.allowedWarehouses);
+        }
 
         document.getElementById('stepEmail').classList.add('hidden');
 
@@ -354,7 +357,7 @@
         redirect: 'follow'
       })
       .then(res => res.json())
-      .then(res => {
+      .then(async res => {
         btn.innerText = 'Set PIN & Sign In';
         btn.disabled = false;
 
@@ -364,6 +367,10 @@
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
+          if (res.allowedWarehouses !== undefined) {
+            localStorage.setItem('inv_user_wh', res.allowedWarehouses);
+          }
+          await clearLocalDatabase();
           showAppScreen();
           loadData(true);
         } else {
@@ -399,7 +406,7 @@
         redirect: 'follow'
       })
       .then(res => res.json())
-      .then(res => {
+      .then(async res => {
         btn.innerText = 'Sign In';
         btn.disabled = false;
         if (res.success) {
@@ -408,6 +415,10 @@
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
+          if (res.allowedWarehouses !== undefined) {
+            localStorage.setItem('inv_user_wh', res.allowedWarehouses);
+          }
+          await clearLocalDatabase();
           showAppScreen();
           loadData(true);
         } else {
@@ -427,6 +438,7 @@
       localStorage.removeItem('inv_user_email');
       localStorage.removeItem('inv_user_pin');
       localStorage.removeItem('inv_user_role');
+      localStorage.removeItem('inv_user_wh');
       currentEmail = null;
       currentPin = null;
       await clearLocalDatabase();
@@ -471,17 +483,34 @@
         return res.json();
       })
       .then(async json => {
-        const whSet = new Set();
-        (json.items || []).forEach(i => { if (i.wh) whSet.add(i.wh); });
+        const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
+        const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
 
-        const userRole = localStorage.getItem('inv_user_role') || 'USER';
+        // รวบรวมคลังสินค้าทั้งหมดที่มีใน data.json
+        const allWhSet = new Set();
+        (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh); });
+        const allWhList = Array.from(allWhSet).sort();
+
+        let accessibleWarehouses = [];
+
+        // เงื่อนไขสิทธิ์: ถ้าเป็น ADMIN หรือ AllowedWarehouses เป็น ALL ให้เห็นครบทุกคลัง
+        if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL' || rawAllowedWH === '') {
+          accessibleWarehouses = allWhList;
+        } else {
+          // แยกคลังด้วยช่องว่าง หรือ จุลภาค เช่น "MVS MDL" หรือ "BPL, PKT"
+          const allowedList = rawAllowedWH.split(/[\s,]+/).map(w => w.trim()).filter(Boolean);
+          accessibleWarehouses = allWhList.filter(wh => allowedList.includes(wh));
+        }
+
+        // กรองเอาเฉพาะข้อมูลสินค้าที่อยู่ในคลังที่พนักงานคนนี้มีสิทธิ์เข้าถึง
+        const accessibleItems = (json.items || []).filter(item => accessibleWarehouses.includes(item.wh));
 
         const constructedData = {
-          items: json.items || [],
+          items: accessibleItems,
           userEmail: currentEmail,
           role: userRole,
           syncTime: json.syncTime || '',
-          userWarehouses: Array.from(whSet).sort()
+          userWarehouses: accessibleWarehouses
         };
 
         renderApp(constructedData);
