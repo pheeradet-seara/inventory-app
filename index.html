@@ -20,13 +20,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-    .badge-green { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    .badge-yellow { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-    .badge-red { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+    .badge-green { background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-yellow { background-color: #fffbeb; color: #9a3412; border: 1px solid #fed7aa; }
+    .badge-red { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
     .custom-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #e2e8f0; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
   </style>
 
   <script>
@@ -35,21 +35,21 @@
     }
   </script>
 </head>
-<body class="max-w-xl mx-auto min-h-screen bg-slate-50/90 pb-28 text-slate-800 antialiased relative">
+<body class="max-w-xl mx-auto min-h-screen bg-slate-100/90 pb-28 text-slate-800 antialiased relative">
 
   <!-- ================= DYNAMIC AUTH SCREEN ================= -->
   <div id="loginScreen" class="min-h-screen flex items-center justify-center p-5">
-    <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl shadow-indigo-100/50 p-8 w-full max-w-sm space-y-5">
+    <div class="bg-white border border-slate-200/90 rounded-[32px] shadow-xl shadow-slate-200/60 p-8 w-full max-w-sm space-y-5">
       
       <div class="text-center space-y-1.5">
         <div class="flex justify-center mb-2">
           <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
         </div>
         <div class="flex items-center justify-center gap-1.5">
-          <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">v1.4.2</span>
+          <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5</span>
         </div>
-        <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
+        <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
 
       <!-- Step 1: Input Email -->
@@ -58,10 +58,10 @@
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Work Email</label>
           <input type="email" id="loginEmailInput" 
                  placeholder="name@searasports.com" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition"
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[14px] focus:outline-none focus:ring-2 focus:ring-slate-800 bg-slate-50/70 font-semibold transition"
                  onkeydown="if(event.key === 'Enter') handleCheckEmail()">
         </div>
-        <button onclick="handleCheckEmail()" id="checkEmailBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
+        <button onclick="handleCheckEmail()" id="checkEmailBtn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white rounded-2xl text-[14px] font-bold transition shadow-lg shadow-slate-300">
           Next →
         </button>
       </div>
@@ -71,15 +71,15 @@
         <div>
           <div class="flex justify-between items-center mb-1.5">
             <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
-            <button onclick="resetToEmailStep()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Change Email</button>
+            <button onclick="resetToEmailStep()" class="text-[11px] font-semibold text-slate-700 hover:underline">Change Email</button>
           </div>
           <input type="password" id="loginPinInput" maxlength="8"
                  inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
                  placeholder="••••" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-slate-800 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleLogin()">
         </div>
-        <button onclick="handleLogin()" id="loginBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
+        <button onclick="handleLogin()" id="loginBtn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-white rounded-2xl text-[14px] font-bold transition shadow-lg shadow-slate-300">
           Sign In
         </button>
       </div>
@@ -94,17 +94,17 @@
           <input type="password" id="newPinInput" maxlength="8"
                  inputmode="numeric" pattern="[0-9]*"
                  placeholder="New 4-8 digit PIN" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center">
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[14px] focus:outline-none focus:ring-2 focus:ring-slate-800 bg-slate-50/70 font-semibold transition tracking-widest text-center">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Confirm PIN</label>
           <input type="password" id="confirmPinInput" maxlength="8"
                  inputmode="numeric" pattern="[0-9]*"
                  placeholder="Confirm PIN" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
+                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[14px] focus:outline-none focus:ring-2 focus:ring-slate-800 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleSetupPin()">
         </div>
-        <button onclick="handleSetupPin()" id="setupPinBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-emerald-200">
+        <button onclick="handleSetupPin()" id="setupPinBtn" class="w-full py-3 bg-emerald-700 hover:bg-emerald-800 active:scale-[0.98] text-white rounded-2xl text-[14px] font-bold transition shadow-lg shadow-emerald-100">
           Set PIN & Sign In
         </button>
       </div>
@@ -116,18 +116,18 @@
   <!-- ================= MAIN APP SCREEN ================= -->
   <div id="appScreen" class="hidden">
     <!-- Top Header Sticky -->
-    <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/70 shadow-xs flex items-center justify-between gap-2">
+    <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs flex items-center justify-between gap-2">
       <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
       
       <!-- Version Tag & Search Badge Container -->
       <div class="flex items-center gap-1.5 flex-shrink-0">
-        <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
+        <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
           <span id="searchBadgeText"></span>
           <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
         </div>
         <!-- Version Badge Top Bar -->
-        <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200/80 select-none">
-          v1.4.2
+        <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
+          v1.5
         </span>
       </div>
     </div>
@@ -136,10 +136,11 @@
       Loading inventory data...
     </div>
 
-    <div id="contentList" class="p-3.5 space-y-3.5"></div>
+    <!-- MAIN BRAND & ITEM CONTAINER -->
+    <div id="contentList" class="p-3.5 space-y-4"></div>
 
     <div id="loadMoreContainer" class="p-4 text-center hidden">
-      <button onclick="renderNextBatch()" class="bg-white border border-slate-200 shadow-sm px-5 py-2.5 rounded-2xl text-[11px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition">
+      <button onclick="renderNextBatch()" class="bg-white border border-slate-200 shadow-xs px-5 py-2.5 rounded-2xl text-[11px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition">
         Load more brands...
       </button>
     </div>
@@ -151,37 +152,37 @@
         <!-- User Info Card -->
         <div class="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-3.5 text-right min-w-[210px] max-w-[250px]">
           <span class="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
-          <p class="text-[14px] font-bold text-slate-800 truncate" id="hubUserEmail">-</p>
+          <p class="text-[14px] font-bold text-slate-900 truncate" id="hubUserEmail">-</p>
           <div class="flex items-center justify-end gap-2 mt-1.5">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700" id="hubUserRole">USER</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200" id="hubUserRole">USER</span>
             <button onclick="logoutApp()" class="text-[11px] font-bold text-red-600 hover:underline">Log out</button>
           </div>
           
           <!-- Database Update Text & Version Indicator -->
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.4.2</b></span>
+            <span>Version: <b class="text-slate-600">1.5</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
 
         <!-- ADMIN ONLY: ปุ่มจัดการระบบ User -->
-        <button id="adminUserMgmtBtn" onclick="openUserModal(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:brightness-105 active:scale-95 transition">
+        <button id="adminUserMgmtBtn" onclick="openUserModal(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-700 active:scale-95 transition border border-slate-700">
           <span>👥 Manage Users</span>
         </button>
 
         <!-- Action Buttons -->
-        <button onclick="clearCacheAndReload()" id="clearCacheBtn" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
+        <button onclick="clearCacheAndReload()" id="clearCacheBtn" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
           <span>🧹 Clear Cache & Reload</span>
         </button>
 
-        <button onclick="goHome(); toggleHubMenu();" class="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-indigo-700 active:scale-95 transition">
+        <button onclick="goHome(); toggleHubMenu();" class="flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-800 active:scale-95 transition">
           <span>🏠 Reset to Home</span>
         </button>
       </div>
 
       <div class="flex items-center gap-2.5 pointer-events-auto">
         <button onclick="openSearchModal()" title="Search Item / Brand" 
-                class="w-13 h-13 p-3.5 bg-white text-indigo-600 rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-200/90 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
+                class="w-13 h-13 p-3.5 bg-white text-slate-700 rounded-2xl shadow-xl shadow-slate-200 border border-slate-200 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
           🔍
         </button>
         <button onclick="toggleHubMenu()" id="hubToggleBtn" title="Menu & Actions" 
@@ -198,17 +199,17 @@
           <span class="text-[15px] text-slate-400 pl-1">🔍</span>
           <input type="text" id="modalSearchInput" oninput="onSearchInputDebounced()" 
                  placeholder="Search Brand, Item No. or Description..." 
-                 class="w-full px-2 py-2 text-[15px] font-semibold text-slate-800 focus:outline-none placeholder:text-slate-400"
+                 class="w-full px-2 py-2 text-[14px] font-semibold text-slate-800 focus:outline-none placeholder:text-slate-400"
                  autocomplete="off">
           <button onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600 text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-100 font-bold">
             Close
           </button>
         </div>
-        <div id="suggestionBox" class="max-h-80 overflow-y-auto divide-y divide-slate-100 text-[11px] pb-2"></div>
+        <div id="suggestionBox" class="max-h-80 overflow-y-auto divide-y divide-slate-100 text-[11px] pb-2 custom-scroll"></div>
       </div>
     </div>
 
-    <!-- ================= ADMIN USER MANAGEMENT MODAL (V1.4.2 TABS DESIGN) ================= -->
+    <!-- ================= ADMIN USER MANAGEMENT MODAL ================= -->
     <div id="userModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm p-3.5 flex flex-col justify-start pt-8 overflow-y-auto">
       <div class="bg-white w-full max-w-lg mx-auto rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-3.5 p-4 sm:p-5 mb-8">
         
@@ -225,41 +226,41 @@
 
         <!-- Segmented Tab Navigation -->
         <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-2xl text-[11px] font-bold">
-          <button id="tabBtnList" onclick="switchUserTab('list')" class="py-2 rounded-xl transition shadow-xs bg-white text-indigo-700">
+          <button id="tabBtnList" onclick="switchUserTab('list')" class="py-2 rounded-xl transition shadow-xs bg-white text-slate-900">
             👥 Registered Users
           </button>
-          <button id="tabBtnForm" onclick="switchUserTab('form')" class="py-2 rounded-xl transition text-slate-600 hover:text-slate-800">
+          <button id="tabBtnForm" onclick="switchUserTab('form')" class="py-2 rounded-xl transition text-slate-500 hover:text-slate-800">
             ➕ Add / Edit User
           </button>
         </div>
 
-        <!-- ================= TAB 1: REGISTERED USERS ================= -->
+        <!-- TAB 1: REGISTERED USERS -->
         <div id="tabContentList" class="space-y-2.5">
           <div class="flex justify-between items-center px-0.5">
             <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Member List</span>
-            <button onclick="fetchUsersList()" class="text-[11px] font-bold text-indigo-600 hover:underline">🔄 Refresh</button>
+            <button onclick="fetchUsersList()" class="text-[11px] font-bold text-slate-700 hover:underline">🔄 Refresh</button>
           </div>
           <div id="usersListContainer" class="space-y-2.5 max-h-[62vh] overflow-y-auto pr-1 text-[11px] custom-scroll">
             <div class="text-center py-10 text-slate-400">Loading users...</div>
           </div>
         </div>
 
-        <!-- ================= TAB 2: ADD / EDIT USER ================= -->
-        <div id="tabContentForm" class="hidden space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+        <!-- TAB 2: ADD / EDIT USER -->
+        <div id="tabContentForm" class="hidden space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
           <div class="flex justify-between items-center">
             <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider" id="formHeaderTitle">Add New User</span>
-            <button onclick="clearUserForm()" class="text-[10px] font-bold text-indigo-600 hover:underline">Reset Form</button>
+            <button onclick="clearUserForm()" class="text-[10px] font-bold text-slate-600 hover:underline">Reset Form</button>
           </div>
           
           <div class="space-y-2.5">
             <div>
               <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Work Email (Col A)</label>
-              <input type="email" id="userFormEmail" placeholder="user@searasports.com" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-600">
+              <input type="email" id="userFormEmail" placeholder="user@searasports.com" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-slate-800">
             </div>
 
             <div>
               <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Role (Col B)</label>
-              <select id="userFormRole" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-600">
+              <select id="userFormRole" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-slate-800">
                 <option value="USER">USER (Access specified warehouses)</option>
                 <option value="ADMIN">ADMIN (Access all warehouses & system settings)</option>
               </select>
@@ -269,9 +270,9 @@
               <div class="flex justify-between items-center mb-1">
                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Allowed Warehouses (Col C)</label>
                 <div class="flex items-center gap-2 text-[10px] font-bold">
-                  <button type="button" onclick="selectAllWarehouses(true)" class="text-indigo-600 hover:underline">Select ALL</button>
+                  <button type="button" onclick="selectAllWarehouses(true)" class="text-slate-800 hover:underline">Select ALL</button>
                   <span class="text-slate-300">|</span>
-                  <button type="button" onclick="selectAllWarehouses(false)" class="text-slate-500 hover:underline">Clear</button>
+                  <button type="button" onclick="selectAllWarehouses(false)" class="text-slate-400 hover:underline">Clear</button>
                 </div>
               </div>
               <div id="warehouseCheckboxList" class="p-2.5 bg-white border border-slate-200 rounded-xl flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scroll">
@@ -282,7 +283,7 @@
 
           <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
             <button onclick="switchUserTab('list')" class="px-3 py-2 text-[11px] font-bold text-slate-500 hover:bg-slate-200 rounded-xl">Cancel</button>
-            <button onclick="saveUserFromForm()" id="saveUserBtn" class="px-5 py-2 text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm">Save User</button>
+            <button onclick="saveUserFromForm()" id="saveUserBtn" class="px-5 py-2 text-[11px] font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-sm">Save User</button>
           </div>
         </div>
 
@@ -293,9 +294,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.4.2
+    // CONFIGURATION - VERSION 1.5
     // ==========================================
-    const APP_VERSION = "1.4.2";
+    const APP_VERSION = "1.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -308,12 +309,12 @@
     let openItems = {};
     let activeKeyword = '';
 
-    let masterWarehouseList = []; // เก็บรายการคลังจาก Column F
+    let masterWarehouseList = [];
 
     let searchDebounceTimer = null;
     let currentRenderList = [];
     let displayedCount = 0;
-    const BATCH_SIZE = 35;
+    const BATCH_SIZE = 30;
 
     const DB_NAME = 'InventoryAppDB';
     const STORE_NAME = 'inventory_store';
@@ -669,7 +670,7 @@
       
       tabsHtml += `
         <button onclick="toggleWarehouseFilter('ALL')" 
-                class="px-3 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${isAllSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                class="px-3.5 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${isAllSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
           All WH
         </button>
       `;
@@ -678,9 +679,9 @@
         const isSelected = !isAllSelected && selectedWarehouses.has(wh);
         tabsHtml += `
           <button onclick="toggleWarehouseFilter('${wh}')" 
-                  class="px-3 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1 ${isSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                  class="px-3.5 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1 ${isSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
             <span>${wh}</span>
-            ${isSelected ? '<span class="text-[9px] bg-indigo-700/80 px-1 rounded-full">✓</span>' : ''}
+            ${isSelected ? '<span class="text-[9px] bg-slate-700 px-1 rounded-full text-slate-200">✓</span>' : ''}
           </button>
         `;
       });
@@ -751,11 +752,11 @@
       if (isClosed) {
         menu.classList.remove('hidden');
         btn.innerText = '✕';
-        btn.classList.add('bg-slate-700');
+        btn.classList.add('bg-slate-800');
       } else {
         menu.classList.add('hidden');
         btn.innerText = '⚡';
-        btn.classList.remove('bg-slate-700');
+        btn.classList.remove('bg-slate-800');
       }
     }
 
@@ -846,15 +847,15 @@
       } else {
         let html = '';
         matches.forEach(m => {
-          let badgeColor = m.type === 'Brand' ? 'bg-purple-100 text-purple-700 font-bold' : (m.type === 'Code' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'bg-slate-100 text-slate-500');
+          let badgeColor = m.type === 'Brand' ? 'bg-slate-200 text-slate-800 font-bold' : (m.type === 'Code' ? 'bg-slate-100 text-slate-800 font-bold' : 'bg-slate-50 text-slate-500');
 
           html += `
             <div onclick="applySuggestion('${encodeURIComponent(m.fillVal)}', '${encodeURIComponent(m.brand || '')}', ${m.isBrandOnly ? true : false})" class="p-3.5 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition">
               <div class="truncate mr-2">
-                <span class="font-bold text-slate-800 text-[15px]">${escapeHtml(m.primary)}</span>
-                <span class="text-[11px] text-slate-400 block truncate mt-0.5">${escapeHtml(m.secondary)}</span>
+                <span class="font-bold text-slate-900 text-[14px]">${escapeHtml(m.primary)}</span>
+                <span class="text-[11px] text-slate-500 block truncate mt-0.5">${escapeHtml(m.secondary)}</span>
               </div>
-              <span class="text-[11px] uppercase px-2 py-0.5 rounded-md ${badgeColor}">${m.type}</span>
+              <span class="text-[10px] uppercase px-2 py-0.5 rounded-md ${badgeColor}">${m.type}</span>
             </div>
           `;
         });
@@ -888,34 +889,9 @@
       renderView();
     }
 
-    function toggleBrand(brandName, btnElement) {
+    function toggleBrand(brandName) {
       openBrands[brandName] = !openBrands[brandName];
-      const isOpen = openBrands[brandName];
-      
-      const card = btnElement.closest('.brand-card');
-      if (!card) return;
-      const content = card.querySelector('.brand-content');
-      const arrow = card.querySelector('.brand-arrow');
-      const countBadge = card.querySelector('.brand-count');
-      const avatar = card.querySelector('.brand-avatar');
-
-      if (isOpen) {
-        content.classList.remove('hidden');
-        card.classList.add('bg-white', 'border-indigo-200', 'shadow-lg', 'shadow-indigo-100/50', 'ring-2', 'ring-indigo-500/20');
-        card.classList.remove('border-slate-200/90', 'shadow-xs');
-        btnElement.classList.add('bg-indigo-50/40');
-        arrow.classList.add('bg-indigo-100', 'text-indigo-700', 'rotate-180');
-        countBadge.classList.add('bg-indigo-600', 'text-white');
-        avatar.classList.add('bg-indigo-600', 'text-white', 'shadow-indigo-200');
-      } else {
-        content.classList.add('hidden');
-        card.classList.remove('border-indigo-200', 'shadow-lg', 'shadow-indigo-100/50', 'ring-2', 'ring-indigo-500/20');
-        card.classList.add('bg-white', 'border-slate-200/90', 'shadow-xs');
-        btnElement.classList.remove('bg-indigo-50/40');
-        arrow.classList.remove('bg-indigo-100', 'text-indigo-700', 'rotate-180');
-        countBadge.classList.remove('bg-indigo-600', 'text-white');
-        avatar.classList.remove('bg-indigo-600', 'text-white', 'shadow-indigo-200');
-      }
+      renderView();
     }
 
     function toggleItem(itemKey, btnElement) {
@@ -963,7 +939,7 @@
         container.innerHTML = `
           <div class="text-center py-20 space-y-2">
             <span class="text-3xl block">🔍</span>
-            <p class="text-[11px] font-semibold text-slate-400">No active stock found</p>
+            <p class="text-[12px] font-semibold text-slate-400">No active stock found</p>
           </div>
         `;
         document.getElementById('loadMoreContainer').classList.add('hidden');
@@ -1008,169 +984,191 @@
       }
     }
 
+    // ========================================================
+    // RENDER BATCH: 2-COLUMN GRID + INLINE FULL-WIDTH EXPAND
+    // ========================================================
     function renderBatch(count, isSingleMatch, keyword) {
       const container = document.getElementById('contentList');
       const nextCount = Math.min(displayedCount + count, currentRenderList.length);
-      let html = '';
+
+      let gridHtml = '<div class="grid grid-cols-2 gap-3">';
+      let expandedSectionsHtml = '';
 
       for (let i = displayedCount; i < nextCount; i++) {
         const { brand, items } = currentRenderList[i];
         const isBrandOpen = keyword.length > 0 ? true : (openBrands[brand] === true);
         const initials = getBrandInitials(brand);
 
-        html += `
-          <div class="brand-card rounded-3xl border transition-all duration-200 overflow-hidden ${isBrandOpen ? 'bg-white border-indigo-200 shadow-lg shadow-indigo-100/50 ring-2 ring-indigo-500/20' : 'bg-white border-slate-200/90 shadow-xs hover:border-indigo-200 hover:shadow-md'}">
-            <button onclick="toggleBrand('${escapeHtml(brand)}', this)" 
-                    class="w-full flex justify-between items-center p-4 text-left transition-colors ${isBrandOpen ? 'bg-indigo-50/40' : 'hover:bg-slate-50/80'}">
-              <div class="flex items-center gap-3.5 min-w-0 pr-2">
-                <div class="brand-avatar w-11 h-11 rounded-2xl flex items-center justify-center text-[15px] font-black flex-shrink-0 transition-transform active:scale-95 shadow-xs ${isBrandOpen ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 border border-slate-200/80'}">
-                  ${escapeHtml(initials)}
-                </div>
-                <div class="truncate">
-                  <span class="font-bold text-slate-900 text-[15px] tracking-tight block truncate">${escapeHtml(brand)}</span>
-                  <span class="text-[11px] font-semibold text-slate-400 block mt-0.5">Brand Catalog</span>
-                </div>
+        // 1. BRAND CARD (2 คอลัมน์)
+        gridHtml += `
+          <div onclick="toggleBrand('${escapeHtml(brand)}')" 
+               class="cursor-pointer p-4 rounded-3xl border transition-all duration-200 select-none flex flex-col justify-between ${isBrandOpen ? 'bg-slate-900 text-white border-slate-900 shadow-lg shadow-slate-900/20 ring-2 ring-slate-800' : 'bg-white text-slate-800 border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md'}">
+            
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-[13px] font-black tracking-tight ${isBrandOpen ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700'}">
+                ${escapeHtml(initials)}
               </div>
-              <div class="flex items-center gap-2.5 flex-shrink-0">
-                <span class="brand-count font-bold text-[11px] px-3 py-1 rounded-xl transition-colors ${isBrandOpen ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200/70'}">
-                  ${items.length} <span class="hidden sm:inline font-medium text-[11px] opacity-80">items</span>
-                </span>
-                <div class="brand-arrow w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold transition-all ${isBrandOpen ? 'bg-indigo-100 text-indigo-700 rotate-180' : 'bg-slate-100 text-slate-400'}">
-                  ▼
-                </div>
-              </div>
-            </button>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isBrandOpen ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500'}">
+                ${items.length} items
+              </span>
+            </div>
 
-            <div class="brand-content ${isBrandOpen ? '' : 'hidden'} border-t border-slate-100 bg-slate-50/50 p-3 space-y-3">
-        `;
-
-        items.forEach(group => {
-          const itemKey = group.itemNo;
-          const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
-
-          html += `
-            <div class="item-card bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition hover:border-slate-300">
-              <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
-                      class="w-full p-3.5 space-y-1.5 hover:bg-slate-50/80 transition text-left">
-                <!-- แถวบน: รหัสสินค้า + ป้าย WH + View/Close -->
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-extrabold text-slate-900 text-base tracking-tight truncate flex-1 min-w-0">${escapeHtml(group.itemNo)}</span>
-                  <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-slate-200/80 whitespace-nowrap">${group.warehouses.length} WH</span>
-                    <span class="item-status-text text-[11px] text-indigo-600 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
-                  </div>
-                </div>
-                <!-- แถวล่าง: Description กว้างสุดขอบจอ -->
-                <div class="w-full">
-                  <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
-                </div>
-              </button>
-
-              <div class="item-content ${isItemOpen ? '' : 'hidden'} p-4 pt-0 border-t border-slate-100 space-y-3 mt-1 bg-white">
-                <div class="flex justify-end items-center text-[11px] font-bold text-slate-400 pt-2.5 px-0.5">
-                  <span>UoM: <b class="text-slate-700 font-bold text-[11px]">${escapeHtml(group.unit) || '-'}</b></span>
-                </div>
-                <div class="space-y-3">
-                  ${group.warehouses.map(w => {
-                    const physicalInStock = Number(w.inStock) || 0;
-                    const defined = Number(w.defined) || 0;
-                    const ordered = Number(w.ordered) || 0;
-                    const whAvgPrice = Number(w.avgPrice) || 0;
-
-                    const realAvailable = physicalInStock - defined;
-                    const projectedBalance = realAvailable + ordered;
-                    const calculatedTotalVal = physicalInStock * whAvgPrice;
-
-                    const isAvailableNegative = realAvailable < 0;
-                    let displayBadgeColor = 'badge-green';
-                    let displayStatusText = 'In Stock';
-
-                    if (physicalInStock <= 0) {
-                      if (ordered > 0) {
-                        displayBadgeColor = 'badge-yellow';
-                        displayStatusText = 'Ordered (PO)';
-                      } else {
-                        displayBadgeColor = 'badge-red';
-                        displayStatusText = 'Out of Stock';
-                      }
-                    } else if (isAvailableNegative) {
-                      displayBadgeColor = 'badge-yellow';
-                      displayStatusText = 'Shortage / Overcommitted';
-                    }
-
-                    return `
-                      <div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-2.5 shadow-2xs">
-                        <div class="flex justify-between items-center">
-                          <span class="font-extrabold text-slate-900 text-[15px] tracking-tight">${w.wh}</span>
-                          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${displayBadgeColor}">${displayStatusText}</span>
-                        </div>
-                        
-                        <!-- Main Available Card -->
-                        <div class="w-full border-2 ${isAvailableNegative ? 'border-rose-200 bg-rose-50/20' : 'border-indigo-200/90 bg-white'} rounded-2xl p-3 space-y-2.5 shadow-sm">
-                          <div class="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
-                            <div>
-                              <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 block">Available in Stock</span>
-                              <span class="text-[9px] font-semibold text-slate-400 block">(In Stock - Defined)</span>
-                            </div>
-                            <span class="text-3xl font-black tracking-tight ${isAvailableNegative ? 'text-red-600' : 'text-emerald-600'}">
-                              ${formatNumber(realAvailable)}
-                            </span>
-                          </div>
-                          <div class="grid grid-cols-2 gap-2 text-center">
-                            <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
-                              <span class="font-bold text-[15px] text-slate-800">${formatNumber(physicalInStock)}</span>
-                            </div>
-                            <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Defined</span>
-                              <span class="font-bold text-[15px] text-orange-600">${formatNumber(defined)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Ordered & Balance Card -->
-                        <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
-                          <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ordered (PO)</span>
-                              <span class="font-bold text-[15px] text-indigo-600 mt-0.5 block">${formatNumber(ordered)}</span>
-                            </div>
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Balance (Proj.)</span>
-                              <span class="font-bold text-[15px] ${projectedBalance < 0 ? 'text-red-600' : 'text-slate-800'} mt-0.5 block">${formatNumber(projectedBalance)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <!-- Price & Total Value Card -->
-                        <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
-                          <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg. Price</span>
-                              <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">฿${formatCurrency(whAvgPrice)}</span>
-                            </div>
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Val</span>
-                              <span class="font-bold text-[15px] text-indigo-700 mt-0.5 block">฿${formatCurrency(calculatedTotalVal)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
+            <div>
+              <span class="font-extrabold text-[13px] tracking-tight block truncate ${isBrandOpen ? 'text-white' : 'text-slate-900'}">${escapeHtml(brand)}</span>
+              <div class="flex items-center justify-between text-[10px] mt-1 ${isBrandOpen ? 'text-slate-300' : 'text-slate-400'}">
+                <span>Catalog</span>
+                <span class="font-bold text-[10px]">${isBrandOpen ? '▲ Close' : '▼ View'}</span>
               </div>
             </div>
-          `;
-        });
 
-        html += `
-            </div>
           </div>
         `;
+
+        // 2. FULL-WIDTH ITEM LIST SECTION (กางคลี่เต็มขอบจอเมื่อคลิก)
+        if (isBrandOpen) {
+          let itemsHtml = `
+            <div class="brand-items-panel bg-white/90 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-md p-3.5 space-y-3 mt-2">
+              <div class="flex items-center justify-between px-1 border-b border-slate-100 pb-2">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
+                  <span class="font-extrabold text-slate-900 text-sm">${escapeHtml(brand)}</span>
+                  <span class="text-[10px] font-bold text-slate-400">(${items.length} items)</span>
+                </div>
+                <button onclick="toggleBrand('${escapeHtml(brand)}')" class="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
+                  ✕ Close Catalog
+                </button>
+              </div>
+              <div class="space-y-2.5">
+          `;
+
+          items.forEach(group => {
+            const itemKey = group.itemNo;
+            const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
+
+            itemsHtml += `
+              <div class="item-card bg-slate-50/80 rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden transition">
+                <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
+                        class="w-full p-3.5 space-y-1.5 hover:bg-slate-100/70 transition text-left">
+                  <!-- แถวบน: รหัสสินค้า + ป้าย WH + View/Close -->
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-extrabold text-slate-900 text-[14px] tracking-tight truncate flex-1 min-w-0">${escapeHtml(group.itemNo)}</span>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      <span class="bg-white text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-lg border border-slate-200 whitespace-nowrap">${group.warehouses.length} WH</span>
+                      <span class="item-status-text text-[11px] text-slate-800 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
+                    </div>
+                  </div>
+                  <!-- แถวล่าง: Description กว้างสุดขอบจอ -->
+                  <div class="w-full">
+                    <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
+                  </div>
+                </button>
+
+                <div class="item-content ${isItemOpen ? '' : 'hidden'} p-3.5 pt-0 border-t border-slate-200/60 space-y-2.5 mt-1 bg-white">
+                  <div class="flex justify-end items-center text-[10px] font-bold text-slate-400 pt-2 px-0.5">
+                    <span>UoM: <b class="text-slate-700 font-bold text-[10px]">${escapeHtml(group.unit) || '-'}</b></span>
+                  </div>
+                  <div class="space-y-2.5">
+                    ${group.warehouses.map(w => {
+                      const physicalInStock = Number(w.inStock) || 0;
+                      const defined = Number(w.defined) || 0;
+                      const ordered = Number(w.ordered) || 0;
+                      const whAvgPrice = Number(w.avgPrice) || 0;
+
+                      const realAvailable = physicalInStock - defined;
+                      const projectedBalance = realAvailable + ordered;
+                      const calculatedTotalVal = physicalInStock * whAvgPrice;
+
+                      const isAvailableNegative = realAvailable < 0;
+                      let displayBadgeColor = 'badge-green';
+                      let displayStatusText = 'In Stock';
+
+                      if (physicalInStock <= 0) {
+                        if (ordered > 0) {
+                          displayBadgeColor = 'badge-yellow';
+                          displayStatusText = 'Ordered (PO)';
+                        } else {
+                          displayBadgeColor = 'badge-red';
+                          displayStatusText = 'Out of Stock';
+                        }
+                      } else if (isAvailableNegative) {
+                        displayBadgeColor = 'badge-yellow';
+                        displayStatusText = 'Shortage / Overcommitted';
+                      }
+
+                      return `
+                        <div class="p-3 bg-slate-50/70 rounded-2xl border border-slate-200 space-y-2 shadow-2xs">
+                          <div class="flex justify-between items-center">
+                            <span class="font-extrabold text-slate-900 text-[13px] tracking-tight">${w.wh}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${displayBadgeColor}">${displayStatusText}</span>
+                          </div>
+                          
+                          <!-- Main Available Card -->
+                          <div class="w-full border-2 ${isAvailableNegative ? 'border-rose-200 bg-rose-50/20' : 'border-slate-200 bg-white'} rounded-2xl p-2.5 space-y-2 shadow-xs">
+                            <div class="flex justify-between items-center pb-1.5 border-b border-dashed border-slate-200">
+                              <div>
+                                <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 block">Available in Stock</span>
+                                <span class="text-[9px] font-semibold text-slate-400 block">(In Stock - Defined)</span>
+                              </div>
+                              <span class="text-2xl font-black tracking-tight ${isAvailableNegative ? 'text-red-600' : 'text-emerald-700'}">
+                                ${formatNumber(realAvailable)}
+                              </span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-center">
+                              <div class="bg-slate-50 py-1.5 px-2 rounded-xl border border-slate-200">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
+                                <span class="font-bold text-[13px] text-slate-800">${formatNumber(physicalInStock)}</span>
+                              </div>
+                              <div class="bg-slate-50 py-1.5 px-2 rounded-xl border border-slate-200">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Defined</span>
+                                <span class="font-bold text-[13px] text-orange-600">${formatNumber(defined)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Ordered & Balance Card -->
+                          <div class="w-full bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs">
+                            <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
+                              <div class="px-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ordered (PO)</span>
+                                <span class="font-bold text-[13px] text-slate-700 mt-0.5 block">${formatNumber(ordered)}</span>
+                              </div>
+                              <div class="px-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Balance (Proj.)</span>
+                                <span class="font-bold text-[13px] ${projectedBalance < 0 ? 'text-red-600' : 'text-slate-800'} mt-0.5 block">${formatNumber(projectedBalance)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Price & Total Value Card -->
+                          <div class="w-full bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs">
+                            <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
+                              <div class="px-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Avg. Price</span>
+                                <span class="font-bold text-[13px] text-slate-800 mt-0.5 block">฿${formatCurrency(whAvgPrice)}</span>
+                              </div>
+                              <div class="px-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Val</span>
+                                <span class="font-bold text-[13px] text-slate-900 mt-0.5 block">฿${formatCurrency(calculatedTotalVal)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+
+          itemsHtml += `</div></div>`;
+          expandedSectionsHtml += itemsHtml;
+        }
       }
 
-      container.insertAdjacentHTML('beforeend', html);
+      gridHtml += '</div>';
+
+      container.innerHTML = gridHtml + (expandedSectionsHtml ? `<div class="space-y-4 pt-1">${expandedSectionsHtml}</div>` : '');
       displayedCount = nextCount;
 
       const loadMoreBtn = document.getElementById('loadMoreContainer');
@@ -1186,7 +1184,7 @@
     }
 
     // ==========================================
-    // ADMIN USER MANAGEMENT FUNCTIONS (V1.4.2 TABS)
+    // ADMIN USER MANAGEMENT (V1.5 - KEPT 100% AS V1.4.2)
     // ==========================================
     function openUserModal() {
       document.getElementById('userModal').classList.remove('hidden');
@@ -1208,13 +1206,13 @@
       if (tab === 'list') {
         tabList.classList.remove('hidden');
         tabForm.classList.add('hidden');
-        btnList.className = 'py-2 rounded-xl transition shadow-xs bg-white text-indigo-700 font-bold';
-        btnForm.className = 'py-2 rounded-xl transition text-slate-600 hover:text-slate-800 font-bold';
+        btnList.className = 'py-2 rounded-xl transition shadow-xs bg-white text-slate-900 font-bold';
+        btnForm.className = 'py-2 rounded-xl transition text-slate-500 hover:text-slate-800 font-bold';
       } else {
         tabList.classList.add('hidden');
         tabForm.classList.remove('hidden');
-        btnForm.className = 'py-2 rounded-xl transition shadow-xs bg-white text-indigo-700 font-bold';
-        btnList.className = 'py-2 rounded-xl transition text-slate-600 hover:text-slate-800 font-bold';
+        btnForm.className = 'py-2 rounded-xl transition shadow-xs bg-white text-slate-900 font-bold';
+        btnList.className = 'py-2 rounded-xl transition text-slate-500 hover:text-slate-800 font-bold';
       }
     }
 
@@ -1242,7 +1240,7 @@
         const checked = isAll || selectedArr.includes(wh.toUpperCase());
         html += `
           <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 text-[11px] font-semibold cursor-pointer bg-slate-50 hover:bg-slate-100 select-none">
-            <input type="checkbox" value="${escapeHtml(wh)}" class="wh-checkbox rounded text-indigo-600 focus:ring-0" ${checked ? 'checked' : ''}>
+            <input type="checkbox" value="${escapeHtml(wh)}" class="wh-checkbox rounded text-slate-800 focus:ring-0" ${checked ? 'checked' : ''}>
             <span>${escapeHtml(wh)}</span>
           </label>
         `;
@@ -1289,20 +1287,16 @@
           return;
         }
 
-        // ==========================================
-        // LAYOUT 2 บรรทัด สำหรับ Mobile: ข้อมูลบน / Action bar ล่าง
-        // ==========================================
         let html = '';
         res.users.forEach(u => {
           const isMe = u.email.toLowerCase() === currentEmail.toLowerCase();
           html += `
-            <div class="p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
-              <!-- แถวบน: ข้อมูลสมาชิก -->
+            <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
               <div>
                 <div class="flex items-center justify-between gap-1.5">
                   <span class="font-extrabold text-slate-900 text-[13px] truncate flex-1 min-w-0">${escapeHtml(u.email)}</span>
                   <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'ADMIN' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
                     ${u.hasPin ? '<span class="text-[10px] text-emerald-600 font-bold">● Active</span>' : '<span class="text-[10px] text-amber-500 font-bold">○ No PIN</span>'}
                   </div>
                 </div>
@@ -1311,7 +1305,6 @@
                 </div>
               </div>
 
-              <!-- แถวล่าง: Action Buttons กว้างกดง่าย ไม่เบียดกัน -->
               <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
                 <button onclick="editUser('${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.allowedWarehouses)}')" 
                         class="px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition flex items-center gap-1">
@@ -1345,7 +1338,7 @@
       renderWarehouseCheckboxes(whStr);
       document.getElementById('formHeaderTitle').innerText = `Edit: ${email}`;
       document.getElementById('saveUserBtn').innerText = 'Update User';
-      switchUserTab('form'); // สลับไปแท็บฟอร์มทันที
+      switchUserTab('form');
     }
 
     function saveUserFromForm() {
