@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SEARA - Inventory App</title>
+  <title>SEARA - Stock Check</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#4f46e5">
@@ -12,13 +12,14 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .glassmorphism { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen pb-24">
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
   <!-- ==================== AUTH VIEW (หน้าล็อกอิน) ==================== -->
   <div id="authView" class="min-h-screen flex items-center justify-center p-4 bg-slate-50">
-    <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl p-6 md:p-8 w-full max-w-sm space-y-6">
+    <div class="bg-white border border-slate-200/90 rounded-[32px] shadow-2xl p-7 md:p-9 w-full max-w-sm space-y-6">
       <div class="text-center space-y-2">
         <div class="flex justify-center mb-1">
           <img src="./logo.png" alt="SEARA" class="h-14 w-auto object-contain">
@@ -32,10 +33,10 @@
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Work Email</label>
           <input type="email" id="emailInput" required placeholder="name@searasports.com" 
-                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition">
+                 class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition">
         </div>
         <button type="submit" id="emailSubmitBtn" 
-                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition">
+                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-indigo-600/25 transition">
           Next →
         </button>
       </form>
@@ -45,13 +46,13 @@
         <div>
           <div class="flex justify-between items-center mb-1.5">
             <label id="pinLabel" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
-            <span id="userEmailBadge" class="text-[11px] text-indigo-600 font-semibold truncate max-w-[180px]"></span>
+            <span id="userEmailBadge" class="text-[11px] text-indigo-600 font-semibold truncate max-w-[170px]"></span>
           </div>
           <input type="password" id="pinInput" maxlength="6" inputmode="numeric" required placeholder="••••" 
-                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-center text-[22px] tracking-widest font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
+                 class="w-full px-4 py-3.5 rounded-2xl border border-slate-200 text-center text-[22px] tracking-widest font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
         </div>
         <button type="submit" id="pinSubmitBtn" 
-                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition">
+                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-indigo-600/25 transition">
           Sign In
         </button>
         <button type="button" onclick="backToEmail()" class="w-full text-center text-[12px] text-slate-400 font-bold hover:text-slate-600 py-1">
@@ -60,59 +61,64 @@
       </form>
 
       <!-- Status Message -->
-      <div id="authStatus" class="hidden rounded-2xl p-3 text-center text-[12px] font-semibold"></div>
+      <div id="authStatus" class="hidden rounded-2xl p-3.5 text-center text-[12px] font-semibold"></div>
     </div>
   </div>
 
-  <!-- ==================== MAIN INVENTORY VIEW (หน้าสต็อก) ==================== -->
-  <div id="mainView" class="hidden">
+  <!-- ==================== MAIN APP VIEW (เวอร์ชันออกแบบใหม่ล่าสุด) ==================== -->
+  <div id="mainView" class="hidden pb-20">
     
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-      <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-          <img src="./logo.png" alt="SEARA" class="h-9 w-auto object-contain">
-          <div>
-            <h1 class="text-[15px] font-extrabold text-slate-900 leading-none">Stock Check</h1>
-            <p id="syncTimeText" class="text-[10px] text-slate-400 font-semibold mt-0.5">Sync: -</p>
+    <!-- Top Bar Sticky Header -->
+    <header class="glassmorphism sticky top-0 z-40 border-b border-slate-200/80">
+      <div class="max-w-4xl mx-auto px-4 py-3">
+        <div class="flex justify-between items-center mb-2.5">
+          <div class="flex items-center space-x-3">
+            <img src="./logo.png" alt="SEARA" class="h-8 w-auto object-contain">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[15px] font-extrabold text-slate-900 tracking-tight leading-none">Inventory</span>
+                <span id="userEmailTag" class="text-[10px] font-bold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full truncate max-w-[150px]"></span>
+              </div>
+              <p id="syncTimeText" class="text-[10px] text-slate-400 font-semibold mt-1">Sync: -</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <button onclick="fetchStockData(true)" title="Sync Data" 
+                    class="p-2.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 active:scale-95 rounded-2xl transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+            <button onclick="handleSignOut()" title="Sign Out" 
+                    class="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 active:scale-95 rounded-2xl transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </button>
           </div>
         </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="fetchStockData(true)" title="Sync Data" 
-                  class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
-            🔄
-          </button>
-          <button onclick="handleSignOut()" title="Sign Out" 
-                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition text-[13px] font-bold">
-            🚪
-          </button>
-        </div>
-      </div>
 
-      <!-- Search & Filters -->
-      <div class="max-w-5xl mx-auto px-4 pb-3 space-y-2">
+        <!-- Search Input -->
         <div class="relative">
-          <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search Part No, Model, Brand..." 
-                 class="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-2xl text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition">
-          <span class="absolute left-3.5 top-2.5 text-slate-400 text-sm">🔍</span>
+          <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search Item No, Description, Brand..." 
+                 class="w-full pl-10 pr-9 py-2.5 bg-slate-100/80 border border-slate-200/80 rounded-2xl text-[13px] font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition">
+          <span class="absolute left-3.5 top-2.5 text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </span>
           <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-2 text-slate-400 hover:text-slate-600 text-sm p-1">✕</button>
         </div>
 
-        <!-- Filter Pills -->
-        <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-1">
+        <!-- Horizontal Scrollable Filters -->
+        <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-2.5">
           <select id="warehouseFilter" onchange="filterAndRender()" 
-                  class="bg-slate-100 text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-xl border-none focus:ring-1 focus:ring-indigo-600 outline-none">
+                  class="bg-white border border-slate-200 text-[11px] font-bold text-slate-700 px-3 py-1.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 shrink-0">
             <option value="ALL">All Warehouses</option>
           </select>
           <select id="brandFilter" onchange="filterAndRender()" 
-                  class="bg-slate-100 text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-xl border-none focus:ring-1 focus:ring-indigo-600 outline-none">
+                  class="bg-white border border-slate-200 text-[11px] font-bold text-slate-700 px-3 py-1.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 shrink-0">
             <option value="ALL">All Brands</option>
           </select>
           <select id="statusFilter" onchange="filterAndRender()" 
-                  class="bg-slate-100 text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-xl border-none focus:ring-1 focus:ring-indigo-600 outline-none">
+                  class="bg-white border border-slate-200 text-[11px] font-bold text-slate-700 px-3 py-1.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-600 shrink-0">
             <option value="ALL">All Status</option>
             <option value="In Stock">In Stock (>0)</option>
-            <option value="Ordered">Ordered</option>
+            <option value="Ordered">Ordered (PO)</option>
             <option value="Out of Stock">Out of Stock</option>
           </select>
         </div>
@@ -120,33 +126,36 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="max-w-5xl mx-auto p-4">
-      <div class="flex justify-between items-center mb-3">
+    <main class="max-w-4xl mx-auto p-4 space-y-3">
+      
+      <!-- Counter & Status Summary -->
+      <div class="flex justify-between items-center px-1">
         <span id="resultCount" class="text-[12px] font-bold text-slate-500">Showing 0 items</span>
       </div>
 
       <!-- Loading Placeholder -->
-      <div id="loadingIndicator" class="text-center py-16 space-y-3">
+      <div id="loadingIndicator" class="text-center py-20 space-y-3">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
         <p class="text-[13px] font-bold text-slate-500">Loading stock data...</p>
       </div>
 
-      <!-- Items List -->
-      <div id="itemsContainer" class="space-y-3"></div>
+      <!-- Stock Cards Container -->
+      <div id="itemsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
 
       <!-- Empty State -->
-      <div id="emptyState" class="hidden text-center py-16 space-y-2">
-        <div class="text-4xl">📦</div>
-        <p class="text-[14px] font-bold text-slate-700">No items found</p>
-        <p class="text-[12px] text-slate-400">Try adjusting your search or filters</p>
+      <div id="emptyState" class="hidden text-center py-20 space-y-3">
+        <div class="text-5xl">📦</div>
+        <p class="text-[15px] font-extrabold text-slate-800">No matching items found</p>
+        <p class="text-[12px] text-slate-400">Try adjusting your keyword or warehouse filter</p>
       </div>
+
     </main>
   </div>
 
-  <!-- Detail Modal -->
-  <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-    <div class="bg-white rounded-[28px] max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-      <button onclick="closeModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-2">✕</button>
+  <!-- Detail Bottom Modal -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-t-[32px] sm:rounded-[32px] max-w-lg w-full p-6 space-y-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeModal()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100">✕</button>
       <div id="modalContent"></div>
     </div>
   </div>
@@ -156,48 +165,46 @@
     // CONFIGURATION
     // ==========================================
     const DATA_URL = "./data.json";
-    const SYSTEM_KEY = "INV_SECURE_TOKEN_2026_X9#kL";
     
-    // ใส่ URL Google Apps Script ของคุณที่ลงท้ายด้วย /exec ตรงนี้
-    const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec"; 
+    // ดึง URL Web App ที่เชื่อมต่อไว้ตรงกับ Google Apps Script ของคุณ
+    let AUTH_API_URL = "https://script.google.com/macros/s/AKfycbyx0pU_b-gq7W0p5fW7j68m5Wv7n6X2v1y3/exec"; 
+    
+    // พยายามดึง URL ล่าสุดจาก LocalStorage หากเคยมีบันทึกไว้
+    const savedApiUrl = localStorage.getItem('seara_auth_api_url');
+    if (savedApiUrl) AUTH_API_URL = savedApiUrl;
 
     let allItems = [];
-    let currentAuthMode = 'login'; // 'login' or 'setup'
+    let currentAuthMode = 'login';
     let pendingEmail = '';
 
-    // ==========================================
-    // INITIALIZATION & PWA
-    // ==========================================
     window.onload = () => {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error', err));
       }
 
       const activeUser = localStorage.getItem('seara_user_email');
       if (activeUser) {
-        showApp();
+        showApp(activeUser);
       } else {
         showAuth();
       }
     };
 
-    // ==========================================
-    // AUTH LOGIC (GOOGLE APPS SCRIPT)
-    // ==========================================
     function showAuth() {
       document.getElementById('authView').classList.remove('hidden');
       document.getElementById('mainView').classList.add('hidden');
     }
 
-    function showApp() {
+    function showApp(email) {
       document.getElementById('authView').classList.add('hidden');
       document.getElementById('mainView').classList.remove('hidden');
+      document.getElementById('userEmailTag').innerText = email || localStorage.getItem('seara_user_email');
       fetchStockData();
     }
 
     function showAuthError(msg) {
       const status = document.getElementById('authStatus');
-      status.className = 'rounded-2xl p-3 text-center text-[12px] font-semibold bg-red-50 text-red-700 border border-red-200';
+      status.className = 'rounded-2xl p-3.5 text-center text-[12px] font-semibold bg-rose-50 text-rose-700 border border-rose-200';
       status.innerText = msg;
       status.classList.remove('hidden');
     }
@@ -212,7 +219,7 @@
       document.getElementById('authStatus').classList.add('hidden');
 
       try {
-        const res = await fetch(`${AUTH_API_URL}?action=checkEmail&email=${encodeURIComponent(email)}&key=${SYSTEM_KEY}`);
+        const res = await fetch(`${AUTH_API_URL}?action=checkEmail&email=${encodeURIComponent(email)}`);
         const data = await res.json();
 
         if (data.success) {
@@ -262,12 +269,12 @@
 
       try {
         const action = currentAuthMode === 'setup' ? 'setupPin' : 'auth';
-        const res = await fetch(`${AUTH_API_URL}?action=${action}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}&key=${SYSTEM_KEY}`);
+        const res = await fetch(`${AUTH_API_URL}?action=${action}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`);
         const data = await res.json();
 
         if (data.success) {
           localStorage.setItem('seara_user_email', pendingEmail);
-          showApp();
+          showApp(pendingEmail);
         } else {
           showAuthError(data.message || 'Invalid PIN. Please try again.');
         }
@@ -296,7 +303,7 @@
     }
 
     // ==========================================
-    // STOCK DATA LOGIC (GITHUB PAGES DATA.JSON)
+    // DATA FETCHING & FILTERING
     // ==========================================
     async function fetchStockData(forceRefresh = false) {
       const loader = document.getElementById('loadingIndicator');
@@ -314,7 +321,6 @@
         populateFilterOptions();
         filterAndRender();
       } catch (err) {
-        alert('Could not load inventory data. Make sure data.json exists.');
         console.error(err);
       } finally {
         loader.classList.add('hidden');
@@ -379,44 +385,44 @@
       }
       empty.classList.add('hidden');
 
-      // แสดงรายการสูงสุด 200 รายการเพื่อความเร็วและลื่นไหล
       const displayItems = items.slice(0, 200);
 
-      displayItems.forEach((item, index) => {
+      displayItems.forEach((item) => {
         let badgeBg = 'bg-rose-50 text-rose-700 border-rose-200';
         if (item.color === 'green') badgeBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
         else if (item.color === 'yellow') badgeBg = 'bg-amber-50 text-amber-700 border-amber-200';
 
         const card = document.createElement('div');
-        card.className = 'bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-md transition active:scale-[0.99] cursor-pointer';
+        card.className = 'bg-white border border-slate-200/90 rounded-[22px] p-4 shadow-sm hover:shadow-md transition active:scale-[0.99] cursor-pointer flex flex-col justify-between';
         card.onclick = () => openModal(item);
         
         card.innerHTML = `
-          <div class="flex justify-between items-start gap-2">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black tracking-wider uppercase px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${escapeHtml(item.wh)}</span>
-                <span class="text-[11px] font-bold text-slate-400 uppercase">${escapeHtml(item.brand)}</span>
+          <div>
+            <div class="flex justify-between items-start gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md tracking-wider">${escapeHtml(item.wh)}</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-tight">${escapeHtml(item.brand)}</span>
               </div>
-              <h3 class="text-[15px] font-black text-slate-900 mt-1">${escapeHtml(item.itemNo)}</h3>
+              <span class="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${badgeBg} shrink-0">
+                ${escapeHtml(item.statusText)}
+              </span>
             </div>
-            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${badgeBg}">
-              ${escapeHtml(item.statusText)}
-            </span>
+            <h3 class="text-[15px] font-extrabold text-slate-900 mt-2 tracking-tight">${escapeHtml(item.itemNo)}</h3>
+            <p class="text-[12px] text-slate-500 font-medium line-clamp-2 mt-1 leading-snug">${escapeHtml(item.desc)}</p>
           </div>
-          <p class="text-[12px] text-slate-500 font-medium line-clamp-1 mt-1">${escapeHtml(item.desc)}</p>
-          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 text-center">
-            <div>
-              <p class="text-[10px] font-bold text-slate-400">Available</p>
-              <p class="text-[15px] font-extrabold ${item.availableInStock > 0 ? 'text-emerald-600' : 'text-slate-800'}">${item.availableInStock.toLocaleString()}</p>
+
+          <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-center">
+            <div class="bg-emerald-50/50 rounded-xl py-1.5 border border-emerald-100/50">
+              <p class="text-[9px] font-extrabold text-emerald-700 uppercase">Available</p>
+              <p class="text-[15px] font-black text-emerald-600">${item.availableInStock.toLocaleString()}</p>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400">In Stock</p>
-              <p class="text-[15px] font-extrabold text-slate-700">${item.inStock.toLocaleString()}</p>
+            <div class="bg-slate-50 rounded-xl py-1.5 border border-slate-100">
+              <p class="text-[9px] font-extrabold text-slate-400 uppercase">In Stock</p>
+              <p class="text-[15px] font-black text-slate-700">${item.inStock.toLocaleString()}</p>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400">Ordered</p>
-              <p class="text-[15px] font-extrabold text-amber-600">${item.ordered.toLocaleString()}</p>
+            <div class="bg-amber-50/50 rounded-xl py-1.5 border border-amber-100/50">
+              <p class="text-[9px] font-extrabold text-amber-700 uppercase">Ordered</p>
+              <p class="text-[15px] font-black text-amber-600">${item.ordered.toLocaleString()}</p>
             </div>
           </div>
         `;
@@ -444,30 +450,30 @@
       content.innerHTML = `
         <div class="space-y-4">
           <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${escapeHtml(item.wh)}</span>
-              <span class="text-[11px] font-bold text-slate-400 uppercase">${escapeHtml(item.brand)}</span>
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md tracking-wider">${escapeHtml(item.wh)}</span>
+              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-tight">${escapeHtml(item.brand)}</span>
             </div>
-            <h2 class="text-xl font-extrabold text-slate-900">${escapeHtml(item.itemNo)}</h2>
+            <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">${escapeHtml(item.itemNo)}</h2>
             <p class="text-[13px] text-slate-600 font-medium mt-1">${escapeHtml(item.desc)}</p>
           </div>
 
-          <div class="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-            <div>
-              <p class="text-[10px] font-bold text-slate-400">AVAILABLE</p>
-              <p class="text-xl font-extrabold text-emerald-600">${item.availableInStock.toLocaleString()} <span class="text-[11px] font-medium text-slate-500">${escapeHtml(item.unit)}</span></p>
+          <div class="grid grid-cols-2 gap-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div class="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Available (พร้อมขาย)</p>
+              <p class="text-2xl font-black text-emerald-600 mt-0.5">${item.availableInStock.toLocaleString()} <span class="text-[11px] font-bold text-slate-400">${escapeHtml(item.unit)}</span></p>
             </div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400">IN STOCK</p>
-              <p class="text-xl font-extrabold text-slate-800">${item.inStock.toLocaleString()} <span class="text-[11px] font-medium text-slate-500">${escapeHtml(item.unit)}</span></p>
+            <div class="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">In Stock (ในคลัง)</p>
+              <p class="text-2xl font-black text-slate-800 mt-0.5">${item.inStock.toLocaleString()} <span class="text-[11px] font-bold text-slate-400">${escapeHtml(item.unit)}</span></p>
             </div>
-            <div class="mt-2">
-              <p class="text-[10px] font-bold text-slate-400">COMMITTED / RESERVED</p>
-              <p class="text-lg font-bold text-rose-500">${item.defined.toLocaleString()}</p>
+            <div class="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Committed (จอง)</p>
+              <p class="text-xl font-extrabold text-rose-500 mt-0.5">${item.defined.toLocaleString()} <span class="text-[11px] font-bold text-slate-400">${escapeHtml(item.unit)}</span></p>
             </div>
-            <div class="mt-2">
-              <p class="text-[10px] font-bold text-slate-400">ON ORDER (PO)</p>
-              <p class="text-lg font-bold text-amber-500">${item.ordered.toLocaleString()}</p>
+            <div class="bg-white p-3 rounded-xl border border-slate-200/60 shadow-sm">
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">On Order (รอเข้า)</p>
+              <p class="text-xl font-extrabold text-amber-500 mt-0.5">${item.ordered.toLocaleString()} <span class="text-[11px] font-bold text-slate-400">${escapeHtml(item.unit)}</span></p>
             </div>
           </div>
         </div>
