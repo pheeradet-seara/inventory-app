@@ -24,7 +24,7 @@
     .badge-green { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
     .badge-yellow { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
     .badge-red { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-    .custom-scroll::-webkit-scrollbar { height: 4px; }
+    .custom-scroll::-webkit-scrollbar { height: 4px; width: 4px; }
     .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   </style>
@@ -47,7 +47,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">v1.4.1</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">v1.4.2</span>
         </div>
         <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -127,7 +127,7 @@
         </div>
         <!-- Version Badge Top Bar -->
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200/80 select-none">
-          v1.4.1
+          v1.4.2
         </span>
       </div>
     </div>
@@ -159,7 +159,7 @@
           
           <!-- Database Update Text & Version Indicator -->
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.4.1</b></span>
+            <span>Version: <b class="text-slate-600">1.4.2</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -208,25 +208,50 @@
       </div>
     </div>
 
-    <!-- ================= ADMIN USER MANAGEMENT MODAL ================= -->
-    <div id="userModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm p-4 flex flex-col justify-start pt-10 overflow-y-auto">
-      <div class="bg-white w-full max-w-lg mx-auto rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-4 p-5 mb-10">
+    <!-- ================= ADMIN USER MANAGEMENT MODAL (V1.4.2 TABS DESIGN) ================= -->
+    <div id="userModal" class="hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm p-3.5 flex flex-col justify-start pt-8 overflow-y-auto">
+      <div class="bg-white w-full max-w-lg mx-auto rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-3.5 p-4 sm:p-5 mb-8">
         
+        <!-- Header -->
         <div class="flex justify-between items-center pb-2 border-b border-slate-100">
           <div>
             <h3 class="font-extrabold text-slate-900 text-base">User Management</h3>
-            <span class="text-[10px] font-medium text-slate-400">Manage roles, permissions & PINs (Tab: Permissions)</span>
+            <span class="text-[10px] font-medium text-slate-400">Permissions Tab Settings</span>
           </div>
           <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-100 font-bold">
             Close
           </button>
         </div>
 
-        <!-- Form: เพิ่ม / แก้ไข User -->
-        <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-3">
-          <span class="text-[11px] font-extrabold text-slate-700 block uppercase tracking-wider">Add / Edit User</span>
+        <!-- Segmented Tab Navigation -->
+        <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-2xl text-[11px] font-bold">
+          <button id="tabBtnList" onclick="switchUserTab('list')" class="py-2 rounded-xl transition shadow-xs bg-white text-indigo-700">
+            👥 Registered Users
+          </button>
+          <button id="tabBtnForm" onclick="switchUserTab('form')" class="py-2 rounded-xl transition text-slate-600 hover:text-slate-800">
+            ➕ Add / Edit User
+          </button>
+        </div>
+
+        <!-- ================= TAB 1: REGISTERED USERS ================= -->
+        <div id="tabContentList" class="space-y-2.5">
+          <div class="flex justify-between items-center px-0.5">
+            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Member List</span>
+            <button onclick="fetchUsersList()" class="text-[11px] font-bold text-indigo-600 hover:underline">🔄 Refresh</button>
+          </div>
+          <div id="usersListContainer" class="space-y-2.5 max-h-[62vh] overflow-y-auto pr-1 text-[11px] custom-scroll">
+            <div class="text-center py-10 text-slate-400">Loading users...</div>
+          </div>
+        </div>
+
+        <!-- ================= TAB 2: ADD / EDIT USER ================= -->
+        <div id="tabContentForm" class="hidden space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider" id="formHeaderTitle">Add New User</span>
+            <button onclick="clearUserForm()" class="text-[10px] font-bold text-indigo-600 hover:underline">Reset Form</button>
+          </div>
           
-          <div class="space-y-2">
+          <div class="space-y-2.5">
             <div>
               <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Work Email (Col A)</label>
               <input type="email" id="userFormEmail" placeholder="user@searasports.com" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-600">
@@ -240,38 +265,24 @@
               </select>
             </div>
 
-            <!-- เลือกคลังสินค้าจาก Col F -->
             <div>
               <div class="flex justify-between items-center mb-1">
                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Allowed Warehouses (Col C)</label>
-                <div class="flex items-center gap-1.5 text-[10px] font-bold">
+                <div class="flex items-center gap-2 text-[10px] font-bold">
                   <button type="button" onclick="selectAllWarehouses(true)" class="text-indigo-600 hover:underline">Select ALL</button>
                   <span class="text-slate-300">|</span>
                   <button type="button" onclick="selectAllWarehouses(false)" class="text-slate-500 hover:underline">Clear</button>
                 </div>
               </div>
-              
-              <!-- Checkbox Container ดึงอัตโนมัติจาก Col F -->
-              <div id="warehouseCheckboxList" class="p-2.5 bg-white border border-slate-200 rounded-xl flex flex-wrap gap-1.5 max-h-36 overflow-y-auto custom-scroll">
+              <div id="warehouseCheckboxList" class="p-2.5 bg-white border border-slate-200 rounded-xl flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scroll">
                 <span class="text-slate-400 text-[10px]">Loading warehouses from Column F...</span>
               </div>
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 pt-1 border-t border-slate-200/60">
-            <button onclick="clearUserForm()" class="px-3 py-1.5 text-[11px] font-bold text-slate-500 hover:bg-slate-200 rounded-xl">Clear</button>
-            <button onclick="saveUserFromForm()" id="saveUserBtn" class="px-4 py-1.5 text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm">Save User</button>
-          </div>
-        </div>
-
-        <!-- รายการ User ทั้งหมด -->
-        <div>
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">Registered Users</span>
-            <button onclick="fetchUsersList()" class="text-[11px] font-bold text-indigo-600 hover:underline">🔄 Refresh</button>
-          </div>
-          <div id="usersListContainer" class="space-y-2 max-h-64 overflow-y-auto divide-y divide-slate-100 pr-1 text-[11px]">
-            <div class="text-center py-6 text-slate-400">Loading users...</div>
+          <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+            <button onclick="switchUserTab('list')" class="px-3 py-2 text-[11px] font-bold text-slate-500 hover:bg-slate-200 rounded-xl">Cancel</button>
+            <button onclick="saveUserFromForm()" id="saveUserBtn" class="px-5 py-2 text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm">Save User</button>
           </div>
         </div>
 
@@ -282,9 +293,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.4.1
+    // CONFIGURATION - VERSION 1.4.2
     // ==========================================
-    const APP_VERSION = "1.4.1";
+    const APP_VERSION = "1.4.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -602,7 +613,6 @@
 
         let accessibleWarehouses = [];
 
-        // กรองสิทธิ์คลัง: ADMIN หรือระบุ ALL จะเห็นทุกคลัง
         if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL') {
           accessibleWarehouses = allWhList;
         } else {
@@ -640,7 +650,6 @@
       document.getElementById('hubUserRole').innerText = `${userRole} ACCESS`;
       document.getElementById('hubSyncTime').innerText = data.syncTime || '-';
 
-      // แสดงปุ่มจัดการสมาชิกเฉพาะ Role ADMIN
       const adminBtn = document.getElementById('adminUserMgmtBtn');
       if (userRole === 'ADMIN') {
         adminBtn.classList.remove('hidden');
@@ -1177,10 +1186,11 @@
     }
 
     // ==========================================
-    // ADMIN USER MANAGEMENT JAVASCRIPT
+    // ADMIN USER MANAGEMENT FUNCTIONS (V1.4.2 TABS)
     // ==========================================
     function openUserModal() {
       document.getElementById('userModal').classList.remove('hidden');
+      switchUserTab('list');
       fetchUsersList();
     }
 
@@ -1189,15 +1199,34 @@
       clearUserForm();
     }
 
+    function switchUserTab(tab) {
+      const tabList = document.getElementById('tabContentList');
+      const tabForm = document.getElementById('tabContentForm');
+      const btnList = document.getElementById('tabBtnList');
+      const btnForm = document.getElementById('tabBtnForm');
+
+      if (tab === 'list') {
+        tabList.classList.remove('hidden');
+        tabForm.classList.add('hidden');
+        btnList.className = 'py-2 rounded-xl transition shadow-xs bg-white text-indigo-700 font-bold';
+        btnForm.className = 'py-2 rounded-xl transition text-slate-600 hover:text-slate-800 font-bold';
+      } else {
+        tabList.classList.add('hidden');
+        tabForm.classList.remove('hidden');
+        btnForm.className = 'py-2 rounded-xl transition shadow-xs bg-white text-indigo-700 font-bold';
+        btnList.className = 'py-2 rounded-xl transition text-slate-600 hover:text-slate-800 font-bold';
+      }
+    }
+
     function clearUserForm() {
       document.getElementById('userFormEmail').value = '';
       document.getElementById('userFormEmail').disabled = false;
       document.getElementById('userFormRole').value = 'USER';
       selectAllWarehouses(false);
+      document.getElementById('formHeaderTitle').innerText = 'Add New User';
       document.getElementById('saveUserBtn').innerText = 'Save User';
     }
 
-    // สร้าง Checkbox สำหรับคลังสินค้าทั้งหมดที่มาจาก Col F
     function renderWarehouseCheckboxes(selectedStr = '') {
       const container = document.getElementById('warehouseCheckboxList');
       if (masterWarehouseList.length === 0) {
@@ -1231,13 +1260,13 @@
       const checkedBoxes = boxes.filter(b => b.checked);
 
       if (checkedBoxes.length === 0) return '';
-      if (checkedBoxes.length === boxes.length) return 'ALL'; // ถ้าติ๊กครบทุกคลังให้บันทึกเป็น ALL
-      return checkedBoxes.map(b => b.value).join(' '); // บันทึกคั่นด้วยช่องว่าง
+      if (checkedBoxes.length === boxes.length) return 'ALL';
+      return checkedBoxes.map(b => b.value).join(' ');
     }
 
     function fetchUsersList() {
       const container = document.getElementById('usersListContainer');
-      container.innerHTML = '<div class="text-center py-6 text-slate-400">Loading users...</div>';
+      container.innerHTML = '<div class="text-center py-10 text-slate-400">Loading users...</div>';
 
       fetch(`${API_URL}?action=getUsers&adminEmail=${encodeURIComponent(currentEmail)}`, {
         method: 'GET',
@@ -1246,38 +1275,58 @@
       .then(res => res.json())
       .then(res => {
         if (!res.success) {
-          container.innerHTML = `<div class="text-center py-4 text-red-500">${res.message || 'Error'}</div>`;
+          container.innerHTML = `<div class="text-center py-6 text-red-500">${res.message || 'Error'}</div>`;
           return;
         }
 
-        // บันทึกรายการคลังสินค้าที่ได้จาก Col F
         if (res.masterWarehouses && Array.isArray(res.masterWarehouses)) {
           masterWarehouseList = res.masterWarehouses;
           renderWarehouseCheckboxes();
         }
 
         if (res.users.length === 0) {
-          container.innerHTML = '<div class="text-center py-4 text-slate-400">No users found</div>';
+          container.innerHTML = '<div class="text-center py-6 text-slate-400">No users found</div>';
           return;
         }
 
+        // ==========================================
+        // LAYOUT 2 บรรทัด สำหรับ Mobile: ข้อมูลบน / Action bar ล่าง
+        // ==========================================
         let html = '';
         res.users.forEach(u => {
           const isMe = u.email.toLowerCase() === currentEmail.toLowerCase();
           html += `
-            <div class="py-2.5 flex items-center justify-between gap-2">
-              <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-bold text-slate-800 text-[12px] truncate">${escapeHtml(u.email)}</span>
-                  <span class="text-[9px] font-bold px-1.5 py-0.2 rounded ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
-                  ${u.hasPin ? '<span class="text-[9px] text-emerald-600 font-semibold">● PIN active</span>' : '<span class="text-[9px] text-amber-500 font-semibold">○ No PIN</span>'}
+            <div class="p-3 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-2.5">
+              <!-- แถวบน: ข้อมูลสมาชิก -->
+              <div>
+                <div class="flex items-center justify-between gap-1.5">
+                  <span class="font-extrabold text-slate-900 text-[13px] truncate flex-1 min-w-0">${escapeHtml(u.email)}</span>
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
+                    ${u.hasPin ? '<span class="text-[10px] text-emerald-600 font-bold">● Active</span>' : '<span class="text-[10px] text-amber-500 font-bold">○ No PIN</span>'}
+                  </div>
                 </div>
-                <span class="text-[10px] text-slate-400 block truncate mt-0.5">Allowed WH: <b class="text-slate-600 font-semibold">${escapeHtml(u.allowedWarehouses || 'None')}</b></span>
+                <div class="text-[10px] text-slate-400 mt-1 truncate">
+                  Allowed WH: <b class="text-slate-700 font-semibold">${escapeHtml(u.allowedWarehouses || 'None')}</b>
+                </div>
               </div>
-              <div class="flex items-center gap-1 flex-shrink-0">
-                <button onclick="editUser('${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.allowedWarehouses)}')" title="Edit User" class="p-1 px-2 text-[10px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg">Edit</button>
-                <button onclick="resetUserPin('${escapeHtml(u.email)}')" title="Reset PIN" class="p-1 px-2 text-[10px] font-bold text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg">Reset PIN</button>
-                ${!isMe ? `<button onclick="deleteUser('${escapeHtml(u.email)}')" title="Delete" class="p-1 px-2 text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg">✕</button>` : ''}
+
+              <!-- แถวล่าง: Action Buttons กว้างกดง่าย ไม่เบียดกัน -->
+              <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                <button onclick="editUser('${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.allowedWarehouses)}')" 
+                        class="px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition flex items-center gap-1">
+                  ✏️ Edit
+                </button>
+                <button onclick="resetUserPin('${escapeHtml(u.email)}')" 
+                        class="px-3 py-1.5 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 active:scale-95 rounded-xl transition flex items-center gap-1">
+                  🔑 Reset PIN
+                </button>
+                ${!isMe ? `
+                  <button onclick="deleteUser('${escapeHtml(u.email)}')" 
+                          class="px-2.5 py-1.5 text-[11px] font-bold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-xl transition">
+                    🗑️
+                  </button>
+                ` : ''}
               </div>
             </div>
           `;
@@ -1285,16 +1334,18 @@
         container.innerHTML = html;
       })
       .catch(() => {
-        container.innerHTML = '<div class="text-center py-4 text-red-500">Failed to load users</div>';
+        container.innerHTML = '<div class="text-center py-6 text-red-500">Failed to load users</div>';
       });
     }
 
     function editUser(email, role, whStr) {
       document.getElementById('userFormEmail').value = email;
-      document.getElementById('userFormEmail').disabled = true; // ล็อกอีเมลตอนแก้ไข
+      document.getElementById('userFormEmail').disabled = true;
       document.getElementById('userFormRole').value = role;
       renderWarehouseCheckboxes(whStr);
+      document.getElementById('formHeaderTitle').innerText = `Edit: ${email}`;
       document.getElementById('saveUserBtn').innerText = 'Update User';
+      switchUserTab('form'); // สลับไปแท็บฟอร์มทันที
     }
 
     function saveUserFromForm() {
@@ -1321,6 +1372,7 @@
         btn.disabled = false;
         if (res.success) {
           clearUserForm();
+          switchUserTab('list');
           fetchUsersList();
         } else {
           alert(res.message || 'Failed to save');
