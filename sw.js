@@ -1,13 +1,12 @@
 /**
  * =======================================================
- * SEARA INVENTORY SYSTEM - VERSION 1.5.7
+ * SEARA INVENTORY SYSTEM - VERSION 1.5.8
  * Service Worker: Offline Cache & Background Fetch
  * =======================================================
  */
 
-const CACHE_NAME = 'seara-inventory-v1.5.7';
+const CACHE_NAME = 'seara-inventory-v1.5.8';
 
-// ไฟล์แกนหลักที่ต้องแคชสำหรับรันแอปแบบ Offline
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -40,7 +39,6 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// data.json และ v_check วิ่งตรงออก Network เสมอ ไม่กักแคช
 self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('data.json') || event.request.url.includes('v_check')) {
     event.respondWith(fetch(event.request));
