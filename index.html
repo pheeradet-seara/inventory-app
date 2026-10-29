@@ -2,992 +2,492 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>SEARA</title>
-  
-  <!-- บังคับสเกลหน้าจอมือถือ (Mobile Responsive Viewport) -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SEARA">
-  <meta name="theme-color" content="#0f172a">
-
+  <title>SEARA - Inventory App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./logo.png">
-  <link rel="icon" type="image/png" href="./logo.png">
-
+  <meta name="theme-color" content="#4f46e5">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
-    .badge-green { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    .badge-yellow { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
-    .badge-red { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-    .custom-scroll::-webkit-scrollbar { height: 4px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
-    }
-  </script>
 </head>
-<body class="max-w-xl mx-auto min-h-screen bg-slate-50/90 pb-28 text-slate-800 antialiased relative">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-24">
 
-  <!-- ================= DYNAMIC AUTH SCREEN ================= -->
-  <div id="loginScreen" class="min-h-screen flex items-center justify-center p-5">
-    <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl shadow-indigo-100/50 p-8 w-full max-w-sm space-y-5">
-      
-      <div class="text-center space-y-1.5">
-        <div class="flex justify-center mb-2">
-          <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
+  <!-- ==================== AUTH VIEW (หน้าล็อกอิน) ==================== -->
+  <div id="authView" class="min-h-screen flex items-center justify-center p-4 bg-slate-50">
+    <div class="bg-white border border-slate-200/90 rounded-[28px] shadow-2xl p-6 md:p-8 w-full max-w-sm space-y-6">
+      <div class="text-center space-y-2">
+        <div class="flex justify-center mb-1">
+          <img src="./logo.png" alt="SEARA" class="h-14 w-auto object-contain">
         </div>
-        <h2 class="text-xl font-extrabold text-slate-800 tracking-tight" id="authTitle">Sign In</h2>
-        <p class="text-[11px] font-medium text-slate-400" id="authSubtitle">Enter your work email to continue</p>
+        <h2 id="authTitle" class="text-xl font-extrabold text-slate-900 tracking-tight">Sign In</h2>
+        <p id="authSubtitle" class="text-[12px] text-slate-400 font-medium">Enter your work email to continue</p>
       </div>
 
-      <!-- Step 1: Input Email -->
-      <div id="stepEmail" class="space-y-3.5">
+      <!-- Step 1: Email Form -->
+      <form id="emailForm" onsubmit="handleEmailSubmit(event)" class="space-y-4">
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Work Email</label>
-          <input type="email" id="loginEmailInput" 
-                 placeholder="name@company.com" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition"
-                 onkeydown="if(event.key === 'Enter') handleCheckEmail()">
+          <input type="email" id="emailInput" required placeholder="name@searasports.com" 
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-[14px] font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition">
         </div>
-        <button onclick="handleCheckEmail()" id="checkEmailBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
+        <button type="submit" id="emailSubmitBtn" 
+                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition">
           Next →
         </button>
-      </div>
+      </form>
 
-      <!-- Step 2A: Normal Login (ผู้ใช้มี PIN แล้ว) -->
-      <div id="stepPin" class="space-y-3.5 hidden">
+      <!-- Step 2: PIN Form -->
+      <form id="pinForm" onsubmit="handlePinSubmit(event)" class="space-y-4 hidden">
         <div>
           <div class="flex justify-between items-center mb-1.5">
-            <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
-            <button onclick="resetToEmailStep()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Change Email</button>
+            <label id="pinLabel" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
+            <span id="userEmailBadge" class="text-[11px] text-indigo-600 font-semibold truncate max-w-[180px]"></span>
           </div>
-          <input type="password" id="loginPinInput" maxlength="8"
-                 placeholder="••••" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest"
-                 onkeydown="if(event.key === 'Enter') handleLogin()">
+          <input type="password" id="pinInput" maxlength="6" inputmode="numeric" required placeholder="••••" 
+                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 text-center text-[22px] tracking-widest font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-600 transition">
         </div>
-        <button onclick="handleLogin()" id="loginBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-indigo-200">
+        <button type="submit" id="pinSubmitBtn" 
+                class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl font-bold text-[14px] shadow-lg shadow-indigo-600/30 transition">
           Sign In
         </button>
-      </div>
-
-      <!-- Step 2B: First-Time Setup (ตั้ง PIN ครั้งแรก) -->
-      <div id="stepCreatePin" class="space-y-3.5 hidden">
-        <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
-          👋 First time sign-in: Please create a 4–8 digit PIN to protect your account.
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Create New PIN</label>
-          <input type="password" id="newPinInput" maxlength="8"
-                 placeholder="New 4-8 digit PIN" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest">
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Confirm PIN</label>
-          <input type="password" id="confirmPinInput" maxlength="8"
-                 placeholder="Confirm PIN" 
-                 class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest"
-                 onkeydown="if(event.key === 'Enter') handleSetupPin()">
-        </div>
-        <button onclick="handleSetupPin()" id="setupPinBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white rounded-2xl text-[15px] font-bold transition shadow-lg shadow-emerald-200">
-          Set PIN & Sign In
+        <button type="button" onclick="backToEmail()" class="w-full text-center text-[12px] text-slate-400 font-bold hover:text-slate-600 py-1">
+          ← Switch Account
         </button>
-      </div>
+      </form>
 
-      <div id="loginError" class="hidden text-center text-[11px] text-red-600 bg-red-50 p-2.5 rounded-xl font-semibold border border-red-100"></div>
+      <!-- Status Message -->
+      <div id="authStatus" class="hidden rounded-2xl p-3 text-center text-[12px] font-semibold"></div>
     </div>
   </div>
 
-  <!-- ================= MAIN APP SCREEN ================= -->
-  <div id="appScreen" class="hidden">
-    <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200/70 shadow-xs flex items-center justify-between gap-2">
-      <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
-      <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer flex-shrink-0">
-        <span id="searchBadgeText"></span>
-        <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
-      </div>
-    </div>
-
-    <div id="loading" class="text-center py-20 text-slate-400 text-[11px] font-semibold">
-      Loading inventory data...
-    </div>
-
-    <div id="contentList" class="p-3.5 space-y-3.5"></div>
-
-    <div id="loadMoreContainer" class="p-4 text-center hidden">
-      <button onclick="renderNextBatch()" class="bg-white border border-slate-200 shadow-sm px-5 py-2.5 rounded-2xl text-[11px] font-bold text-slate-700 hover:bg-slate-50 active:scale-95 transition">
-        Load more brands...
-      </button>
-    </div>
-
-    <!-- ================= FLOATING ACTION CONTROLS ================= -->
-    <div class="fixed right-5 bottom-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
-      <div id="hubActionsMenu" class="hidden flex flex-col items-end gap-2.5 pointer-events-auto transition-all duration-200 scale-95 origin-bottom-right mb-1">
-        <div class="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-3.5 text-right max-w-[230px]">
-          <span class="text-[11px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
-          <p class="text-[15px] font-bold text-slate-800 truncate" id="hubUserEmail">-</p>
-          <div class="flex items-center justify-end gap-2 mt-2">
-            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700" id="hubUserRole">USER</span>
-            <button onclick="logoutApp()" class="text-[11px] font-bold text-red-600 hover:underline">Log out</button>
+  <!-- ==================== MAIN INVENTORY VIEW (หน้าสต็อก) ==================== -->
+  <div id="mainView" class="hidden">
+    
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <img src="./logo.png" alt="SEARA" class="h-9 w-auto object-contain">
+          <div>
+            <h1 class="text-[15px] font-extrabold text-slate-900 leading-none">Stock Check</h1>
+            <p id="syncTimeText" class="text-[10px] text-slate-400 font-semibold mt-0.5">Sync: -</p>
           </div>
         </div>
-        <button onclick="loadData(true); toggleHubMenu();" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
-          <span>🔄 Sync Data</span>
-          <span id="hubSyncTime" class="text-[10px] font-medium text-slate-400"></span>
-        </button>
-        <button onclick="goHome(); toggleHubMenu();" class="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-indigo-700 active:scale-95 transition">
-          <span>🏠 Reset to Home</span>
-        </button>
-      </div>
-
-      <div class="flex items-center gap-2.5 pointer-events-auto">
-        <button onclick="openSearchModal()" title="Search Item / Brand" 
-                class="w-13 h-13 p-3.5 bg-white text-indigo-600 rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-200/90 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
-          🔍
-        </button>
-        <button onclick="toggleHubMenu()" id="hubToggleBtn" title="Menu & Actions" 
-                class="w-13 h-13 p-3.5 bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-900/30 border border-slate-700 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-800 transition">
-          ⚡
-        </button>
-      </div>
-    </div>
-
-    <!-- ================= SEARCH MODAL OVERLAY ================= -->
-    <div id="searchModal" class="hidden fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm p-4 flex flex-col justify-start pt-16">
-      <div class="bg-white w-full max-w-lg mx-auto rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-2">
-        <div class="p-3.5 border-b border-slate-100 flex items-center gap-2">
-          <span class="text-[15px] text-slate-400 pl-1">🔍</span>
-          <input type="text" id="modalSearchInput" oninput="onSearchInputDebounced()" 
-                 placeholder="Search Brand, Item No. or Description..." 
-                 class="w-full px-2 py-2 text-[15px] font-semibold text-slate-800 focus:outline-none placeholder:text-slate-400"
-                 autocomplete="off">
-          <button onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600 text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-100 font-bold">
-            Close
+        <div class="flex items-center space-x-2">
+          <button onclick="fetchStockData(true)" title="Sync Data" 
+                  class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition">
+            🔄
+          </button>
+          <button onclick="handleSignOut()" title="Sign Out" 
+                  class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition text-[13px] font-bold">
+            🚪
           </button>
         </div>
-        <div id="suggestionBox" class="max-h-80 overflow-y-auto divide-y divide-slate-100 text-[11px] pb-2"></div>
       </div>
+
+      <!-- Search & Filters -->
+      <div class="max-w-5xl mx-auto px-4 pb-3 space-y-2">
+        <div class="relative">
+          <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search Part No, Model, Brand..." 
+                 class="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-2xl text-[13px] font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:bg-white transition">
+          <span class="absolute left-3.5 top-2.5 text-slate-400 text-sm">🔍</span>
+          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3 top-2 text-slate-400 hover:text-slate-600 text-sm p-1">✕</button>
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar pt-1">
+          <select id="warehouseFilter" onchange="filterAndRender()" 
+                  class="bg-slate-100 text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-xl border-none focus:ring-1 focus:ring-indigo-600 outline-none">
+            <option value="ALL">All Warehouses</option>
+          </select>
+          <select id="brandFilter" onchange="filterAndRender()" 
+                  class="bg-slate-100 text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-xl border-none focus:ring-1 focus:ring-indigo-600 outline-none">
+            <option value="ALL">All Brands</option>
+          </select>
+          <select id="statusFilter" onchange="filterAndRender()" 
+                  class="bg-slate-100 text-[11px] font-bold text-slate-600 px-3 py-1.5 rounded-xl border-none focus:ring-1 focus:ring-indigo-600 outline-none">
+            <option value="ALL">All Status</option>
+            <option value="In Stock">In Stock (>0)</option>
+            <option value="Ordered">Ordered</option>
+            <option value="Out of Stock">Out of Stock</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-5xl mx-auto p-4">
+      <div class="flex justify-between items-center mb-3">
+        <span id="resultCount" class="text-[12px] font-bold text-slate-500">Showing 0 items</span>
+      </div>
+
+      <!-- Loading Placeholder -->
+      <div id="loadingIndicator" class="text-center py-16 space-y-3">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+        <p class="text-[13px] font-bold text-slate-500">Loading stock data...</p>
+      </div>
+
+      <!-- Items List -->
+      <div id="itemsContainer" class="space-y-3"></div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-16 space-y-2">
+        <div class="text-4xl">📦</div>
+        <p class="text-[14px] font-bold text-slate-700">No items found</p>
+        <p class="text-[12px] text-slate-400">Try adjusting your search or filters</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+    <div class="bg-white rounded-[28px] max-w-md w-full p-6 space-y-4 shadow-2xl relative">
+      <button onclick="closeModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-2">✕</button>
+      <div id="modalContent"></div>
     </div>
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    const DATA_URL = "./data.json";
     const SYSTEM_KEY = "INV_SECURE_TOKEN_2026_X9#kL";
+    
+    // ใส่ URL Google Apps Script ของคุณที่ลงท้ายด้วย /exec ตรงนี้
+    const AUTH_API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec"; 
 
-    let currentEmail = localStorage.getItem('inv_user_email') || null;
-    let currentPin = localStorage.getItem('inv_user_pin') || null;
+    let allItems = [];
+    let currentAuthMode = 'login'; // 'login' or 'setup'
     let pendingEmail = '';
-    let appData = { items: [], userWarehouses: [] };
-    let selectedWarehouses = new Set(['ALL']);
-    let openBrands = {};
-    let openItems = {};
-    let activeKeyword = '';
 
-    let searchDebounceTimer = null;
-    let currentRenderList = [];
-    let displayedCount = 0;
-    const BATCH_SIZE = 35;
-
-    const DB_NAME = 'InventoryAppDB';
-    const STORE_NAME = 'inventory_store';
-
-    function formatNumber(num) {
-      return (Number(num) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    }
-
-    function formatCurrency(num) {
-      return (Number(num) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function getBrandInitials(name) {
-      if (!name) return 'BR';
-      const clean = name.replace(/[^a-zA-Z0-9]/g, ' ').trim().split(/\s+/);
-      if (clean.length === 1) return clean[0].substring(0, 2).toUpperCase();
-      return (clean[0][0] + clean[1][0]).toUpperCase();
-    }
-
-    function openDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 1);
-        req.onupgradeneeded = (e) => e.target.result.createObjectStore(STORE_NAME);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function setCache(key, val) {
-      try {
-        const db = await openDB();
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).put(val, key);
-      } catch (e) {}
-    }
-
-    async function getCache(key) {
-      try {
-        const db = await openDB();
-        return new Promise((resolve) => {
-          const tx = db.transaction(STORE_NAME, 'readonly');
-          const req = tx.objectStore(STORE_NAME).get(key);
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => resolve(null);
-        });
-      } catch (e) {
-        return null;
-      }
-    }
-
-    async function clearLocalDatabase() {
-      try {
-        const db = await openDB();
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        tx.objectStore(STORE_NAME).clear();
-      } catch (e) {}
-    }
-
-    function resetToEmailStep() {
-      document.getElementById('stepEmail').classList.remove('hidden');
-      document.getElementById('stepPin').classList.add('hidden');
-      document.getElementById('stepCreatePin').classList.add('hidden');
-      document.getElementById('loginError').classList.add('hidden');
-      document.getElementById('authTitle').innerText = 'Sign In';
-      document.getElementById('authSubtitle').innerText = 'Enter your work email to continue';
-      document.getElementById('loginPinInput').value = '';
-    }
-
-    function handleCheckEmail() {
-      const email = document.getElementById('loginEmailInput').value.trim();
-      const errEl = document.getElementById('loginError');
-      const btn = document.getElementById('checkEmailBtn');
-
-      if (!email) {
-        errEl.innerText = 'Please enter your work email.';
-        errEl.classList.remove('hidden');
-        return;
+    // ==========================================
+    // INITIALIZATION & PWA
+    // ==========================================
+    window.onload = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
       }
 
-      errEl.classList.add('hidden');
-      btn.innerText = 'Checking...';
+      const activeUser = localStorage.getItem('seara_user_email');
+      if (activeUser) {
+        showApp();
+      } else {
+        showAuth();
+      }
+    };
+
+    // ==========================================
+    // AUTH LOGIC (GOOGLE APPS SCRIPT)
+    // ==========================================
+    function showAuth() {
+      document.getElementById('authView').classList.remove('hidden');
+      document.getElementById('mainView').classList.add('hidden');
+    }
+
+    function showApp() {
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('mainView').classList.remove('hidden');
+      fetchStockData();
+    }
+
+    function showAuthError(msg) {
+      const status = document.getElementById('authStatus');
+      status.className = 'rounded-2xl p-3 text-center text-[12px] font-semibold bg-red-50 text-red-700 border border-red-200';
+      status.innerText = msg;
+      status.classList.remove('hidden');
+    }
+
+    async function handleEmailSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
+      const btn = document.getElementById('emailSubmitBtn');
+      
       btn.disabled = true;
+      btn.innerText = 'Checking...';
+      document.getElementById('authStatus').classList.add('hidden');
 
-      fetch(`${API_URL}?action=checkEmail&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(email)}`, {
-        method: 'GET',
-        redirect: 'follow'
-      })
-      .then(res => res.json())
-      .then(res => {
-        btn.innerText = 'Next →';
-        btn.disabled = false;
+      try {
+        const res = await fetch(`${AUTH_API_URL}?action=checkEmail&email=${encodeURIComponent(email)}&key=${SYSTEM_KEY}`);
+        const data = await res.json();
 
-        if (!res.success) {
-          errEl.innerText = res.message || 'Authorization failed';
-          errEl.classList.remove('hidden');
-          return;
-        }
+        if (data.success) {
+          pendingEmail = email;
+          document.getElementById('emailForm').classList.add('hidden');
+          document.getElementById('pinForm').classList.remove('hidden');
+          document.getElementById('userEmailBadge').innerText = email;
 
-        pendingEmail = res.userEmail;
-        document.getElementById('stepEmail').classList.add('hidden');
-
-        if (res.hasPin) {
-          document.getElementById('stepPin').classList.remove('hidden');
-          document.getElementById('authTitle').innerText = 'Enter PIN';
-          document.getElementById('authSubtitle').innerText = pendingEmail;
-          document.getElementById('loginPinInput').focus();
+          if (data.hasPin) {
+            currentAuthMode = 'login';
+            document.getElementById('authTitle').innerText = 'Security PIN';
+            document.getElementById('authSubtitle').innerText = 'Enter your 4-6 digit PIN';
+            document.getElementById('pinLabel').innerText = 'ENTER PIN';
+            document.getElementById('pinSubmitBtn').innerText = 'Sign In';
+          } else {
+            currentAuthMode = 'setup';
+            document.getElementById('authTitle').innerText = 'Create PIN';
+            document.getElementById('authSubtitle').innerText = 'Set a 4-6 digit PIN for first-time login';
+            document.getElementById('pinLabel').innerText = 'CREATE NEW PIN';
+            document.getElementById('pinSubmitBtn').innerText = 'Save & Sign In';
+          }
+          document.getElementById('pinInput').focus();
         } else {
-          document.getElementById('stepCreatePin').classList.remove('hidden');
-          document.getElementById('authTitle').innerText = 'Setup PIN';
-          document.getElementById('authSubtitle').innerText = pendingEmail;
-          document.getElementById('newPinInput').focus();
+          showAuthError(data.message || 'Email not authorized to access system.');
         }
-      })
-      .catch(() => {
-        btn.innerText = 'Next →';
+      } catch (err) {
+        showAuthError('Connection error. Please try again.');
+      } finally {
         btn.disabled = false;
-        errEl.innerText = 'Connection error. Please try again.';
-        errEl.classList.remove('hidden');
-      });
+        btn.innerText = 'Next →';
+      }
     }
 
-    function handleSetupPin() {
-      const pin = document.getElementById('newPinInput').value.trim();
-      const confirmPin = document.getElementById('confirmPinInput').value.trim();
-      const errEl = document.getElementById('loginError');
-      const btn = document.getElementById('setupPinBtn');
+    async function handlePinSubmit(e) {
+      e.preventDefault();
+      const pin = document.getElementById('pinInput').value.trim();
+      const btn = document.getElementById('pinSubmitBtn');
 
       if (pin.length < 4) {
-        errEl.innerText = 'PIN must be at least 4 digits.';
-        errEl.classList.remove('hidden');
+        showAuthError('PIN must be at least 4 digits');
         return;
       }
 
-      if (pin !== confirmPin) {
-        errEl.innerText = 'PINs do not match. Please re-enter.';
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      errEl.classList.add('hidden');
-      btn.innerText = 'Setting PIN...';
       btn.disabled = true;
-
-      fetch(`${API_URL}?action=setupPin&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`, {
-        method: 'GET',
-        redirect: 'follow'
-      })
-      .then(res => res.json())
-      .then(res => {
-        btn.innerText = 'Set PIN & Sign In';
-        btn.disabled = false;
-
-        if (res.success) {
-          currentEmail = res.userEmail;
-          currentPin = pin;
-          localStorage.setItem('inv_user_email', currentEmail);
-          localStorage.setItem('inv_user_pin', currentPin);
-          showAppScreen();
-          loadData(true);
-        } else {
-          errEl.innerText = res.message || 'Setup failed.';
-          errEl.classList.remove('hidden');
-        }
-      })
-      .catch(() => {
-        btn.innerText = 'Set PIN & Sign In';
-        btn.disabled = false;
-        errEl.innerText = 'Connection error. Please try again.';
-        errEl.classList.remove('hidden');
-      });
-    }
-
-    function handleLogin() {
-      const pin = document.getElementById('loginPinInput').value.trim();
-      const errEl = document.getElementById('loginError');
-      const btn = document.getElementById('loginBtn');
-
-      if (!pin) {
-        errEl.innerText = 'Please enter your security PIN.';
-        errEl.classList.remove('hidden');
-        return;
-      }
-
-      errEl.classList.add('hidden');
       btn.innerText = 'Verifying...';
-      btn.disabled = true;
+      document.getElementById('authStatus').classList.add('hidden');
 
-      fetch(`${API_URL}?action=auth&key=${encodeURIComponent(SYSTEM_KEY)}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}`, {
-        method: 'GET',
-        redirect: 'follow'
-      })
-      .then(res => res.json())
-      .then(res => {
-        btn.innerText = 'Sign In';
-        btn.disabled = false;
-        if (res.success) {
-          currentEmail = res.userEmail;
-          currentPin = pin;
-          localStorage.setItem('inv_user_email', currentEmail);
-          localStorage.setItem('inv_user_pin', currentPin);
-          showAppScreen();
-          loadData(true);
+      try {
+        const action = currentAuthMode === 'setup' ? 'setupPin' : 'auth';
+        const res = await fetch(`${AUTH_API_URL}?action=${action}&email=${encodeURIComponent(pendingEmail)}&pin=${encodeURIComponent(pin)}&key=${SYSTEM_KEY}`);
+        const data = await res.json();
+
+        if (data.success) {
+          localStorage.setItem('seara_user_email', pendingEmail);
+          showApp();
         } else {
-          errEl.innerText = res.message || 'Invalid PIN code.';
-          errEl.classList.remove('hidden');
+          showAuthError(data.message || 'Invalid PIN. Please try again.');
         }
-      })
-      .catch(() => {
-        btn.innerText = 'Sign In';
+      } catch (err) {
+        showAuthError('Connection error. Please try again.');
+      } finally {
         btn.disabled = false;
-        errEl.innerText = 'Connection error. Please try again.';
-        errEl.classList.remove('hidden');
+        btn.innerText = currentAuthMode === 'setup' ? 'Save & Sign In' : 'Sign In';
+      }
+    }
+
+    function backToEmail() {
+      document.getElementById('pinForm').classList.add('hidden');
+      document.getElementById('emailForm').classList.remove('hidden');
+      document.getElementById('authTitle').innerText = 'Sign In';
+      document.getElementById('authSubtitle').innerText = 'Enter your work email to continue';
+      document.getElementById('authStatus').classList.add('hidden');
+      document.getElementById('pinInput').value = '';
+    }
+
+    function handleSignOut() {
+      if (confirm('Are you sure you want to sign out?')) {
+        localStorage.removeItem('seara_user_email');
+        location.reload();
+      }
+    }
+
+    // ==========================================
+    // STOCK DATA LOGIC (GITHUB PAGES DATA.JSON)
+    // ==========================================
+    async function fetchStockData(forceRefresh = false) {
+      const loader = document.getElementById('loadingIndicator');
+      loader.classList.remove('hidden');
+
+      try {
+        const fetchUrl = forceRefresh ? `${DATA_URL}?t=${new Date().getTime()}` : `${DATA_URL}?t=${Math.floor(Date.now() / 60000)}`;
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('Failed to load data.json');
+
+        const json = await res.json();
+        allItems = json.items || [];
+        document.getElementById('syncTimeText').innerText = `Sync: ${json.syncTime || '-'}`;
+
+        populateFilterOptions();
+        filterAndRender();
+      } catch (err) {
+        alert('Could not load inventory data. Make sure data.json exists.');
+        console.error(err);
+      } finally {
+        loader.classList.add('hidden');
+      }
+    }
+
+    function populateFilterOptions() {
+      const warehouses = new Set();
+      const brands = new Set();
+
+      allItems.forEach(item => {
+        if (item.wh) warehouses.add(item.wh);
+        if (item.brand) brands.add(item.brand);
+      });
+
+      const whSelect = document.getElementById('warehouseFilter');
+      whSelect.innerHTML = '<option value="ALL">All Warehouses</option>';
+      Array.from(warehouses).sort().forEach(wh => {
+        whSelect.innerHTML += `<option value="${wh}">${wh}</option>`;
+      });
+
+      const brandSelect = document.getElementById('brandFilter');
+      brandSelect.innerHTML = '<option value="ALL">All Brands</option>';
+      Array.from(brands).sort().forEach(b => {
+        brandSelect.innerHTML += `<option value="${b}">${b}</option>`;
       });
     }
 
-    async function logoutApp() {
-      localStorage.removeItem('inv_user_email');
-      localStorage.removeItem('inv_user_pin');
-      currentEmail = null;
-      currentPin = null;
-      await clearLocalDatabase();
-      document.getElementById('hubActionsMenu').classList.add('hidden');
-      document.getElementById('loginEmailInput').value = '';
-      document.getElementById('loginPinInput').value = '';
-      document.getElementById('newPinInput').value = '';
-      document.getElementById('confirmPinInput').value = '';
-      resetToEmailStep();
-      document.getElementById('appScreen').classList.add('hidden');
-      document.getElementById('loginScreen').classList.remove('hidden');
+    function filterAndRender() {
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const selWh = document.getElementById('warehouseFilter').value;
+      const selBrand = document.getElementById('brandFilter').value;
+      const selStatus = document.getElementById('statusFilter').value;
+
+      const filtered = allItems.filter(item => {
+        const matchesSearch = !search || 
+          item.itemNo.toLowerCase().includes(search) || 
+          item.desc.toLowerCase().includes(search) || 
+          item.brand.toLowerCase().includes(search);
+
+        const matchesWh = selWh === 'ALL' || item.wh === selWh;
+        const matchesBrand = selBrand === 'ALL' || item.brand === selBrand;
+        const matchesStatus = selStatus === 'ALL' || item.statusText === selStatus;
+
+        return matchesSearch && matchesWh && matchesBrand && matchesStatus;
+      });
+
+      renderItems(filtered);
     }
 
-    function showAppScreen() {
-      document.getElementById('loginScreen').classList.add('hidden');
-      document.getElementById('appScreen').classList.remove('hidden');
-    }
+    function renderItems(items) {
+      const container = document.getElementById('itemsContainer');
+      const empty = document.getElementById('emptyState');
+      const count = document.getElementById('resultCount');
 
-    async function loadData(forceSync = false) {
-      if (!currentEmail || !currentPin) {
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('appScreen').classList.add('hidden');
+      container.innerHTML = '';
+      count.innerText = `Showing ${items.length.toLocaleString()} items`;
+
+      if (items.length === 0) {
+        empty.classList.remove('hidden');
         return;
       }
+      empty.classList.add('hidden');
 
-      showAppScreen();
-      document.getElementById('loading').style.display = 'block';
+      // แสดงรายการสูงสุด 200 รายการเพื่อความเร็วและลื่นไหล
+      const displayItems = items.slice(0, 200);
 
-      if (!forceSync) {
-        const cached = await getCache('cached_' + currentEmail);
-        if (cached && cached.items && cached.items.length > 0) {
-          renderApp(cached);
-          document.getElementById('loading').style.display = 'none';
-        }
-      }
+      displayItems.forEach((item, index) => {
+        let badgeBg = 'bg-rose-50 text-rose-700 border-rose-200';
+        if (item.color === 'green') badgeBg = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        else if (item.color === 'yellow') badgeBg = 'bg-amber-50 text-amber-700 border-amber-200';
 
-      // ดึงข้อมูลตรงจาก data.json (ใส่ timestamp เพื่อข้าม Browser Cache)
-      fetch('./data.json?t=' + new Date().getTime())
-        .then(res => {
-          if (!res.ok) throw new Error('Data file not found');
-          return res.json();
-        })
-        .then(async data => {
-          data.userEmail = currentEmail;
-          data.role = 'USER';
-          
-          // ดึงรายชื่อ Warehouse ทั้งหมดในไฟล์อัตโนมัติ
-          const allWh = [...new Set(data.items.map(item => item.wh))].filter(Boolean);
-          data.userWarehouses = allWh;
-
-          renderApp(data);
-          document.getElementById('loading').style.display = 'none';
-          await setCache('cached_' + currentEmail, data);
-        })
-        .catch((err) => {
-          console.error(err);
-          document.getElementById('loading').innerHTML = '⚠️ Using offline cache (Sync failed)';
-        });
-    }
-
-    function renderApp(data) {
-      if (!data) return;
-      appData = data;
-
-      document.getElementById('hubUserEmail').innerText = data.userEmail || '-';
-      document.getElementById('hubUserRole').innerText = `${data.role || 'USER'} ACCESS`;
-      document.getElementById('hubSyncTime').innerText = `Synced: ${data.syncTime || ''}`;
-
-      renderWarehouseTabs();
-      renderView();
-      initHorizontalScroll();
-    }
-
-    function renderWarehouseTabs() {
-      const tabs = document.getElementById('warehouseTabs');
-      let tabsHtml = '';
-      const isAllSelected = selectedWarehouses.has('ALL') || selectedWarehouses.size === 0;
-      
-      tabsHtml += `
-        <button onclick="toggleWarehouseFilter('ALL')" 
-                class="px-3 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${isAllSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-          All WH
-        </button>
-      `;
-
-      (appData.userWarehouses || []).forEach(wh => {
-        const isSelected = !isAllSelected && selectedWarehouses.has(wh);
-        tabsHtml += `
-          <button onclick="toggleWarehouseFilter('${wh}')" 
-                  class="px-3 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1 ${isSelected ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-            <span>${wh}</span>
-            ${isSelected ? '<span class="text-[9px] bg-indigo-700/80 px-1 rounded-full">✓</span>' : ''}
-          </button>
-        `;
-      });
-
-      tabs.innerHTML = tabsHtml;
-    }
-
-    function toggleWarehouseFilter(wh) {
-      if (wh === 'ALL') {
-        selectedWarehouses.clear();
-        selectedWarehouses.add('ALL');
-      } else {
-        selectedWarehouses.delete('ALL');
-        if (selectedWarehouses.has(wh)) {
-          selectedWarehouses.delete(wh);
-        } else {
-          selectedWarehouses.add(wh);
-        }
-
-        if (selectedWarehouses.size === 0) {
-          selectedWarehouses.add('ALL');
-        }
-      }
-
-      renderWarehouseTabs();
-      renderView();
-    }
-
-    function initHorizontalScroll() {
-      const slider = document.getElementById('warehouseTabs');
-      if (!slider || slider.dataset.dragInit) return;
-      slider.dataset.dragInit = 'true';
-
-      let isDown = false;
-      let startX;
-      let scrollLeft;
-
-      slider.addEventListener('mousedown', (e) => {
-        isDown = true;
-        startX = e.pageX - slider.offsetLeft;
-        scrollLeft = slider.scrollLeft;
-      });
-
-      slider.addEventListener('mouseleave', () => isDown = false);
-      slider.addEventListener('mouseup', () => isDown = false);
-
-      slider.addEventListener('mousemove', (e) => {
-        if (!isDown) return;
-        e.preventDefault();
-        const x = e.pageX - slider.offsetLeft;
-        const walk = (x - startX) * 1.5;
-        slider.scrollLeft = scrollLeft - walk;
-      });
-
-      slider.addEventListener('wheel', (e) => {
-        if (e.deltaY !== 0) {
-          e.preventDefault();
-          slider.scrollLeft += e.deltaY;
-        }
-      }, { passive: false });
-    }
-
-    function toggleHubMenu() {
-      const menu = document.getElementById('hubActionsMenu');
-      const btn = document.getElementById('hubToggleBtn');
-      const isClosed = menu.classList.contains('hidden');
-
-      if (isClosed) {
-        menu.classList.remove('hidden');
-        btn.innerText = '✕';
-        btn.classList.add('bg-slate-700');
-      } else {
-        menu.classList.add('hidden');
-        btn.innerText = '⚡';
-        btn.classList.remove('bg-slate-700');
-      }
-    }
-
-    function goHome() {
-      clearSearch();
-      selectedWarehouses.clear();
-      selectedWarehouses.add('ALL');
-      openBrands = {};
-      openItems = {};
-      renderWarehouseTabs();
-      renderApp(appData);
-    }
-
-    function openSearchModal() {
-      const modal = document.getElementById('searchModal');
-      const input = document.getElementById('modalSearchInput');
-      modal.classList.remove('hidden');
-      input.value = activeKeyword;
-      input.focus();
-      handleSearchInput();
-    }
-
-    function closeSearchModal() {
-      document.getElementById('searchModal').classList.add('hidden');
-    }
-
-    function onSearchInputDebounced() {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => {
-        handleSearchInput();
-      }, 150);
-    }
-
-    function isWarehouseSelected(wh) {
-      if (selectedWarehouses.has('ALL') || selectedWarehouses.size === 0) return true;
-      return selectedWarehouses.has(wh);
-    }
-
-    function handleSearchInput() {
-      const input = document.getElementById('modalSearchInput');
-      const val = input.value.trim();
-      const box = document.getElementById('suggestionBox');
-
-      if (val.length < 1) {
-        box.innerHTML = '<div class="p-4 text-center text-slate-400">Type brand, item no., or description to search</div>';
-        return;
-      }
-
-      const term = val.toLowerCase();
-      const matches = [];
-      const seen = new Set();
-
-      for (let i = 0; i < (appData.items || []).length; i++) {
-        const item = appData.items[i];
-        if (!isWarehouseSelected(item.wh)) continue;
-
-        const brandName = (item.brand || '').trim();
-        if (brandName && brandName.toLowerCase().includes(term)) {
-          const key = 'b_' + brandName.toLowerCase();
-          if (!seen.has(key)) {
-            matches.push({ type: 'Brand', primary: brandName, secondary: 'Category', fillVal: brandName, isBrandOnly: true });
-            seen.add(key);
-          }
-        }
-        if (matches.length >= 3) break;
-      }
-
-      for (let i = 0; i < (appData.items || []).length; i++) {
-        const item = appData.items[i];
-        if (!isWarehouseSelected(item.wh)) continue;
-
-        const itemNoMatch = (item.itemNo || '').toLowerCase().includes(term);
-        const descMatch = (item.desc || '').toLowerCase().includes(term);
-
-        if (itemNoMatch && !seen.has(item.itemNo)) {
-          matches.push({ type: 'Code', primary: item.itemNo, secondary: item.desc, fillVal: item.itemNo, brand: item.brand });
-          seen.add(item.itemNo);
-        } else if (descMatch && !seen.has(item.desc)) {
-          matches.push({ type: 'Desc', primary: item.desc, secondary: item.itemNo, fillVal: item.itemNo, brand: item.brand });
-          seen.add(item.desc);
-        }
-
-        if (matches.length >= 8) break;
-      }
-
-      if (matches.length === 0) {
-        box.innerHTML = '<div class="p-4 text-center text-slate-400">No matching items found</div>';
-      } else {
-        let html = '';
-        matches.forEach(m => {
-          let badgeColor = m.type === 'Brand' ? 'bg-purple-100 text-purple-700 font-bold' : (m.type === 'Code' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'bg-slate-100 text-slate-500');
-
-          html += `
-            <div onclick="applySuggestion('${encodeURIComponent(m.fillVal)}', '${encodeURIComponent(m.brand || '')}', ${m.isBrandOnly ? true : false})" class="p-3.5 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition">
-              <div class="truncate mr-2">
-                <span class="font-bold text-slate-800 text-[15px]">${escapeHtml(m.primary)}</span>
-                <span class="text-[11px] text-slate-400 block truncate mt-0.5">${escapeHtml(m.secondary)}</span>
+        const card = document.createElement('div');
+        card.className = 'bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm hover:shadow-md transition active:scale-[0.99] cursor-pointer';
+        card.onclick = () => openModal(item);
+        
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black tracking-wider uppercase px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${escapeHtml(item.wh)}</span>
+                <span class="text-[11px] font-bold text-slate-400 uppercase">${escapeHtml(item.brand)}</span>
               </div>
-              <span class="text-[11px] uppercase px-2 py-0.5 rounded-md ${badgeColor}">${m.type}</span>
+              <h3 class="text-[15px] font-black text-slate-900 mt-1">${escapeHtml(item.itemNo)}</h3>
             </div>
-          `;
-        });
-        box.innerHTML = html;
-      }
+            <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full border ${badgeBg}">
+              ${escapeHtml(item.statusText)}
+            </span>
+          </div>
+          <p class="text-[12px] text-slate-500 font-medium line-clamp-1 mt-1">${escapeHtml(item.desc)}</p>
+          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-100 text-center">
+            <div>
+              <p class="text-[10px] font-bold text-slate-400">Available</p>
+              <p class="text-[15px] font-extrabold ${item.availableInStock > 0 ? 'text-emerald-600' : 'text-slate-800'}">${item.availableInStock.toLocaleString()}</p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400">In Stock</p>
+              <p class="text-[15px] font-extrabold text-slate-700">${item.inStock.toLocaleString()}</p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400">Ordered</p>
+              <p class="text-[15px] font-extrabold text-amber-600">${item.ordered.toLocaleString()}</p>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
     }
 
-    function applySuggestion(encodedVal, encodedBrand, isBrandOnly) {
-      const val = decodeURIComponent(encodedVal);
-      const brand = decodeURIComponent(encodedBrand);
-      activeKeyword = val;
-      closeSearchModal();
-
-      const badge = document.getElementById('searchBadge');
-      document.getElementById('searchBadgeText').innerText = `🔍 ${val}`;
-      badge.classList.remove('hidden');
-
-      if (isBrandOnly) {
-        openBrands[val] = true;
-      } else {
-        if (brand) openBrands[brand] = true;
-        openItems[val] = true;
-      }
-
-      renderView();
+    function handleSearch(val) {
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (val.trim()) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+      filterAndRender();
     }
 
     function clearSearch() {
-      activeKeyword = '';
-      document.getElementById('searchBadge').classList.add('hidden');
-      renderView();
+      const input = document.getElementById('searchInput');
+      input.value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      filterAndRender();
+      input.focus();
     }
 
-    // สลับเปิด/ปิด Brand แบบ DOM Direct (ไม่สั่ง Re-render ทั้งหน้า)
-    function toggleBrand(brandName, btnElement) {
-      openBrands[brandName] = !openBrands[brandName];
-      const isOpen = openBrands[brandName];
-      
-      const card = btnElement.closest('.brand-card');
-      if (!card) return;
-      const content = card.querySelector('.brand-content');
-      const arrow = card.querySelector('.brand-arrow');
-      const countBadge = card.querySelector('.brand-count');
-      const avatar = card.querySelector('.brand-avatar');
-
-      if (isOpen) {
-        content.classList.remove('hidden');
-        card.classList.add('bg-white', 'border-indigo-200', 'shadow-lg', 'shadow-indigo-100/50', 'ring-2', 'ring-indigo-500/20');
-        card.classList.remove('border-slate-200/90', 'shadow-xs');
-        btnElement.classList.add('bg-indigo-50/40');
-        arrow.classList.add('bg-indigo-100', 'text-indigo-700', 'rotate-180');
-        countBadge.classList.add('bg-indigo-600', 'text-white');
-        avatar.classList.add('bg-indigo-600', 'text-white', 'shadow-indigo-200');
-      } else {
-        content.classList.add('hidden');
-        card.classList.remove('border-indigo-200', 'shadow-lg', 'shadow-indigo-100/50', 'ring-2', 'ring-indigo-500/20');
-        card.classList.add('bg-white', 'border-slate-200/90', 'shadow-xs');
-        btnElement.classList.remove('bg-indigo-50/40');
-        arrow.classList.remove('bg-indigo-100', 'text-indigo-700', 'rotate-180');
-        countBadge.classList.remove('bg-indigo-600', 'text-white');
-        avatar.classList.remove('bg-indigo-600', 'text-white', 'shadow-indigo-200');
-      }
-    }
-
-    // สลับเปิด/ปิด Item แบบ DOM Direct
-    function toggleItem(itemKey, btnElement) {
-      openItems[itemKey] = !openItems[itemKey];
-      const isOpen = openItems[itemKey];
-      
-      const card = btnElement.closest('.item-card');
-      if (!card) return;
-      const content = card.querySelector('.item-content');
-      const label = card.querySelector('.item-status-text');
-
-      if (isOpen) {
-        content.classList.remove('hidden');
-        label.innerText = '▲ Close';
-      } else {
-        content.classList.add('hidden');
-        label.innerText = '▼ View';
-      }
-    }
-
-    function escapeHtml(text) {
-      return (text || '').toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function renderView() {
-      const keyword = (activeKeyword || '').toLowerCase().trim();
-      const container = document.getElementById('contentList');
-
-      const filteredRaw = (appData.items || []).filter(item => {
-        const matchWh = isWarehouseSelected(item.wh);
-        if (!matchWh) return false;
-        if (!keyword) return true;
-
-        return (item.brand || '').toLowerCase().includes(keyword) ||
-               (item.itemNo || '').toLowerCase().includes(keyword) ||
-               (item.desc || '').toLowerCase().includes(keyword);
-      });
-
-      if (filteredRaw.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-20 space-y-2">
-            <span class="text-3xl block">🔍</span>
-            <p class="text-[11px] font-semibold text-slate-400">No active stock found</p>
-          </div>
-        `;
-        document.getElementById('loadMoreContainer').classList.add('hidden');
-        return;
-      }
-
-      const itemMap = {};
-      filteredRaw.forEach(item => {
-        const key = item.itemNo;
-        if (!itemMap[key]) {
-          itemMap[key] = {
-            itemNo: item.itemNo,
-            desc: item.desc,
-            brand: (item.brand || 'Unbranded').trim(),
-            unit: item.unit,
-            warehouses: []
-          };
-        }
-        itemMap[key].warehouses.push(item);
-      });
-
-      const uniqueItems = Object.values(itemMap);
-      const isSingleMatch = (keyword.length > 0 && uniqueItems.length === 1);
-
-      const brandGroups = {};
-      uniqueItems.forEach(item => {
-        const b = item.brand || 'Unbranded';
-        if (!brandGroups[b]) brandGroups[b] = [];
-        brandGroups[b].push(item);
-      });
-
-      const sortedBrands = Object.keys(brandGroups).sort();
-      currentRenderList = sortedBrands.map(b => ({ brand: b, items: brandGroups[b] }));
-
-      displayedCount = 0;
-      container.innerHTML = '';
-      
-      if (keyword.length > 0) {
-        renderBatch(currentRenderList.length, isSingleMatch, keyword);
-      } else {
-        renderBatch(BATCH_SIZE, false, '');
-      }
-    }
-
-    function renderBatch(count, isSingleMatch, keyword) {
-      const container = document.getElementById('contentList');
-      const nextCount = Math.min(displayedCount + count, currentRenderList.length);
-      let html = '';
-
-      for (let i = displayedCount; i < nextCount; i++) {
-        const { brand, items } = currentRenderList[i];
-        const isBrandOpen = keyword.length > 0 ? true : (openBrands[brand] === true);
-        const initials = getBrandInitials(brand);
-
-        html += `
-          <div class="brand-card rounded-3xl border transition-all duration-200 overflow-hidden ${isBrandOpen ? 'bg-white border-indigo-200 shadow-lg shadow-indigo-100/50 ring-2 ring-indigo-500/20' : 'bg-white border-slate-200/90 shadow-xs hover:border-indigo-200 hover:shadow-md'}">
-            <button onclick="toggleBrand('${escapeHtml(brand)}', this)" 
-                    class="w-full flex justify-between items-center p-4 text-left transition-colors ${isBrandOpen ? 'bg-indigo-50/40' : 'hover:bg-slate-50/80'}">
-              <div class="flex items-center gap-3.5 min-w-0 pr-2">
-                <div class="brand-avatar w-11 h-11 rounded-2xl flex items-center justify-center text-[15px] font-black flex-shrink-0 transition-transform active:scale-95 shadow-xs ${isBrandOpen ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-gradient-to-br from-slate-100 to-slate-200 text-slate-700 border border-slate-200/80'}">
-                  ${escapeHtml(initials)}
-                </div>
-                <div class="truncate">
-                  <span class="font-bold text-slate-900 text-[15px] tracking-tight block truncate">${escapeHtml(brand)}</span>
-                  <span class="text-[11px] font-semibold text-slate-400 block mt-0.5">Brand Catalog</span>
-                </div>
-              </div>
-              <div class="flex items-center gap-2.5 flex-shrink-0">
-                <span class="brand-count font-bold text-[11px] px-3 py-1 rounded-xl transition-colors ${isBrandOpen ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 border border-slate-200/70'}">
-                  ${items.length} <span class="hidden sm:inline font-medium text-[11px] opacity-80">items</span>
-                </span>
-                <div class="brand-arrow w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-bold transition-all ${isBrandOpen ? 'bg-indigo-100 text-indigo-700 rotate-180' : 'bg-slate-100 text-slate-400'}">
-                  ▼
-                </div>
-              </div>
-            </button>
-
-            <div class="brand-content ${isBrandOpen ? '' : 'hidden'} border-t border-slate-100 bg-slate-50/50 p-3 space-y-3">
-        `;
-
-        items.forEach(group => {
-          const itemKey = group.itemNo;
-          const isItemOpen = isSingleMatch ? true : (openItems[itemKey] === true);
-
-          html += `
-            <div class="item-card bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition hover:border-slate-300">
-              <button onclick="toggleItem('${escapeHtml(itemKey)}', this)" 
-                      class="w-full p-4 flex items-center justify-between gap-3 hover:bg-slate-50/80 transition text-left">
-                <div class="flex-1 min-w-0 pr-1 space-y-0.5">
-                  <span class="font-extrabold text-slate-900 text-lg tracking-tight block truncate">${escapeHtml(group.itemNo)}</span>
-                  <span class="text-[11px] text-slate-500 font-medium block truncate" title="${escapeHtml(group.desc)}">${escapeHtml(group.desc)}</span>
-                </div>
-                <div class="flex items-center justify-end gap-2 flex-shrink-0 w-28 text-right">
-                  <span class="bg-slate-100 text-slate-700 text-[11px] font-bold px-2 py-1 rounded-lg border border-slate-200/80 whitespace-nowrap">${group.warehouses.length} WH</span>
-                  <span class="item-status-text text-[11px] text-indigo-600 font-bold whitespace-nowrap min-w-[44px] text-right">${isItemOpen ? '▲ Close' : '▼ View'}</span>
-                </div>
-              </button>
-
-              <div class="item-content ${isItemOpen ? '' : 'hidden'} p-4 pt-0 border-t border-slate-100 space-y-3 mt-1 bg-white">
-                <div class="flex justify-end items-center text-[11px] font-bold text-slate-400 pt-2.5 px-0.5">
-                  <span>UoM: <b class="text-slate-700 font-bold text-[11px]">${escapeHtml(group.unit) || '-'}</b></span>
-                </div>
-                <div class="space-y-3">
-                  ${group.warehouses.map(w => {
-                    const whAvgPrice = Number(w.avgPrice) || 0;
-                    const calculatedTotalVal = (w.inStock || 0) * whAvgPrice;
-                    const isNegative = w.availableInStock < 0;
-
-                    return `
-                      <div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-2.5 shadow-2xs">
-                        <div class="flex justify-between items-center">
-                          <span class="font-extrabold text-slate-900 text-[15px] tracking-tight">${w.wh}</span>
-                          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full badge-${w.color}">${w.statusText}</span>
-                        </div>
-                        
-                        <div class="w-full border-2 border-indigo-200/90 bg-white rounded-2xl p-3 space-y-2.5 shadow-sm">
-                          <div class="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
-                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 block">Available in Stock</span>
-                            <span class="text-3xl font-black tracking-tight ${isNegative ? 'text-red-600' : 'text-emerald-600'}">
-                              ${formatNumber(w.availableInStock)}
-                            </span>
-                          </div>
-                          <div class="grid grid-cols-2 gap-2 text-center">
-                            <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">In Stock</span>
-                              <span class="font-bold text-[15px] text-slate-800">${formatNumber(w.inStock)}</span>
-                            </div>
-                            <div class="bg-slate-50 py-1.5 px-2.5 rounded-xl border border-slate-200/70">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Defined</span>
-                              <span class="font-bold text-[15px] text-orange-600">${formatNumber(w.defined)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
-                          <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Ordered (PO)</span>
-                              <span class="font-bold text-[15px] text-indigo-600 mt-0.5 block">${formatNumber(w.ordered)}</span>
-                            </div>
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Balance</span>
-                              <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">${formatNumber(w.availableInStock + w.ordered)}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
-                          <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Avg. Price</span>
-                              <span class="font-bold text-[15px] text-slate-800 mt-0.5 block">฿${formatCurrency(whAvgPrice)}</span>
-                            </div>
-                            <div class="px-1">
-                              <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Val</span>
-                              <span class="font-bold text-[15px] text-indigo-700 mt-0.5 block">฿${formatCurrency(calculatedTotalVal)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
+    function openModal(item) {
+      const content = document.getElementById('modalContent');
+      content.innerHTML = `
+        <div class="space-y-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">${escapeHtml(item.wh)}</span>
+              <span class="text-[11px] font-bold text-slate-400 uppercase">${escapeHtml(item.brand)}</span>
             </div>
-          `;
-        });
+            <h2 class="text-xl font-extrabold text-slate-900">${escapeHtml(item.itemNo)}</h2>
+            <p class="text-[13px] text-slate-600 font-medium mt-1">${escapeHtml(item.desc)}</p>
+          </div>
 
-        html += `
+          <div class="grid grid-cols-2 gap-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div>
+              <p class="text-[10px] font-bold text-slate-400">AVAILABLE</p>
+              <p class="text-xl font-extrabold text-emerald-600">${item.availableInStock.toLocaleString()} <span class="text-[11px] font-medium text-slate-500">${escapeHtml(item.unit)}</span></p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-slate-400">IN STOCK</p>
+              <p class="text-xl font-extrabold text-slate-800">${item.inStock.toLocaleString()} <span class="text-[11px] font-medium text-slate-500">${escapeHtml(item.unit)}</span></p>
+            </div>
+            <div class="mt-2">
+              <p class="text-[10px] font-bold text-slate-400">COMMITTED / RESERVED</p>
+              <p class="text-lg font-bold text-rose-500">${item.defined.toLocaleString()}</p>
+            </div>
+            <div class="mt-2">
+              <p class="text-[10px] font-bold text-slate-400">ON ORDER (PO)</p>
+              <p class="text-lg font-bold text-amber-500">${item.ordered.toLocaleString()}</p>
             </div>
           </div>
-        `;
-      }
-
-      container.insertAdjacentHTML('beforeend', html);
-      displayedCount = nextCount;
-
-      const loadMoreBtn = document.getElementById('loadMoreContainer');
-      if (displayedCount < currentRenderList.length) {
-        loadMoreBtn.classList.remove('hidden');
-      } else {
-        loadMoreBtn.classList.add('hidden');
-      }
+        </div>
+      `;
+      document.getElementById('detailModal').classList.remove('hidden');
     }
 
-    function renderNextBatch() {
-      renderBatch(BATCH_SIZE, false, '');
+    function closeModal() {
+      document.getElementById('detailModal').classList.add('hidden');
     }
 
-    window.onload = () => {
-      if (currentEmail && currentPin) {
-        loadData();
-      } else {
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('appScreen').classList.add('hidden');
-      }
-    };
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
   </script>
 </body>
 </html>
