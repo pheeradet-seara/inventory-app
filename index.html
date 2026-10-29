@@ -486,24 +486,26 @@
         const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
         const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
 
-        // รวบรวมคลังสินค้าทั้งหมดที่มีใน data.json
+        // 1. ดึงคลังทั้งหมดที่มีใน data.json
         const allWhSet = new Set();
-        (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh); });
+        (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh.trim()); });
         const allWhList = Array.from(allWhSet).sort();
 
         let accessibleWarehouses = [];
 
-        // เงื่อนไขสิทธิ์: ถ้าเป็น ADMIN หรือ AllowedWarehouses เป็น ALL ให้เห็นครบทุกคลัง
-        if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL' || rawAllowedWH === '') {
+        // 2. ถ้าเป็น ADMIN หรือชีตระบุคำว่า ALL ให้เห็นทุกคลัง
+        if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL') {
           accessibleWarehouses = allWhList;
         } else {
-          // แยกคลังด้วยช่องว่าง หรือ จุลภาค เช่น "MVS MDL" หรือ "BPL, PKT"
-          const allowedList = rawAllowedWH.split(/[\s,]+/).map(w => w.trim()).filter(Boolean);
-          accessibleWarehouses = allWhList.filter(wh => allowedList.includes(wh));
+          // คัดกรองเฉพาะคลังที่ระบุในคอลัมน์ C (รองรับการคั่นด้วยวรรค, คอมม่า, หรือขึ้นบรรทัดใหม่)
+          const allowedList = rawAllowedWH.split(/[\s,]+/).map(w => w.trim().toUpperCase()).filter(Boolean);
+          accessibleWarehouses = allWhList.filter(wh => allowedList.includes(wh.toUpperCase()));
         }
 
-        // กรองเอาเฉพาะข้อมูลสินค้าที่อยู่ในคลังที่พนักงานคนนี้มีสิทธิ์เข้าถึง
-        const accessibleItems = (json.items || []).filter(item => accessibleWarehouses.includes(item.wh));
+        // 3. กรองสินค้าให้เหลือเฉพาะคลังที่ได้รับอนุญาต
+        const accessibleItems = (json.items || []).filter(item => {
+          return accessibleWarehouses.includes((item.wh || '').trim());
+        });
 
         const constructedData = {
           items: accessibleItems,
