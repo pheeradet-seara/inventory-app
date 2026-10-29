@@ -13,7 +13,7 @@
 
   <link rel="manifest" href="./manifest.json">
   
-  <!-- ไอคอน Application สำหรับ Mobile Home Screen และ Favicon (ใช้ icon.png) -->
+  <!-- ไอคอน Application สำหรับ Mobile Home Screen และ Favicon -->
   <link rel="apple-touch-icon" href="./icon.png">
   <link rel="icon" type="image/png" href="./icon.png">
 
@@ -43,12 +43,12 @@
       
       <div class="text-center space-y-1.5">
         <div class="flex justify-center mb-2">
-          <!-- โลโก้หลักของแอปพลิเคชัน (ใช้ logo.png) -->
+          <!-- โลโก้หลักของแอปพลิเคชัน -->
           <img src="./logo.png" alt="Company Logo" class="h-16 w-auto object-contain">
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.4</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.5</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -126,7 +126,7 @@
           <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
         </div>
         <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5.4
+          v1.5.5
         </span>
       </div>
     </div>
@@ -151,7 +151,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5.4</b></span>
+            <span>Version: <b class="text-slate-600">1.5.5</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -174,7 +174,7 @@
                 class="w-13 h-13 p-3.5 bg-white text-slate-700 rounded-2xl shadow-xl shadow-slate-200 border border-slate-200 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
           🔍
         </button>
-        <!-- ปุ่ม Toggle Menu: แสดงเป็น logo.png และสลับเป็น ✕ เมื่อเปิดเมนู -->
+        <!-- ปุ่ม Toggle Menu -->
         <button onclick="toggleHubMenu()" id="hubToggleBtn" title="Menu & Actions" 
                 class="w-13 h-13 p-2 bg-white text-slate-800 rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-200/90 flex items-center justify-center active:scale-95 hover:bg-slate-50 transition overflow-hidden">
           <img id="hubToggleImg" src="./logo.png" alt="Logo" class="w-8 h-8 object-contain">
@@ -281,9 +281,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5.4
+    // CONFIGURATION - VERSION 1.5.5
     // ==========================================
-    const APP_VERSION = "1.5.4";
+    const APP_VERSION = "1.5.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -564,6 +564,9 @@
       document.getElementById('appScreen').classList.remove('hidden');
     }
 
+    // ========================================================
+    // LOAD DATA: STALE-WHILE-REVALIDATE (เปิดปุ๊บติดปั๊บ + ดึงสดเบื้องหลัง)
+    // ========================================================
     async function loadData(forceSync = false) {
       if (!currentEmail || !currentPin) {
         document.getElementById('loginScreen').classList.remove('hidden');
@@ -572,19 +575,24 @@
       }
 
       showAppScreen();
-      document.getElementById('loading').style.display = 'block';
 
+      // 1. นำข้อมูลจากแคชในเครื่องขึ้นมาแสดงผลทันทีภายในเสี้ยววินาที
       if (!forceSync) {
         const cached = await getCache('cached_' + currentEmail);
         if (cached && cached.items && cached.items.length > 0) {
           renderApp(cached);
           document.getElementById('loading').style.display = 'none';
+        } else {
+          document.getElementById('loading').style.display = 'block';
         }
+      } else {
+        document.getElementById('loading').style.display = 'block';
       }
 
-      const fetchUrl = forceSync ? `${DATA_URL}?t=${new Date().getTime()}` : `${DATA_URL}?t=${Math.floor(Date.now() / 60000)}`;
+      // 2. ยิงไปดึงข้อมูลสดจาก Server เสมอ (Always Background Sync) โดยใช้ timestamp ใหม่ตลอด
+      const freshUrl = `${DATA_URL}?t=${Date.now()}`;
 
-      fetch(fetchUrl)
+      fetch(freshUrl, { cache: 'no-store' })
       .then(res => {
         if (!res.ok) throw new Error('Data file not found');
         return res.json();
@@ -618,12 +626,19 @@
           userWarehouses: accessibleWarehouses
         };
 
+        // แสดงผลข้อมูลเวอร์ชันใหม่และบันทึกทับแคช
         renderApp(constructedData);
         document.getElementById('loading').style.display = 'none';
         await setCache('cached_' + currentEmail, constructedData);
       })
       .catch(() => {
-        document.getElementById('loading').innerHTML = '⚠️ Offline cache active / Data sync error';
+        // หากไม่มีเน็ต แต่มีข้อมูลแคชอยู่แล้ว ก็ให้ใช้งานต่อได้แบบ Offline
+        const loadingEl = document.getElementById('loading');
+        if (appData && appData.items && appData.items.length > 0) {
+          loadingEl.style.display = 'none';
+        } else {
+          loadingEl.innerHTML = '⚠️ Offline cache active / Data sync error';
+        }
       });
     }
 
@@ -729,9 +744,6 @@
       }, { passive: false });
     }
 
-    // ==========================================
-    // FLOATING BUTTON LOGO TOGGLE
-    // ==========================================
     function toggleHubMenu() {
       const menu = document.getElementById('hubActionsMenu');
       const logoImg = document.getElementById('hubToggleImg');
