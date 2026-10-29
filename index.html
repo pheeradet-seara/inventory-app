@@ -70,7 +70,8 @@
             <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Security PIN</label>
             <button onclick="resetToEmailStep()" class="text-[11px] font-semibold text-indigo-600 hover:underline">Change Email</button>
           </div>
-          <input type="password" id="loginPinInput" maxlength="8" inputmode="numeric" pattern="[0-9]*"
+          <input type="password" id="loginPinInput" maxlength="8"
+                 inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
                  placeholder="••••" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleLogin()">
@@ -87,13 +88,15 @@
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Create New PIN</label>
-          <input type="password" id="newPinInput" maxlength="8" inputmode="numeric" pattern="[0-9]*"
+          <input type="password" id="newPinInput" maxlength="8"
+                 inputmode="numeric" pattern="[0-9]*"
                  placeholder="New 4-8 digit PIN" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center">
         </div>
         <div>
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Confirm PIN</label>
-          <input type="password" id="confirmPinInput" maxlength="8" inputmode="numeric" pattern="[0-9]*"
+          <input type="password" id="confirmPinInput" maxlength="8"
+                 inputmode="numeric" pattern="[0-9]*"
                  placeholder="Confirm PIN" 
                  class="w-full px-4 py-3 border border-slate-200 rounded-2xl text-[15px] focus:outline-none focus:ring-2 focus:ring-indigo-600 bg-slate-50/70 font-semibold transition tracking-widest text-center"
                  onkeydown="if(event.key === 'Enter') handleSetupPin()">
@@ -183,7 +186,6 @@
     // ==========================================
     // CONFIGURATION
     // ==========================================
-    // เชื่อมต่อตรงกับ Google Apps Script สำหรับระบบล็อกอิน
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -299,6 +301,10 @@
         }
 
         pendingEmail = res.userEmail;
+        if (res.role) {
+          localStorage.setItem('inv_user_role', res.role);
+        }
+
         document.getElementById('stepEmail').classList.add('hidden');
 
         if (res.hasPin) {
@@ -357,6 +363,7 @@
           currentPin = pin;
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
+          localStorage.setItem('inv_user_role', res.role || 'USER');
           showAppScreen();
           loadData(true);
         } else {
@@ -400,6 +407,7 @@
           currentPin = pin;
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
+          localStorage.setItem('inv_user_role', res.role || 'USER');
           showAppScreen();
           loadData(true);
         } else {
@@ -418,6 +426,7 @@
     async function logoutApp() {
       localStorage.removeItem('inv_user_email');
       localStorage.removeItem('inv_user_pin');
+      localStorage.removeItem('inv_user_role');
       currentEmail = null;
       currentPin = null;
       await clearLocalDatabase();
@@ -454,7 +463,6 @@
         }
       }
 
-      // ดึงตรงจาก data.json บน GitHub Pages
       const fetchUrl = forceSync ? `${DATA_URL}?t=${new Date().getTime()}` : `${DATA_URL}?t=${Math.floor(Date.now() / 60000)}`;
 
       fetch(fetchUrl)
@@ -463,14 +471,15 @@
         return res.json();
       })
       .then(async json => {
-        // ดึงรายการคลังทั้งหมดจากข้อมูล
         const whSet = new Set();
         (json.items || []).forEach(i => { if (i.wh) whSet.add(i.wh); });
+
+        const userRole = localStorage.getItem('inv_user_role') || 'USER';
 
         const constructedData = {
           items: json.items || [],
           userEmail: currentEmail,
-          role: 'STAFF',
+          role: userRole,
           syncTime: json.syncTime || '',
           userWarehouses: Array.from(whSet).sort()
         };
