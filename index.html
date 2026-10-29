@@ -63,7 +63,7 @@
         </button>
       </div>
 
-      <!-- Step 2A: Normal Login -->
+      <!-- Step 2A: Normal Login (ผู้ใช้มี PIN แล้ว) -->
       <div id="stepPin" class="space-y-3.5 hidden">
         <div>
           <div class="flex justify-between items-center mb-1.5">
@@ -81,7 +81,7 @@
         </button>
       </div>
 
-      <!-- Step 2B: First-Time Setup -->
+      <!-- Step 2B: First-Time Setup (ตั้ง PIN ครั้งแรก) -->
       <div id="stepCreatePin" class="space-y-3.5 hidden">
         <div class="bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl text-[11px] text-amber-800 font-medium">
           👋 First time sign-in: Please create a 4–8 digit PIN to protect your account.
@@ -135,18 +135,26 @@
     <!-- ================= FLOATING ACTION CONTROLS ================= -->
     <div class="fixed right-5 bottom-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
       <div id="hubActionsMenu" class="hidden flex flex-col items-end gap-2.5 pointer-events-auto transition-all duration-200 scale-95 origin-bottom-right mb-1">
-        <div class="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-3.5 text-right max-w-[230px]">
-          <span class="text-[11px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
-          <p class="text-[15px] font-bold text-slate-800 truncate" id="hubUserEmail">-</p>
-          <div class="flex items-center justify-end gap-2 mt-2">
-            <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700" id="hubUserRole">USER</span>
+        
+        <!-- User Info Card -->
+        <div class="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-3.5 text-right min-w-[210px] max-w-[250px]">
+          <span class="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
+          <p class="text-[14px] font-bold text-slate-800 truncate" id="hubUserEmail">-</p>
+          <div class="flex items-center justify-end gap-2 mt-1.5">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700" id="hubUserRole">USER</span>
             <button onclick="logoutApp()" class="text-[11px] font-bold text-red-600 hover:underline">Log out</button>
           </div>
+          <!-- Database Update Text (เล็ก เรียบง่าย ไม่เด่น) -->
+          <div class="mt-2 pt-2 border-t border-slate-100 text-[10px] font-medium text-slate-400 leading-tight">
+            Database: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span>
+          </div>
         </div>
-        <button onclick="loadData(true); toggleHubMenu();" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
-          <span>🔄 Sync Data</span>
-          <span id="hubSyncTime" class="text-[10px] font-medium text-slate-400"></span>
+
+        <!-- Action Buttons -->
+        <button onclick="clearCacheAndReload()" id="clearCacheBtn" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
+          <span>🧹 Clear Cache & Reload</span>
         </button>
+
         <button onclick="goHome(); toggleHubMenu();" class="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-indigo-700 active:scale-95 transition">
           <span>🏠 Reset to Home</span>
         </button>
@@ -183,6 +191,9 @@
   </div>
 
   <script>
+    // ==========================================
+    // CONFIGURATION - VERSION 1.2
+    // ==========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -255,6 +266,24 @@
         const tx = db.transaction(STORE_NAME, 'readwrite');
         tx.objectStore(STORE_NAME).clear();
       } catch (e) {}
+    }
+
+    // ล้างแคชแล้วดึงข้อมูลใหม่ทันทีโดยไม่ต้อง Logout
+    async function clearCacheAndReload() {
+      const btn = document.getElementById('clearCacheBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>⏳ Clearing...</span>';
+      btn.disabled = true;
+
+      await clearLocalDatabase();
+      await loadData(true);
+
+      btn.innerHTML = '<span>✅ Updated!</span>';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        toggleHubMenu();
+      }, 700);
     }
 
     function resetToEmailStep() {
@@ -475,12 +504,14 @@
         const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
         const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
 
+        // 1. ดึงคลังทั้งหมดที่มีใน data.json
         const allWhSet = new Set();
         (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh.trim()); });
         const allWhList = Array.from(allWhSet).sort();
 
         let accessibleWarehouses = [];
 
+        // 2. ตรวจสอบสิทธิ์คลังสินค้า
         if (userRole === 'ADMIN' || rawAllowedWH.toUpperCase() === 'ALL') {
           accessibleWarehouses = allWhList;
         } else {
@@ -488,6 +519,7 @@
           accessibleWarehouses = allWhList.filter(wh => allowedList.includes(wh.toUpperCase()));
         }
 
+        // 3. กรองสินค้าให้เหลือเฉพาะคลังที่ได้รับอนุญาต
         const accessibleItems = (json.items || []).filter(item => {
           return accessibleWarehouses.includes((item.wh || '').trim());
         });
@@ -515,7 +547,7 @@
 
       document.getElementById('hubUserEmail').innerText = data.userEmail || currentEmail || '-';
       document.getElementById('hubUserRole').innerText = `${data.role || 'USER'} ACCESS`;
-      document.getElementById('hubSyncTime').innerText = `Synced: ${data.syncTime || ''}`;
+      document.getElementById('hubSyncTime').innerText = data.syncTime || '-';
 
       renderWarehouseTabs();
       renderView();
@@ -928,7 +960,6 @@
                 </div>
                 <div class="space-y-3">
                   ${group.warehouses.map(w => {
-                    // คำนวณตามสูตรคลังสินค้าที่ถูกต้อง
                     const physicalInStock = Number(w.inStock) || 0;
                     const defined = Number(w.defined) || 0;
                     const ordered = Number(w.ordered) || 0;
@@ -962,6 +993,7 @@
                           <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${displayBadgeColor}">${displayStatusText}</span>
                         </div>
                         
+                        <!-- Main Available Card -->
                         <div class="w-full border-2 ${isAvailableNegative ? 'border-rose-200 bg-rose-50/20' : 'border-indigo-200/90 bg-white'} rounded-2xl p-3 space-y-2.5 shadow-sm">
                           <div class="flex justify-between items-center pb-2 border-b border-dashed border-slate-200">
                             <div>
@@ -984,6 +1016,7 @@
                           </div>
                         </div>
 
+                        <!-- Ordered & Balance Card -->
                         <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
                           <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
                             <div class="px-1">
@@ -997,6 +1030,7 @@
                           </div>
                         </div>
 
+                        <!-- Price & Total Value Card -->
                         <div class="w-full bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-2xs">
                           <div class="grid grid-cols-2 gap-2 divide-x divide-slate-100 text-center">
                             <div class="px-1">
