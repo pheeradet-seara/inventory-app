@@ -5,7 +5,6 @@
   <title>SEARA - Stock Uploader</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Library สำหรับอ่านไฟล์ Excel ในเบราว์เซอร์ -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -45,7 +44,7 @@
       <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelect(event)">
       <div class="text-4xl mb-3 group-hover:scale-110 transition-transform">📊</div>
       <p class="text-[14px] font-bold text-slate-700">คลิกเลือกไฟล์ หรือลากไฟล์ SAP มาวางที่นี่</p>
-      <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์ .xlsx, .xls, .csv</p>
+      <p class="text-[11px] text-slate-400 mt-1">รองรับไฟล์ .xlsx, .xls, .csv (รักษาข้อมูล Install Plan เดิมอัตโนมัติ)</p>
     </div>
 
     <!-- Status Box -->
@@ -132,14 +131,12 @@
             const defined = Math.round((parseFloat(row['Defined']) || 0) * 100) / 100;
             const ordered = Math.round((parseFloat(row['Ordered']) || 0) * 100) / 100;
             
-            // ตรวจสอบค่า Available ให้แม่นยำแม้เป็นเลข 0
             const rawAvail = row['Available'];
             const parsedAvail = (rawAvail !== undefined && rawAvail !== '') ? parseFloat(rawAvail) : (inStock - defined);
             const availableInStock = Math.round((isNaN(parsedAvail) ? 0 : parsedAvail) * 100) / 100;
 
             const avgPrice = Math.round((parseFloat(row['Average Price']) || 0) * 100) / 100;
 
-            // กรองแถวที่ไม่มีสต็อกเลยออกเพื่อลดขนาดไฟล์
             if (inStock === 0 && ordered === 0 && defined === 0 && availableInStock === 0) continue;
 
             let statusText = 'Out of Stock';
@@ -159,19 +156,8 @@
             });
           }
 
-          const now = new Date();
-          const syncTime = `${now.toLocaleDateString('en-GB')}, ${now.toLocaleTimeString('en-GB')}`;
-          const finalPayload = {
-            syncTime: syncTime,
-            items: items
-          };
-
-          const jsonString = JSON.stringify(finalPayload);
-          const sizeMb = (new Blob([jsonString]).size / (1024 * 1024)).toFixed(2);
-
-          showStatus(`⏳ กำลังอัปโหลดข้อมูล ${items.length.toLocaleString()} รายการ (${sizeMb} MB) ขึ้น GitHub...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
-
-          await uploadToGitHub(token, jsonString, items.length);
+          showStatus(`⏳ กำลังตรวจสอบข้อมูล Install Plan เดิมบน GitHub...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
+          await uploadToGitHubPreservingPlan(token, items);
 
         } catch (err) {
           console.error(err);
@@ -181,7 +167,7 @@
       reader.readAsArrayBuffer(file);
     }
 
-    async function uploadToGitHub(token, contentStr, itemCount) {
+    async function uploadToGitHubPreservingPlan(token, items) {
       const url = `https://api.github.com/repos/${REPO_NAME}/contents/${TARGET_FILE}`;
       const headers = {
         'Authorization': `token ${token}`,
@@ -190,13 +176,39 @@
       };
 
       try {
-        // ดึง SHA สดใหม่เสมอโดยเติม timestamp ป้องกัน Browser Cache
-        const getRes = await fetch(`${url}?t=${new Date().getTime()}`, { headers });
+        const getRes = await fetch(`${url}?t=${Date.now()}`, { headers });
         let sha = null;
+        let existingInstallPlan = null;
+
         if (getRes.ok) {
           const getData = await getRes.json();
           sha = getData.sha;
+          if (getData.download_url) {
+            try {
+              const rawRes = await fetch(`${getData.download_url}?t=${Date.now()}`);
+              if (rawRes.ok) {
+                const oldJson = await rawRes.json();
+                if (oldJson && oldJson.installPlan) {
+                  existingInstallPlan = oldJson.installPlan;
+                }
+              }
+            } catch (e) {}
+          }
         }
+
+        const now = new Date();
+        const syncTime = `${now.toLocaleDateString('en-GB')}, ${now.toLocaleTimeString('en-GB')}`;
+        const finalPayload = {
+          syncTime: syncTime,
+          items: items
+        };
+        if (existingInstallPlan) {
+          finalPayload.installPlan = existingInstallPlan;
+        }
+
+        const contentStr = JSON.stringify(finalPayload);
+        const sizeMb = (new Blob([contentStr]).size / (1024 * 1024)).toFixed(2);
+        showStatus(`⏳ กำลังอัปโหลดข้อมูล ${items.length.toLocaleString()} รายการ (${sizeMb} MB) ขึ้น GitHub...`, 'bg-indigo-50 text-indigo-700 border border-indigo-200');
 
         const utf8Bytes = new TextEncoder().encode(contentStr);
         let binaryStr = '';
@@ -205,7 +217,6 @@
         }
         const b64Content = btoa(binaryStr);
 
-        const now = new Date();
         const payload = {
           message: `Update stock: ${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB')}`,
           content: b64Content
@@ -219,7 +230,7 @@
         });
 
         if (putRes.ok) {
-          showStatus(`🎉 สำเร็จ! อัปเดตข้อมูล ${itemCount.toLocaleString()} รายการขึ้นระบบเรียบร้อยแล้ว`, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
+          showStatus(`🎉 สำเร็จ! อัปเดตข้อมูล ${items.length.toLocaleString()} รายการขึ้นระบบเรียบร้อยแล้ว`, 'bg-emerald-50 text-emerald-800 border border-emerald-200');
         } else {
           const errData = await putRes.json();
           showStatus(`❌ อัปโหลดไม่สำเร็จ: ${errData.message || 'Token หรือสิทธิ์ไม่ถูกต้อง'}`, 'bg-red-50 text-red-700 border border-red-200');
