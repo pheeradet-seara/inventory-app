@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.4</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.5</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.4</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.5</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -213,7 +213,7 @@
       <!-- Row 3B: Contextual Bar for TEAM -->
       <div id="teamSubHeaderBar" class="hidden flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
 
-      <!-- Row 3C: Contextual Bar for PROJECT (Work Schedule) -->
+      <!-- Row 3C: Contextual Bar for PROJECT -->
       <div id="projectSubHeaderBar" class="hidden">
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
@@ -331,9 +331,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.4
+    // CONFIGURATION - VERSION 1.9.5
     // ==========================================
-    const APP_VERSION = "1.9.4";
+    const APP_VERSION = "1.9.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -347,12 +347,12 @@
     let activeMainTab = 'stock';
     let selectedPlanTeam = 'ALL';
     let highlightedProjectName = null;
-    let selectedTimelineProjectName = null;
 
-    // Shared Month/Year State for Team & Project Schedule
+    // Shared Month/Year State for Team & Project Calendars
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth(); // 0-11
     let selectedCalDate = null;
+    let selectedProjectCalDate = getTodayIso();
 
     // Independent Search States
     let activeStockKeyword = '';
@@ -882,6 +882,9 @@
 
       activeMainTab = tabName;
       selectedCalDate = null;
+      if (tabName === 'project' && !selectedProjectCalDate) {
+        selectedProjectCalDate = getTodayIso();
+      }
       hideStockSuggestions();
       closeAccountDrawer();
 
@@ -931,10 +934,17 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function jumpToProjectView(projectName) {
+    function jumpToProjectView(projectName, targetIsoDate = null) {
       if (!canUserAccessInstallPlan()) return;
       activeProjectKeyword = projectName || '';
-      selectedTimelineProjectName = projectName || null;
+      if (targetIsoDate && targetIsoDate.includes('-')) {
+        const parts = targetIsoDate.split('-');
+        calYear = parseInt(parts[0], 10);
+        calMonth = parseInt(parts[1], 10) - 1;
+        selectedProjectCalDate = targetIsoDate;
+      } else {
+        selectedProjectCalDate = getTodayIso();
+      }
       const input = document.getElementById('projectSearchInput');
       const clearBtn = document.getElementById('clearProjSearchBtn');
       if (input) input.value = activeProjectKeyword;
@@ -981,7 +991,6 @@
 
     function clearProjectSearch() {
       activeProjectKeyword = '';
-      selectedTimelineProjectName = null;
       document.getElementById('projectSearchInput').value = '';
       document.getElementById('clearProjSearchBtn').classList.add('hidden');
       renderInstallPlanView();
@@ -1154,6 +1163,7 @@
       calYear = now.getFullYear();
       calMonth = now.getMonth();
       selectedCalDate = null;
+      selectedProjectCalDate = getTodayIso();
       renderInstallPlanView();
     }
 
@@ -1162,16 +1172,23 @@
       renderInstallPlanView();
     }
 
-    function selectTimelineProject(encodedName) {
-      const name = decodeURIComponent(encodedName);
-      selectedTimelineProjectName = (selectedTimelineProjectName === name) ? null : name;
+    function selectProjectCalendarDay(isoDate) {
+      selectedProjectCalDate = isoDate;
       renderInstallPlanView();
-      if (selectedTimelineProjectName) {
-        setTimeout(() => {
-          const card = document.getElementById('selectedProjectDetailCard');
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 80);
-      }
+      setTimeout(() => {
+        const card = document.getElementById('projectDayInspectorCard');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 60);
+    }
+
+    function jumpToProjectMonthAndDate(targetIsoDate) {
+      if (!targetIsoDate || !targetIsoDate.includes('-')) return;
+      const parts = targetIsoDate.split('-');
+      calYear = parseInt(parts[0], 10);
+      calMonth = parseInt(parts[1], 10) - 1;
+      selectedProjectCalDate = targetIsoDate;
+      renderInstallPlanView();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function computeTeamFreeWindow(teamName, activeProjects, todayIso) {
@@ -1352,7 +1369,7 @@
       const analytics = buildPlanAnalytics(plan);
 
       if (activeMainTab === 'project') {
-        renderProjectWorkScheduleTab(container, plan, analytics);
+        renderProjectCalendarTab(container, plan, analytics);
       } else {
         renderTeamCalendarTab(container, plan, analytics);
       }
@@ -1712,7 +1729,7 @@
               ${selectedSnap.searaJobs.length === 0 ? `
                 <p class="text-[11px] text-slate-400 px-1">No installation scheduled on this date</p>
               ` : selectedSnap.searaJobs.map(p => `
-                <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}', '${selectedCalDate}')" 
                      class="cursor-pointer p-3 rounded-2xl ${isProjectFiltered ? 'bg-emerald-50/80 border-emerald-300' : 'bg-slate-50 hover:bg-slate-100/90 border-slate-200'} border transition space-y-1 group">
                   <div class="flex items-center justify-between gap-2">
                     <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${isProjectFiltered ? 'bg-emerald-700 text-white' : 'bg-slate-900 text-white'}">
@@ -1738,7 +1755,7 @@
               <div class="space-y-2 pt-2 border-t border-slate-100">
                 <span class="text-[11px] font-extrabold text-slate-600 block">Subcontractor (${selectedSnap.subJobs.length}):</span>
                 ${selectedSnap.subJobs.map(p => `
-                  <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                  <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}', '${selectedCalDate}')" 
                        class="cursor-pointer p-2.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200 transition space-y-0.5">
                     <div class="flex items-center justify-between gap-2">
                       <span class="font-extrabold text-slate-800 text-[12px] truncate">${escapeHtml(p.projectName || 'Untitled')}</span>
@@ -1774,7 +1791,7 @@
                     ? `${formatShortDate(p.startDate)} – ${formatShortDate(p.endDate)}`
                     : 'Schedule TBD';
                   return `
-                    <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                    <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}', '${p.startDate || ''}')" 
                          class="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition flex items-center justify-between gap-2">
                       <div class="min-w-0 flex-1">
                         <p class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(p.projectName || 'Untitled')}</p>
@@ -1886,19 +1903,221 @@
     }
 
     // ========================================================
-    // SUB-VIEW B: PROJECT WORK SCHEDULE (MONTHLY GANTT TIMELINE 1-31)
+    // SUB-VIEW B: PROJECT MONTHLY CALENDAR (SUN - SAT, PROJECT NAMES ONLY IN CELLS)
     // ========================================================
-    function renderProjectWorkScheduleTab(container, plan, analytics) {
+    function renderProjectCalendarTab(container, plan, analytics) {
       const searchKw = (activeProjectKeyword || '').toLowerCase().trim();
       const todayIso = getTodayIso();
 
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-      const mStr = String(calMonth + 1).padStart(2, '0');
-      const monthStartIso = `${calYear}-${mStr}-01`;
-      const monthEndIso = `${calYear}-${mStr}-${String(daysInMonth).padStart(2, '0')}`;
 
-      // Group all non-cancelled scopes by Project Name
+      // กรองเฉพาะงาน SEARA Install (ตัด Subcontractor ออก) ที่ตรงกับคำค้นหา
+      const filteredSearaScopes = analytics.allNonCancelProjects.filter(p => {
+        const hasSeara = Boolean(p.startDate && p.endDate);
+        if (!hasSeara) return false;
+        if (!searchKw) return true;
+        return (p.projectName || '').toLowerCase().includes(searchKw) ||
+               (p.team || '').toLowerCase().includes(searchKw) ||
+               (p.note || '').toLowerCase().includes(searchKw);
+      });
+
+      // Helper: ดึงรายชื่อโปรเจค SEARA Install ของวันที่กำหนด
+      const getDayProjectsSnapshot = (isoDate) => {
+        const jobsToday = filteredSearaScopes.filter(p => isoDate >= p.startDate && isoDate <= p.endDate);
+        // รวมชื่อโปรเจคไม่ให้ซ้ำกันในช่องปฏิทินวันเดียวกัน (กรณีโปรเจคเดียวมีหลาย Scope ในวันเดียว)
+        const uniqueProjectNames = [];
+        const seenNames = new Set();
+        jobsToday.forEach(j => {
+          const name = (j.projectName || 'Untitled').trim();
+          if (!seenNames.has(name)) {
+            seenNames.add(name);
+            uniqueProjectNames.push(name);
+          }
+        });
+
+        const globalLoad = analytics.getGlobalDayLoad(isoDate);
+        return {
+          jobsToday,
+          uniqueProjectNames,
+          isOverload: globalLoad.isOverload
+        };
+      };
+
+      let html = `
+        <div class="bg-white rounded-3xl border border-slate-200 p-3 shadow-xs space-y-3">
+          
+          <!-- Month Switcher Header -->
+          <div class="flex items-center justify-between px-0.5">
+            <div class="flex items-center gap-1.5">
+              <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">◀</button>
+              <h2 class="text-[15px] font-extrabold text-slate-900 min-w-[130px] text-center">${monthNames[calMonth]} ${calYear}</h2>
+              <button onclick="changeCalendarMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">▶</button>
+            </div>
+            <button onclick="jumpToTodayCalendar()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800">
+              Today
+            </button>
+          </div>
+
+          <!-- Legend -->
+          <div class="grid grid-cols-3 gap-1 text-center text-[10px] font-bold bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+            <div class="py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80">SEARA Install</div>
+            <div class="py-1 rounded-lg bg-rose-100 text-rose-800 border border-rose-300/80">Overload</div>
+            <div class="py-1 rounded-lg bg-white text-slate-500 border border-slate-200/80">Tap day to view</div>
+          </div>
+
+          <!-- Sun - Sat Day Headers -->
+          <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-wider">
+            <div class="text-rose-500 py-0.5">Sun</div>
+            <div class="text-slate-500 py-0.5">Mon</div>
+            <div class="text-slate-500 py-0.5">Tue</div>
+            <div class="text-slate-500 py-0.5">Wed</div>
+            <div class="text-slate-500 py-0.5">Thu</div>
+            <div class="text-slate-500 py-0.5">Fri</div>
+            <div class="text-slate-400 py-0.5">Sat</div>
+          </div>
+
+          <!-- 30-31 Days Calendar Grid (Sun - Sat) -->
+          <div class="grid grid-cols-7 gap-1">
+      `;
+
+      for (let e = 0; e < firstDayOfMonth; e++) {
+        html += `<div class="min-h-[66px] rounded-xl bg-slate-50/40"></div>`;
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const mStr = String(calMonth + 1).padStart(2, '0');
+        const dStr = String(day).padStart(2, '0');
+        const isoDate = `${calYear}-${mStr}-${dStr}`;
+        const dayOfWeek = new Date(calYear, calMonth, day).getDay();
+        const isSunday = (dayOfWeek === 0);
+        const isPast = (isoDate < todayIso);
+        const isSelected = (isoDate === selectedProjectCalDate);
+        const isToday = (isoDate === todayIso);
+
+        const snap = getDayProjectsSnapshot(isoDate);
+        const projNames = snap.uniqueProjectNames;
+
+        let cellBg = 'bg-white border-slate-200/80';
+        let dayNumColor = isSunday ? 'text-rose-600' : 'text-slate-800';
+
+        if (isPast && projNames.length === 0) {
+          cellBg = 'bg-slate-100/80 border-slate-200/60';
+          dayNumColor = 'text-slate-400';
+        } else if (isSunday) {
+          cellBg = 'bg-rose-50/60 border-rose-200/80';
+          dayNumColor = 'text-rose-600';
+        } else if (snap.isOverload && projNames.length > 0) {
+          cellBg = 'bg-rose-50/90 border-rose-300';
+        } else if (projNames.length > 0) {
+          cellBg = isPast ? 'bg-slate-100 border-slate-300/80' : 'bg-emerald-50/50 border-emerald-200/90';
+        }
+
+        const selectedClass = isSelected ? 'ring-2 ring-slate-950 scale-[1.03] z-10 shadow-sm' : '';
+
+        // แสดงเฉพาะชื่อโปรเจคในช่องปฏิทิน (สูงสุด 2 บรรทัด + ตัวนับส่วนเกิน)
+        let pillsHtml = '';
+        if (projNames.length > 0) {
+          const maxShow = 2;
+          const visibleNames = projNames.slice(0, maxShow);
+          const extraCount = projNames.length - maxShow;
+          const pillBg = isPast
+            ? 'bg-slate-500 text-white'
+            : (snap.isOverload ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white');
+
+          pillsHtml = `<div class="w-full space-y-0.5 mt-0.5 overflow-hidden">`;
+          visibleNames.forEach(pName => {
+            pillsHtml += `
+              <div class="w-full px-1 py-[1px] rounded-[4px] ${pillBg} text-[7.5px] font-bold leading-tight truncate text-left">
+                ${escapeHtml(pName)}
+              </div>
+            `;
+          });
+          if (extraCount > 0) {
+            pillsHtml += `
+              <div class="w-full text-[7px] font-extrabold text-slate-600 text-center leading-none pt-[1px]">
+                +${extraCount} more
+              </div>
+            `;
+          }
+          pillsHtml += `</div>`;
+        } else if (isSunday) {
+          pillsHtml = `<span class="text-[7.5px] font-bold text-rose-400 mt-auto">Holiday</span>`;
+        }
+
+        html += `
+          <button onclick="selectProjectCalendarDay('${isoDate}')" 
+                  class="min-h-[66px] p-1 rounded-xl border transition-all flex flex-col items-center justify-start ${cellBg} ${selectedClass}">
+            <span class="text-[10px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : dayNumColor}">
+              ${day}
+            </span>
+            ${pillsHtml}
+          </button>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      // ========================================================
+      // DAY INSPECTOR CARD (รายละเอียดโปรเจค + ทีมติดตั้งของวันที่คลิก)
+      // ========================================================
+      const inspectIso = selectedProjectCalDate || todayIso;
+      const inspectSnap = getDayProjectsSnapshot(inspectIso);
+      const isInspectToday = (inspectIso === todayIso);
+
+      html += `
+        <div id="projectDayInspectorCard" class="bg-white rounded-3xl border-2 ${inspectSnap.jobsToday.length > 0 ? 'border-emerald-300' : 'border-slate-200'} p-4 shadow-xs space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider ${isInspectToday ? 'text-emerald-700' : 'text-slate-400'} block">
+                ${isInspectToday ? 'Today’s Schedule' : 'Selected Date'}
+              </span>
+              <h3 class="text-[15px] font-extrabold text-slate-900">${formatShortDate(inspectIso)} ${inspectIso.split('-')[0]}</h3>
+            </div>
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-xl border ${inspectSnap.isOverload && inspectSnap.jobsToday.length > 0 ? 'bg-rose-100 text-rose-700 border-rose-300' : (inspectSnap.jobsToday.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200')}">
+              ${inspectSnap.jobsToday.length} ${inspectSnap.jobsToday.length === 1 ? 'Job' : 'Jobs'}
+            </span>
+          </div>
+
+          ${inspectSnap.jobsToday.length === 0 ? `
+            <p class="text-[11px] text-slate-400 text-center py-3 font-medium">No SEARA installation scheduled on this date</p>
+          ` : `
+            <div class="space-y-2">
+              ${inspectSnap.jobsToday.map(p => `
+                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white">
+                      ${escapeHtml(p.team || 'Unassigned')}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
+                      ${escapeHtml(p.status || '-')}
+                    </span>
+                  </div>
+                  <p class="font-extrabold text-slate-900 text-[13px] leading-snug">
+                    ${escapeHtml(p.projectName || 'Untitled')}
+                  </p>
+                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
+                  <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-1 border-t border-slate-200/70">
+                    <span>Install Period: <b class="text-slate-700">${formatShortDate(p.startDate)} – ${formatShortDate(p.endDate)}</b></span>
+                    <button onclick="jumpToProjectPeriodInCalendar('${encodeURIComponent(p.projectName || '')}', '${p.startDate}')" 
+                            class="text-emerald-700 hover:underline font-extrabold">
+                      Team View →
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+      `;
+
+      // ========================================================
+      // ACTIVE PROJECTS DIRECTORY (รายการโปรเจคที่ยังไม่จบทั้งหมด A-Z)
+      // ========================================================
       const projMap = {};
       (plan.projects || []).forEach(p => {
         if (p.status.startsWith('6.')) return;
@@ -1910,51 +2129,24 @@
             teams: new Set(),
             earliestStart: '',
             latestEnd: '',
-            hasOpenScope: false,
-            isOverload: false
+            hasOpenScope: false
           };
         }
         projMap[key].scopes.push(p);
         if (p.team) projMap[key].teams.add(p.team);
         if (!p.status.startsWith('5.')) projMap[key].hasOpenScope = true;
 
-        const candidateStarts = [p.subStart, p.startDate].filter(Boolean);
-        const candidateEnds = [p.subEnd, p.endDate].filter(Boolean);
-
-        candidateStarts.forEach(s => {
-          if (!projMap[key].earliestStart || s < projMap[key].earliestStart) projMap[key].earliestStart = s;
-        });
-        candidateEnds.forEach(e => {
-          if (!projMap[key].latestEnd || e > projMap[key].latestEnd) projMap[key].latestEnd = e;
-        });
+        if (p.startDate && (!projMap[key].earliestStart || p.startDate < projMap[key].earliestStart)) {
+          projMap[key].earliestStart = p.startDate;
+        }
+        if (p.endDate && (!projMap[key].latestEnd || p.endDate > projMap[key].latestEnd)) {
+          projMap[key].latestEnd = p.endDate;
+        }
       });
 
-      Object.values(projMap).forEach(proj => {
-        proj.scopes.forEach(sc => {
-          if (sc.startDate && sc.endDate && !sc.status.startsWith('5.')) {
-            let cur = new Date(sc.startDate + 'T00:00:00');
-            const end = new Date(sc.endDate + 'T00:00:00');
-            let guard = 0;
-            while (cur <= end && guard < 120) {
-              const y = cur.getFullYear();
-              const m = String(cur.getMonth() + 1).padStart(2, '0');
-              const d = String(cur.getDate()).padStart(2, '0');
-              const iso = `${y}-${m}-${d}`;
-              const gl = analytics.getGlobalDayLoad(iso);
-              if (gl.isExceedTotalTeams || (sc.team && gl.sameTeamConflictTeams.includes(sc.team))) {
-                proj.isOverload = true;
-              }
-              cur.setDate(cur.getDate() + 1);
-              guard++;
-            }
-          }
-        });
-      });
-
-      // Filter by keyword
-      const allFilteredProjects = Object.values(projMap).filter(proj => {
+      let projList = Object.values(projMap).filter(proj => {
         if (!proj.hasOpenScope) return false;
-        if (proj.latestEnd && proj.latestEnd < todayIso && !(proj.latestEnd >= monthStartIso && proj.latestEnd <= monthEndIso)) return false;
+        if (proj.latestEnd && proj.latestEnd < todayIso) return false;
 
         if (searchKw) {
           const matchName = proj.projectName.toLowerCase().includes(searchKw);
@@ -1967,290 +2159,41 @@
         return true;
       });
 
-      // Projects that have activity in the currently viewed month
-      const monthProjects = allFilteredProjects.filter(proj => {
-        return proj.scopes.some(sc => {
-          const searaOverlap = sc.startDate && sc.endDate && sc.startDate <= monthEndIso && sc.endDate >= monthStartIso;
-          const subOverlap = sc.subStart && sc.subEnd && sc.subStart <= monthEndIso && sc.subEnd >= monthStartIso;
-          return searaOverlap || subOverlap;
-        });
-      }).sort((a, b) => (a.earliestStart || '9999').localeCompare(b.earliestStart || '9999'));
+      projList.sort((a, b) => {
+        const aHasDate = Boolean(a.earliestStart || a.latestEnd);
+        const bHasDate = Boolean(b.earliestStart || b.latestEnd);
+        if (aHasDate && !bHasDate) return -1;
+        if (!aHasDate && bHasDate) return 1;
+        return a.projectName.localeCompare(b.projectName, 'th', { sensitivity: 'base' });
+      });
 
-      // Upcoming / TBD projects outside this month
-      const otherActiveProjects = allFilteredProjects.filter(proj => !monthProjects.includes(proj))
-        .sort((a, b) => {
-          const aHasDate = Boolean(a.earliestStart || a.latestEnd);
-          const bHasDate = Boolean(b.earliestStart || b.latestEnd);
-          if (aHasDate && !bHasDate) return -1;
-          if (!aHasDate && bHasDate) return 1;
-          return a.projectName.localeCompare(b.projectName, 'th', { sensitivity: 'base' });
-        });
-
-      const dayHeaders = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-      const DAY_COL_PX = 24;
-      const LEFT_COL_PX = 132;
-      const totalGridWidth = LEFT_COL_PX + (daysInMonth * DAY_COL_PX);
-
-      let html = `
-        <!-- MONTHLY WORK SCHEDULE CARD -->
-        <div class="bg-white rounded-3xl border border-slate-200 p-3.5 shadow-xs space-y-3">
-          
-          <!-- Month Switcher Header -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-1.5">
-              <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">◀</button>
-              <h2 class="text-[15px] font-extrabold text-slate-900 min-w-[130px] text-center">${monthNames[calMonth]} ${calYear}</h2>
-              <button onclick="changeCalendarMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">▶</button>
-            </div>
-            <button onclick="jumpToTodayCalendar()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800">
-              Today
-            </button>
-          </div>
-
-          <!-- Legend -->
-          <div class="flex items-center justify-between text-[10px] font-bold bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
-            <div class="flex items-center gap-3">
-              <span class="flex items-center gap-1 text-emerald-800"><span class="w-2.5 h-2.5 rounded-xs bg-emerald-600 inline-block"></span> SEARA Install</span>
-              <span class="flex items-center gap-1 text-slate-700"><span class="w-2.5 h-2.5 rounded-xs bg-slate-500 inline-block"></span> Sub</span>
-              <span class="flex items-center gap-1 text-rose-700"><span class="w-2.5 h-2.5 rounded-xs bg-rose-600 inline-block"></span> Overload</span>
-            </div>
-            <span class="text-slate-400">${monthProjects.length} Active</span>
-          </div>
-
-          ${monthProjects.length === 0 ? `
-            <div class="py-10 text-center space-y-1 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
-              <p class="text-[12px] font-bold text-slate-600">No projects scheduled in ${monthNames[calMonth]}</p>
-              <p class="text-[10px] text-slate-400">Use ◀ / ▶ arrows to view other months</p>
-            </div>
-          ` : `
-            <!-- Horizontal Scrollable Gantt Matrix -->
-            <div id="workScheduleScrollContainer" class="overflow-x-auto border border-slate-200 rounded-2xl custom-scroll relative bg-white">
-              <div style="width: ${totalGridWidth}px;">
-                
-                <!-- Table Header Row (Days 1..31) -->
-                <div class="flex border-b border-slate-200 bg-slate-50 text-[9px] font-extrabold select-none">
-                  <div style="width: ${LEFT_COL_PX}px;" class="sticky left-0 z-20 bg-slate-50 border-r border-slate-200 px-2.5 py-2 flex items-center text-slate-500 uppercase tracking-wider">
-                    Project / Team
-                  </div>
-                  <div class="flex">
-                    ${Array.from({ length: daysInMonth }, (_, idx) => {
-                      const dNum = idx + 1;
-                      const dStr = String(dNum).padStart(2, '0');
-                      const iso = `${calYear}-${mStr}-${dStr}`;
-                      const dow = new Date(calYear, calMonth, dNum).getDay();
-                      const isSun = (dow === 0);
-                      const isToday = (iso === todayIso);
-                      return `
-                        <div style="width: ${DAY_COL_PX}px;" 
-                             data-is-today="${isToday ? 'true' : 'false'}"
-                             class="flex-shrink-0 py-1 text-center border-r border-slate-100 flex flex-col items-center justify-center ${isToday ? 'bg-slate-900 text-white' : (isSun ? 'bg-rose-50/80 text-rose-500' : 'text-slate-600')}">
-                          <span class="text-[8px] opacity-75 leading-none">${dayHeaders[dow]}</span>
-                          <span class="text-[10px] font-black leading-tight mt-0.5">${dNum}</span>
-                        </div>
-                      `;
-                    }).join('')}
-                  </div>
-                </div>
-
-                <!-- Project Gantt Rows -->
-                <div class="divide-y divide-slate-100">
-                  ${monthProjects.map(proj => {
-                    const isSelectedProj = (selectedTimelineProjectName === proj.projectName);
-                    const teamLabel = Array.from(proj.teams).join(', ') || 'TBD';
-
-                    // Compute Bar Spans within this month
-                    const getMonthDayIndex = (iso) => {
-                      if (!iso) return null;
-                      if (iso < monthStartIso) return 1;
-                      if (iso > monthEndIso) return daysInMonth;
-                      return parseInt(iso.split('-')[2], 10);
-                    };
-
-                    // Build continuous bars for Subcontractor and SEARA Install
-                    const subBars = [];
-                    const searaBars = [];
-
-                    proj.scopes.forEach(sc => {
-                      if (sc.subStart && sc.subEnd && sc.subStart <= monthEndIso && sc.subEnd >= monthStartIso) {
-                        const sIdx = getMonthDayIndex(sc.subStart);
-                        const eIdx = getMonthDayIndex(sc.subEnd);
-                        if (sIdx && eIdx && eIdx >= sIdx) {
-                          subBars.push({ startDay: sIdx, endDay: eIdx, label: 'Sub' });
-                        }
-                      }
-                      if (sc.startDate && sc.endDate && sc.startDate <= monthEndIso && sc.endDate >= monthStartIso) {
-                        const sIdx = getMonthDayIndex(sc.startDate);
-                        const eIdx = getMonthDayIndex(sc.endDate);
-                        if (sIdx && eIdx && eIdx >= sIdx) {
-                          searaBars.push({
-                            startDay: sIdx,
-                            endDay: eIdx,
-                            team: sc.team || 'SEARA',
-                            isOverload: proj.isOverload
-                          });
-                        }
-                      }
-                    });
-
-                    return `
-                      <div onclick="selectTimelineProject('${encodeURIComponent(proj.projectName)}')" 
-                           class="flex items-stretch cursor-pointer transition ${isSelectedProj ? 'bg-emerald-50/60' : 'hover:bg-slate-50/80'}">
-                        
-                        <!-- Sticky Left Project Name Column -->
-                        <div style="width: ${LEFT_COL_PX}px;" 
-                             class="sticky left-0 z-10 ${isSelectedProj ? 'bg-emerald-50 border-r-emerald-300' : 'bg-white border-r-slate-200'} border-r px-2.5 py-2 flex flex-col justify-center min-h-[46px]">
-                          <p class="text-[11px] font-extrabold text-slate-900 leading-tight line-clamp-2" title="${escapeHtml(proj.projectName)}">
-                            ${escapeHtml(proj.projectName)}
-                          </p>
-                          <span class="text-[9px] font-bold text-slate-400 truncate mt-0.5">${escapeHtml(teamLabel)}</span>
-                        </div>
-
-                        <!-- Right Timeline Cells + Continuous Gantt Bars -->
-                        <div class="relative flex items-center" style="width: ${daysInMonth * DAY_COL_PX}px;">
-                          
-                          <!-- Background Day Grid Columns -->
-                          <div class="absolute inset-0 flex pointer-events-none">
-                            ${Array.from({ length: daysInMonth }, (_, idx) => {
-                              const dNum = idx + 1;
-                              const dStr = String(dNum).padStart(2, '0');
-                              const iso = `${calYear}-${mStr}-${dStr}`;
-                              const dow = new Date(calYear, calMonth, dNum).getDay();
-                              const isSun = (dow === 0);
-                              const isToday = (iso === todayIso);
-                              return `
-                                <div style="width: ${DAY_COL_PX}px;" 
-                                     class="h-full border-r border-slate-100/90 ${isToday ? 'bg-slate-900/10 border-x border-x-slate-900/30' : (isSun ? 'bg-rose-50/40' : '')}">
-                                </div>
-                              `;
-                            }).join('')}
-                          </div>
-
-                          <!-- Subcontractor Bars (Top Track if both exist) -->
-                          ${subBars.map(bar => {
-                            const leftPx = (bar.startDay - 1) * DAY_COL_PX + 2;
-                            const widthPx = (bar.endDay - bar.startDay + 1) * DAY_COL_PX - 4;
-                            const topClass = searaBars.length > 0 ? 'top-1.5 h-3' : 'top-1/2 -translate-y-1/2 h-5';
-                            return `
-                              <div style="left: ${leftPx}px; width: ${widthPx}px;" 
-                                   class="absolute ${topClass} rounded-md bg-slate-500 text-white text-[8px] font-extrabold px-1.5 flex items-center truncate shadow-2xs">
-                                ${widthPx >= 26 ? 'Sub' : ''}
-                              </div>
-                            `;
-                          }).join('')}
-
-                          <!-- SEARA Install Bars (Main / Bottom Track) -->
-                          ${searaBars.map(bar => {
-                            const leftPx = (bar.startDay - 1) * DAY_COL_PX + 2;
-                            const widthPx = (bar.endDay - bar.startDay + 1) * DAY_COL_PX - 4;
-                            const topClass = subBars.length > 0 ? 'bottom-1.5 h-4' : 'top-1/2 -translate-y-1/2 h-5';
-                            const barBg = bar.isOverload ? 'bg-rose-600' : 'bg-emerald-600';
-                            return `
-                              <div style="left: ${leftPx}px; width: ${widthPx}px;" 
-                                   class="absolute ${topClass} rounded-md ${barBg} text-white text-[9px] font-extrabold px-1.5 flex items-center truncate shadow-2xs">
-                                ${widthPx >= 34 ? escapeHtml(bar.team) : ''}
-                              </div>
-                            `;
-                          }).join('')}
-
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-
-              </div>
-            </div>
-          `}
-        </div>
-      `;
-
-      // SELECTED PROJECT INSPECTOR CARD (เมื่อแตะเลือกโปรเจคใน Timeline)
-      if (selectedTimelineProjectName && projMap[selectedTimelineProjectName]) {
-        const selProj = projMap[selectedTimelineProjectName];
-        const jumpTargetDate = selProj.scopes.find(s => s.startDate)?.startDate || selProj.earliestStart;
-        html += `
-          <div id="selectedProjectDetailCard" class="bg-white rounded-3xl border-2 border-emerald-400 p-4 shadow-md space-y-2.5">
-            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
-              <div class="min-w-0 flex-1">
-                <span class="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 block">Selected Project</span>
-                <h3 class="text-[14px] font-extrabold text-slate-900 leading-snug">${escapeHtml(selProj.projectName)}</h3>
-              </div>
-              <div class="flex items-center gap-1.5 flex-shrink-0">
-                ${jumpTargetDate ? `
-                  <button onclick="jumpToProjectPeriodInCalendar('${encodeURIComponent(selProj.projectName)}', '${jumpTargetDate}')" 
-                          class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white text-[10px] font-bold hover:bg-emerald-700">
-                    Calendar →
-                  </button>
-                ` : ''}
-                <button onclick="selectedTimelineProjectName = null; renderInstallPlanView();" 
-                        class="px-2 py-1 rounded-xl bg-slate-100 text-slate-600 text-[10px] font-bold hover:bg-slate-200">
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div class="space-y-1.5">
-              ${selProj.scopes.map(sc => {
-                const hasSub = sc.subStart || sc.subEnd;
-                const hasSeara = sc.startDate || sc.endDate;
-                return `
-                  <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-[11px]">
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="font-bold text-slate-800 truncate">${escapeHtml(sc.note || 'Main Scope')}</span>
-                      <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white text-slate-600 border border-slate-200 flex-shrink-0">${escapeHtml(sc.status || '-')}</span>
-                    </div>
-                    ${hasSub ? `
-                      <div class="flex justify-between text-[10px] font-bold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded-md">
-                        <span>Subcontractor</span>
-                        <span>${formatShortDate(sc.subStart)} – ${formatShortDate(sc.subEnd)}</span>
-                      </div>
-                    ` : ''}
-                    ${(sc.team || hasSeara) ? `
-                      <div class="flex justify-between text-[10px] font-bold text-emerald-900 bg-emerald-100/90 px-2 py-0.5 rounded-md">
-                        <span>${escapeHtml(sc.team || 'Unassigned')}</span>
-                        <span>${hasSeara ? `${formatShortDate(sc.startDate)} – ${formatShortDate(sc.endDate)}` : 'TBD'}</span>
-                      </div>
-                    ` : ''}
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      }
-
-      // UPCOMING / OTHER ACTIVE PROJECTS LIST (โปรเจคเดือนอื่นหรือยังไม่มีวันกำหนด)
-      if (otherActiveProjects.length > 0) {
+      if (projList.length > 0) {
         html += `
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between px-1">
-              <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Other Active & Upcoming Projects (${otherActiveProjects.length})</span>
+              <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Active Projects List (${projList.length})</span>
+              <span class="text-[10px] font-bold text-slate-400">Tap to jump</span>
             </div>
             <div class="space-y-2">
-              ${otherActiveProjects.map(proj => {
-                const jumpTargetDate = proj.scopes.find(s => s.startDate)?.startDate || proj.earliestStart;
+              ${projList.map(proj => {
                 const rangeText = (proj.earliestStart || proj.latestEnd)
                   ? `${formatShortDate(proj.earliestStart)} – ${formatShortDate(proj.latestEnd)}`
                   : 'Schedule TBD';
+                const teamsStr = Array.from(proj.teams).join(', ');
 
                 return `
-                  <div onclick="selectTimelineProject('${encodeURIComponent(proj.projectName)}')" 
-                       class="cursor-pointer bg-white rounded-2xl border ${proj.isOverload ? 'border-rose-300' : 'border-slate-200'} px-3.5 py-3 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300 transition">
+                  <div onclick="${proj.earliestStart ? `jumpToProjectMonthAndDate('${proj.earliestStart}')` : ''}" 
+                       class="${proj.earliestStart ? 'cursor-pointer hover:border-slate-300' : ''} bg-white rounded-2xl border border-slate-200 px-3.5 py-3 shadow-2xs flex items-center justify-between gap-3 transition">
                     <div class="min-w-0 flex-1">
-                      <div class="flex items-center gap-1.5">
-                        <h3 class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(proj.projectName)}</h3>
-                        ${proj.isOverload ? '<span class="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-rose-600 text-white flex-shrink-0">Overload</span>' : ''}
-                      </div>
+                      <h3 class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(proj.projectName)}</h3>
                       <p class="text-[11px] font-semibold ${rangeText === 'Schedule TBD' ? 'text-slate-400 italic' : 'text-slate-500'} mt-0.5 truncate">
-                        ${rangeText}
+                        ${rangeText}${teamsStr ? ` · <b class="text-slate-700">${escapeHtml(teamsStr)}</b>` : ''}
                       </p>
                     </div>
-
-                    ${jumpTargetDate ? `
-                      <button onclick="event.stopPropagation(); jumpToProjectPeriodInCalendar('${encodeURIComponent(proj.projectName)}', '${jumpTargetDate}')" 
-                              class="flex-shrink-0 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold transition active:scale-95">
-                        Calendar →
-                      </button>
+                    ${proj.earliestStart ? `
+                      <span class="flex-shrink-0 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                        View →
+                      </span>
                     ` : ''}
                   </div>
                 `;
@@ -2261,17 +2204,6 @@
       }
 
       container.innerHTML = html;
-
-      // Auto-scroll timeline horizontally to "Today" if viewing current month
-      setTimeout(() => {
-        const scroller = document.getElementById('workScheduleScrollContainer');
-        if (!scroller) return;
-        const todayHeader = scroller.querySelector('[data-is-today="true"]');
-        if (todayHeader) {
-          const targetOffset = todayHeader.offsetLeft - LEFT_COL_PX - 40;
-          scroller.scrollLeft = Math.max(0, targetOffset);
-        }
-      }, 30);
     }
 
     // ========================================================
