@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.7</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.8</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.7</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.8</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -213,18 +213,17 @@
       <!-- Row 3B: Contextual Bar for TEAM -->
       <div id="teamSubHeaderBar" class="hidden flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
 
-      <!-- Row 3C: Contextual Bar for PROJECT (With Search Suggestions) -->
+      <!-- Row 3C: Contextual Bar for PROJECT (With Scope-Aware Search Suggestions) -->
       <div id="projectSubHeaderBar" class="hidden">
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
           <input type="text" id="projectSearchInput" oninput="onProjectSearchInput()" onfocus="onProjectSearchFocus()"
-                 placeholder="Search project, team or note..." 
+                 placeholder="Search project, scope or team..." 
                  autocomplete="off"
                  class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800 placeholder:text-slate-400">
           <button id="clearProjSearchBtn" onclick="clearProjectSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
 
-          <!-- Project Search Suggestions Dropdown -->
-          <div id="projectSuggestionDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200 max-h-60 overflow-y-auto divide-y divide-slate-100 text-[11px] z-50 custom-scroll"></div>
+          <div id="projectSuggestionDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200 max-h-64 overflow-y-auto divide-y divide-slate-100 text-[11px] z-50 custom-scroll"></div>
         </div>
       </div>
 
@@ -334,9 +333,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.7
+    // CONFIGURATION - VERSION 1.9.8
     // ==========================================
-    const APP_VERSION = "1.9.7";
+    const APP_VERSION = "1.9.8";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -360,6 +359,7 @@
     // Independent Search States
     let activeStockKeyword = '';
     let activeProjectKeyword = '';
+    let activeProjectScopeFilter = null; // { projectName, team, note } when user selects a specific scope
 
     let activeBrandName = null;
     let openItems = {};
@@ -942,6 +942,7 @@
     function jumpToProjectView(projectName, targetIsoDate = null) {
       if (!canUserAccessInstallPlan()) return;
       activeProjectKeyword = projectName || '';
+      activeProjectScopeFilter = null;
       if (targetIsoDate && targetIsoDate.includes('-')) {
         const parts = targetIsoDate.split('-');
         calYear = parseInt(parts[0], 10);
@@ -984,11 +985,13 @@
     }
 
     // ========================================================
-    // INDEPENDENT SEARCH 1: PROJECT SEARCH + SUGGESTIONS
+    // INDEPENDENT SEARCH 1: PROJECT SEARCH + SCOPE-AWARE SUGGESTIONS
     // ========================================================
     function onProjectSearchInput() {
       const input = document.getElementById('projectSearchInput');
       activeProjectKeyword = input.value.trim();
+      activeProjectScopeFilter = null; // Reset scope-specific filter when typing manually
+
       const clearBtn = document.getElementById('clearProjSearchBtn');
       if (activeProjectKeyword) clearBtn.classList.remove('hidden');
       else clearBtn.classList.add('hidden');
@@ -1026,7 +1029,7 @@
       const matches = [];
       const seen = new Set();
 
-      // 1. ค้นหาจากชื่อทีม (Team) สูงสุด 2 รายการ
+      // 1. ค้นหาจากชื่อทีม (Team)
       (plan.teams || []).forEach(t => {
         const tName = (t.team || '').trim();
         if (tName && tName.toLowerCase().includes(term)) {
@@ -1034,10 +1037,14 @@
           if (!seen.has(key) && matches.length < 2) {
             seen.add(key);
             matches.push({
-              type: 'TEAM',
+              kind: 'TEAM',
+              badge: 'TEAM',
               primary: tName,
               secondary: t.summaryText || 'Installation Team',
               fillVal: tName,
+              projectName: '',
+              teamFilter: '',
+              noteFilter: '',
               targetDate: ''
             });
           }
@@ -1063,14 +1070,14 @@
         if (!projGroupMap[pName]) {
           projGroupMap[pName] = {
             projectName: pName,
+            scopes: [],
             teams: new Set(),
-            notes: new Set(),
             earliestStart: '',
             latestEnd: ''
           };
         }
+        projGroupMap[pName].scopes.push(p);
         if (pTeam) projGroupMap[pName].teams.add(pTeam);
-        if (pNote) projGroupMap[pName].notes.add(pNote);
         if (p.startDate && (!projGroupMap[pName].earliestStart || p.startDate < projGroupMap[pName].earliestStart)) {
           projGroupMap[pName].earliestStart = p.startDate;
         }
@@ -1082,27 +1089,73 @@
       Object.values(projGroupMap)
         .sort((a, b) => a.projectName.localeCompare(b.projectName, 'th', { sensitivity: 'base' }))
         .forEach(pg => {
-          if (matches.length >= 6) return;
-          const dateStr = (pg.earliestStart || pg.latestEnd)
-            ? `${formatShortDate(pg.earliestStart)} – ${formatShortDate(pg.latestEnd)}`
-            : 'Schedule TBD';
-          const noteArr = Array.from(pg.notes);
-          const teamArr = Array.from(pg.teams);
-          const subText = `${dateStr}${noteArr.length > 0 ? ' · ' + noteArr.join(', ') : ''}`;
+          if (matches.length >= 8) return;
 
-          matches.push({
-            type: teamArr.length > 0 ? teamArr.join(', ') : 'PROJECT',
-            primary: pg.projectName,
-            secondary: subText,
-            fillVal: pg.projectName,
-            targetDate: pg.earliestStart || ''
-          });
+          // ถ้าโปรเจคมีหลาย Scope (เช่น Jaraskiatt มี 5 รายการ) ให้แสดงตัวเลือก "All Scopes" ก่อน แล้วตามด้วยรายการย่อยแยกตาม Scope/Team
+          if (pg.scopes.length > 1) {
+            const allDateStr = (pg.earliestStart || pg.latestEnd)
+              ? `${formatShortDate(pg.earliestStart)} – ${formatShortDate(pg.latestEnd)}`
+              : 'Schedule TBD';
+            matches.push({
+              kind: 'ALL_SCOPES',
+              badge: `ALL (${pg.scopes.length})`,
+              primary: `${pg.projectName} — All Scopes`,
+              secondary: `${allDateStr} · ${Array.from(pg.teams).join(', ') || 'Unassigned'}`,
+              fillVal: pg.projectName,
+              projectName: pg.projectName,
+              teamFilter: '',
+              noteFilter: '',
+              targetDate: pg.earliestStart || ''
+            });
+
+            pg.scopes.forEach(sc => {
+              if (matches.length >= 8) return;
+              const scTeam = (sc.team || '').trim();
+              const scNote = (sc.note || '').trim();
+              const scDate = (sc.startDate || sc.endDate)
+                ? `${formatShortDate(sc.startDate)} – ${formatShortDate(sc.endDate)}`
+                : 'Schedule TBD';
+              const labelTitle = scNote ? `${pg.projectName} (${scNote})` : pg.projectName;
+
+              matches.push({
+                kind: 'SINGLE_SCOPE',
+                badge: scTeam || (sc.startDate ? 'NO TEAM' : 'TBD'),
+                primary: labelTitle,
+                secondary: `${scDate} · ${sc.status || '-'}`,
+                fillVal: pg.projectName,
+                projectName: pg.projectName,
+                teamFilter: scTeam,
+                noteFilter: scNote,
+                targetDate: sc.startDate || ''
+              });
+            });
+          } else {
+            // โปรเจคที่มี Scope เดียว
+            const sc = pg.scopes[0];
+            const scTeam = (sc.team || '').trim();
+            const scNote = (sc.note || '').trim();
+            const scDate = (sc.startDate || sc.endDate)
+              ? `${formatShortDate(sc.startDate)} – ${formatShortDate(sc.endDate)}`
+              : 'Schedule TBD';
+
+            matches.push({
+              kind: 'PROJECT',
+              badge: scTeam || (sc.startDate ? 'NO TEAM' : 'TBD'),
+              primary: scNote ? `${pg.projectName} (${scNote})` : pg.projectName,
+              secondary: `${scDate} · ${sc.status || '-'}`,
+              fillVal: pg.projectName,
+              projectName: pg.projectName,
+              teamFilter: '',
+              noteFilter: '',
+              targetDate: sc.startDate || ''
+            });
+          }
         });
 
       if (matches.length === 0) {
         box.innerHTML = `
           <div class="p-3 text-center text-slate-400 font-semibold text-[11px]">
-            No matching project or team found
+            No matching project, scope or team found
           </div>
         `;
         box.classList.remove('hidden');
@@ -1111,19 +1164,23 @@
 
       let html = '';
       matches.forEach(m => {
-        const isTeam = m.type === 'TEAM';
-        const badgeStyle = isTeam
-          ? 'bg-slate-900 text-white font-extrabold'
-          : 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold';
+        let badgeStyle = 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold';
+        if (m.kind === 'TEAM') {
+          badgeStyle = 'bg-slate-900 text-white font-extrabold';
+        } else if (m.kind === 'ALL_SCOPES') {
+          badgeStyle = 'bg-indigo-50 text-indigo-800 border border-indigo-200 font-extrabold';
+        } else if (m.badge === 'TBD') {
+          badgeStyle = 'bg-amber-50 text-amber-800 border border-amber-200 font-extrabold';
+        }
 
         html += `
-          <div onclick="applyProjectSuggestion('${encodeURIComponent(m.fillVal)}', '${m.targetDate}')" 
+          <div onclick="applyProjectSuggestion('${encodeURIComponent(m.fillVal)}', '${encodeURIComponent(m.projectName)}', '${encodeURIComponent(m.teamFilter)}', '${encodeURIComponent(m.noteFilter)}', '${m.targetDate}')" 
                class="p-2.5 hover:bg-slate-50 active:bg-slate-100 cursor-pointer flex justify-between items-center gap-2 transition">
             <div class="min-w-0 flex-1">
               <span class="font-extrabold text-slate-900 text-[12px] block truncate">${escapeHtml(m.primary)}</span>
               <span class="text-[10px] text-slate-500 font-medium block truncate mt-0.5">${escapeHtml(m.secondary)}</span>
             </div>
-            <span class="text-[9px] uppercase px-2 py-0.5 rounded-md flex-shrink-0 ${badgeStyle}">${escapeHtml(m.type)}</span>
+            <span class="text-[9px] uppercase px-2 py-0.5 rounded-md flex-shrink-0 ${badgeStyle}">${escapeHtml(m.badge)}</span>
           </div>
         `;
       });
@@ -1132,14 +1189,23 @@
       box.classList.remove('hidden');
     }
 
-    function applyProjectSuggestion(encodedVal, targetDate) {
-      const val = decodeURIComponent(encodedVal);
-      activeProjectKeyword = val;
+    function applyProjectSuggestion(encodedFill, encodedProjName, encodedTeam, encodedNote, targetDate) {
+      const fillVal = decodeURIComponent(encodedFill);
+      const projName = decodeURIComponent(encodedProjName);
+      const teamFilter = decodeURIComponent(encodedTeam);
+      const noteFilter = decodeURIComponent(encodedNote);
+
+      activeProjectKeyword = fillVal;
+      if (projName && (teamFilter || noteFilter)) {
+        activeProjectScopeFilter = { projectName: projName, team: teamFilter, note: noteFilter };
+      } else {
+        activeProjectScopeFilter = null;
+      }
 
       const input = document.getElementById('projectSearchInput');
       if (input) {
-        input.value = val;
-        input.blur(); // พับคีย์บอร์ดมือถือลงเพื่อให้เห็นปฏิทินและการ์ดรายละเอียดทันที
+        input.value = fillVal;
+        input.blur();
       }
 
       const clearBtn = document.getElementById('clearProjSearchBtn');
@@ -1156,19 +1222,23 @@
 
       renderInstallPlanView();
 
-      if (targetDate) {
-        setTimeout(() => {
-          const card = document.getElementById('projectDayInspectorCard');
-          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 80);
-      }
+      setTimeout(() => {
+        const targetCard = document.getElementById('projectAllScopesCard') || document.getElementById('projectDayInspectorCard');
+        if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
     }
 
     function clearProjectSearch() {
       activeProjectKeyword = '';
+      activeProjectScopeFilter = null;
       document.getElementById('projectSearchInput').value = '';
       document.getElementById('clearProjSearchBtn').classList.add('hidden');
       hideProjectSuggestions();
+      renderInstallPlanView();
+    }
+
+    function clearScopeSubFilter() {
+      activeProjectScopeFilter = null;
       renderInstallPlanView();
     }
 
@@ -2085,7 +2155,7 @@
     }
 
     // ========================================================
-    // SUB-VIEW B: PROJECT MONTHLY CALENDAR (CONTINUOUS SPANNING BARS)
+    // SUB-VIEW B: PROJECT MONTHLY CALENDAR (SEPARATE SCOPE BARS + FULL SCOPE CARD)
     // ========================================================
     function renderProjectCalendarTab(container, plan, analytics) {
       const searchKw = (activeProjectKeyword || '').toLowerCase().trim();
@@ -2096,32 +2166,46 @@
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
       const mStr = String(calMonth + 1).padStart(2, '0');
 
-      // กรองเฉพาะงาน SEARA Install (ตัด Subcontractor และ 6. Cancelled ออก)
-      const filteredSearaScopes = analytics.allNonCancelProjects.filter(p => {
-        if (!p.startDate || !p.endDate) return false;
+      const matchesProjectSearch = (p) => {
+        if (activeProjectScopeFilter) {
+          const sameProj = (p.projectName || '').trim().toLowerCase() === activeProjectScopeFilter.projectName.toLowerCase();
+          const sameTeam = !activeProjectScopeFilter.team || (p.team || '').trim().toLowerCase() === activeProjectScopeFilter.team.toLowerCase();
+          const sameNote = !activeProjectScopeFilter.note || (p.note || '').trim().toLowerCase() === activeProjectScopeFilter.note.toLowerCase();
+          return sameProj && sameTeam && sameNote;
+        }
         if (!searchKw) return true;
         return (p.projectName || '').toLowerCase().includes(searchKw) ||
                (p.team || '').toLowerCase().includes(searchKw) ||
                (p.note || '').toLowerCase().includes(searchKw);
-      });
+      };
 
-      // จัดกลุ่มตามชื่อโปรเจค เพื่อลากแถบสีต่อเนื่องยาวเส้นเดียว
-      const projectSpansMap = {};
-      filteredSearaScopes.forEach(p => {
-        const name = (p.projectName || 'Untitled').trim();
+      // รายการทุก Scope ที่ตรงคำค้น (รวมงานที่ยังไม่ลงวันที่ด้วย เพื่อโชว์ในการ์ดรายละเอียดด้านล่าง)
+      const allMatchedScopes = analytics.allNonCancelProjects.filter(matchesProjectSearch);
+
+      // เฉพาะงานที่มีวันเริ่ม-จบ สำหรับวาดแถบสีบนปฏิทิน
+      const scheduledSearaScopes = allMatchedScopes.filter(p => p.startDate && p.endDate);
+
+      // แยกแถบสีบนปฏิทินตาม Scope / Team (ไม่ยุบรวมโปรเจคชื่อเดียวกันเป็นเส้นเดียว)
+      const scopeBarsList = scheduledSearaScopes.map((p, idx) => {
+        const pName = (p.projectName || 'Untitled').trim();
+        const pNote = (p.note || '').trim();
+        const pTeam = (p.team || '').trim();
         const isScopeCompleted = String(p.status || '').trim().startsWith('5.');
-        if (!projectSpansMap[name]) {
-          projectSpansMap[name] = {
-            projectName: name,
-            startDate: p.startDate,
-            endDate: p.endDate,
-            isCompleted: isScopeCompleted
-          };
-        } else {
-          if (p.startDate < projectSpansMap[name].startDate) projectSpansMap[name].startDate = p.startDate;
-          if (p.endDate > projectSpansMap[name].endDate) projectSpansMap[name].endDate = p.endDate;
-          if (!isScopeCompleted) projectSpansMap[name].isCompleted = false;
-        }
+
+        // สร้างป้ายชื่อบนแถบสีให้แยกแยะแต่ละ Scope ออกชัดเจน
+        let barLabel = pName;
+        if (pNote && pTeam) barLabel = `${pName} (${pNote}) · ${pTeam}`;
+        else if (pNote) barLabel = `${pName} (${pNote})`;
+        else if (pTeam) barLabel = `${pName} · ${pTeam}`;
+
+        return {
+          id: `bar_${idx}`,
+          projectName: pName,
+          barLabel: barLabel,
+          startDate: p.startDate,
+          endDate: p.endDate,
+          isCompleted: isScopeCompleted
+        };
       });
 
       // สร้างโครงสร้างปฏิทินทีละสัปดาห์ (Rows of 7 days: Sun-Sat)
@@ -2143,14 +2227,13 @@
         weeks.push(currentWeek);
       }
 
-      // ฟังก์ชันคำนวณ Track แถบสีลากยาวของแต่ละสัปดาห์
       const buildWeekBars = (weekDates) => {
         const validDates = weekDates.filter(Boolean);
         if (validDates.length === 0) return { tracks: [] };
         const wStart = validDates[0];
         const wEnd = validDates[validDates.length - 1];
 
-        const overlapping = Object.values(projectSpansMap).filter(sp => {
+        const overlapping = scopeBarsList.filter(sp => {
           return sp.startDate <= wEnd && sp.endDate >= wStart;
         }).sort((a, b) => {
           if (a.startDate !== b.startDate) return a.startDate.localeCompare(b.startDate);
@@ -2170,6 +2253,7 @@
           }
           return {
             projectName: sp.projectName,
+            barLabel: sp.barLabel,
             startCol,
             endCol,
             isCompleted: sp.isCompleted,
@@ -2199,7 +2283,7 @@
       };
 
       const getDayProjectsSnapshot = (isoDate) => {
-        const jobsToday = filteredSearaScopes.filter(p => isoDate >= p.startDate && isoDate <= p.endDate);
+        const jobsToday = scheduledSearaScopes.filter(p => isoDate >= p.startDate && isoDate <= p.endDate);
         const globalLoad = analytics.getGlobalDayLoad(isoDate);
         return {
           jobsToday,
@@ -2283,7 +2367,7 @@
               }).join('')}
             </div>
 
-            <!-- Continuous Spanning Project Bars Overlay -->
+            <!-- Continuous Spanning Project Scope Bars Overlay -->
             ${tracks.length > 0 ? `
               <div class="relative z-10 pt-[22px] pb-1 space-y-[2px] pointer-events-none">
                 ${tracks.map(track => {
@@ -2301,7 +2385,7 @@
                           <div onclick="event.stopPropagation(); selectProjectCalendarDay('${bar.clickIso}')"
                                style="left: calc(${leftPct}% + ${bar.continuesLeft ? 0 : 2}px); width: calc(${widthPct}% - ${(bar.continuesLeft ? 0 : 2) + (bar.continuesRight ? 0 : 2)}px);"
                                class="pointer-events-auto cursor-pointer absolute top-0 h-[13px] px-1.5 flex items-center text-[8px] font-extrabold leading-none truncate ${barStyle} ${bar.continuesLeft ? 'rounded-l-none' : 'rounded-l-[4px]'} ${bar.continuesRight ? 'rounded-r-none' : 'rounded-r-[4px]'} hover:brightness-95 transition">
-                            ${escapeHtml(bar.projectName)}
+                            ${escapeHtml(bar.barLabel)}
                           </div>
                         `;
                       }).join('')}
@@ -2377,6 +2461,74 @@
       `;
 
       // ========================================================
+      // ALL MATCHED SCOPES BREAKDOWN CARD (แสดงทุก Scope & ทีมของโปรเจคที่ค้นหาครบ 100% รวมถึงงาน TBD)
+      // ========================================================
+      if (searchKw || activeProjectScopeFilter) {
+        html += `
+          <div id="projectAllScopesCard" class="bg-white rounded-3xl border-2 border-indigo-200 p-4 shadow-xs space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5 gap-2">
+              <div class="min-w-0 flex-1">
+                <span class="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700 block">
+                  ${activeProjectScopeFilter ? 'Selected Scope Details' : 'All Matching Scopes & Teams'}
+                </span>
+                <h3 class="text-[14px] font-extrabold text-slate-900 truncate">
+                  "${escapeHtml(activeProjectKeyword)}" (${allMatchedScopes.length} ${allMatchedScopes.length === 1 ? 'Scope' : 'Scopes'})
+                </h3>
+              </div>
+              ${activeProjectScopeFilter ? `
+                <button onclick="clearScopeSubFilter()" class="px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-extrabold flex-shrink-0">
+                  Show All Scopes
+                </button>
+              ` : ''}
+            </div>
+
+            ${allMatchedScopes.length === 0 ? `
+              <p class="text-[11px] text-slate-400 text-center py-3 font-medium">No matching scopes found</p>
+            ` : `
+              <div class="space-y-2">
+                ${allMatchedScopes.map(sc => {
+                  const hasSearaDate = Boolean(sc.startDate || sc.endDate);
+                  const hasSubDate = Boolean(sc.subStart || sc.subEnd);
+                  const isDone = String(sc.status || '').trim().startsWith('5.');
+                  const searaPeriodText = hasSearaDate
+                    ? `${formatShortDate(sc.startDate)} – ${formatShortDate(sc.endDate)}`
+                    : 'Schedule TBD (ยังไม่ลงวันที่)';
+
+                  return `
+                    <div onclick="${sc.startDate ? `jumpToProjectMonthAndDate('${sc.startDate}')` : ''}"
+                         class="${sc.startDate ? 'cursor-pointer hover:border-indigo-300' : ''} p-3 rounded-2xl bg-slate-50 border border-slate-200 transition space-y-1.5">
+                      <div class="flex items-center justify-between gap-2">
+                        <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold ${sc.team ? (isDone ? 'bg-slate-500 text-white' : 'bg-slate-900 text-white') : 'bg-slate-200 text-slate-600'}">
+                          ${escapeHtml(sc.team || 'Unassigned')}
+                        </span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
+                          ${escapeHtml(sc.status || '-')}
+                        </span>
+                      </div>
+                      <div class="flex items-center justify-between gap-2">
+                        <p class="font-extrabold text-slate-900 text-[13px] truncate">
+                          ${escapeHtml(sc.projectName || 'Untitled')}${sc.note ? ` · <span class="text-indigo-700">${escapeHtml(sc.note)}</span>` : ''}
+                        </p>
+                        ${sc.startDate ? '<span class="text-[10px] font-extrabold text-emerald-700 flex-shrink-0">Jump →</span>' : ''}
+                      </div>
+                      <div class="text-[10px] font-bold ${hasSearaDate ? 'text-slate-600' : 'text-amber-700 italic'}">
+                        SEARA Install: <span class="${hasSearaDate ? 'text-slate-900' : ''}">${searaPeriodText}</span>
+                      </div>
+                      ${hasSubDate ? `
+                        <div class="text-[10px] font-bold text-slate-500">
+                          Subcontractor: <span class="text-slate-700">${formatShortDate(sc.subStart)} – ${formatShortDate(sc.subEnd)}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      // ========================================================
       // ACTIVE PROJECTS DIRECTORY (รายการโปรเจคที่ยังไม่จบทั้งหมด A-Z)
       // ========================================================
       const projMap = {};
@@ -2388,6 +2540,7 @@
             projectName: key,
             scopes: [],
             teams: new Set(),
+            notes: new Set(),
             earliestStart: '',
             latestEnd: '',
             hasOpenScope: false
@@ -2395,6 +2548,7 @@
         }
         projMap[key].scopes.push(p);
         if (p.team) projMap[key].teams.add(p.team);
+        if (p.note) projMap[key].notes.add(p.note);
         if (!p.status.startsWith('5.')) projMap[key].hasOpenScope = true;
 
         if (p.startDate && (!projMap[key].earliestStart || p.startDate < projMap[key].earliestStart)) {
@@ -2427,12 +2581,12 @@
         return a.projectName.localeCompare(b.projectName, 'th', { sensitivity: 'base' });
       });
 
-      if (projList.length > 0) {
+      if (projList.length > 0 && !searchKw) {
         html += `
           <div class="space-y-2 pt-1">
             <div class="flex items-center justify-between px-1">
               <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Active Projects List (${projList.length})</span>
-              <span class="text-[10px] font-bold text-slate-400">Tap to jump</span>
+              <span class="text-[10px] font-bold text-slate-400">Tap to inspect</span>
             </div>
             <div class="space-y-2">
               ${projList.map(proj => {
@@ -2440,21 +2594,25 @@
                   ? `${formatShortDate(proj.earliestStart)} – ${formatShortDate(proj.latestEnd)}`
                   : 'Schedule TBD';
                 const teamsStr = Array.from(proj.teams).join(', ');
+                const scopeCountBadge = proj.scopes.length > 1
+                  ? `<span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 ml-1">${proj.scopes.length} Scopes</span>`
+                  : '';
 
                 return `
-                  <div onclick="${proj.earliestStart ? `jumpToProjectMonthAndDate('${proj.earliestStart}')` : ''}" 
-                       class="${proj.earliestStart ? 'cursor-pointer hover:border-slate-300' : ''} bg-white rounded-2xl border border-slate-200 px-3.5 py-2.5 shadow-2xs flex items-center justify-between gap-3 transition">
+                  <div onclick="jumpToProjectView('${escapeHtml(proj.projectName)}', '${proj.earliestStart || ''}')" 
+                       class="cursor-pointer hover:border-slate-300 bg-white rounded-2xl border border-slate-200 px-3.5 py-2.5 shadow-2xs flex items-center justify-between gap-3 transition">
                     <div class="min-w-0 flex-1">
-                      <h3 class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(proj.projectName)}</h3>
+                      <div class="flex items-center">
+                        <h3 class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(proj.projectName)}</h3>
+                        ${scopeCountBadge}
+                      </div>
                       <p class="text-[11px] font-semibold ${rangeText === 'Schedule TBD' ? 'text-slate-400 italic' : 'text-slate-500'} mt-0.5 truncate">
                         ${rangeText}${teamsStr ? ` · <b class="text-slate-700">${escapeHtml(teamsStr)}</b>` : ''}
                       </p>
                     </div>
-                    ${proj.earliestStart ? `
-                      <span class="flex-shrink-0 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                        View →
-                      </span>
-                    ` : ''}
+                    <span class="flex-shrink-0 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                      View →
+                    </span>
                   </div>
                 `;
               }).join('')}
