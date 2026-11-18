@@ -12,7 +12,6 @@
   <meta name="theme-color" content="#0f172a">
 
   <link rel="manifest" href="./manifest.json">
-  
   <link rel="apple-touch-icon" href="./icon.png">
   <link rel="icon" type="image/png" href="./icon.png">
 
@@ -67,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.5.9</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.0</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -135,27 +134,72 @@
 
   <!-- ================= MAIN APP SCREEN ================= -->
   <div id="appScreen" class="hidden">
-    <!-- Top Header Sticky -->
-    <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs flex items-center justify-between gap-2">
-      <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
-      
-      <div class="flex items-center gap-1.5 flex-shrink-0">
-        <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
-          <span id="searchBadgeText"></span>
-          <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
+    
+    <!-- ==================== VIEW 1: INVENTORY STOCK ==================== -->
+    <div id="inventoryViewSection">
+      <!-- Top Header Sticky -->
+      <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs flex items-center justify-between gap-2">
+        <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
+        
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
+            <span id="searchBadgeText"></span>
+            <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
+            v1.6.0
+          </span>
         </div>
-        <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-          v1.5.9
-        </span>
       </div>
+
+      <div id="loading" class="text-center py-20 text-slate-400 text-[11px] font-semibold">
+        Loading inventory data...
+      </div>
+
+      <!-- MAIN BRAND & ITEM CONTAINER -->
+      <div id="contentList" class="p-3.5 space-y-4"></div>
     </div>
 
-    <div id="loading" class="text-center py-20 text-slate-400 text-[11px] font-semibold">
-      Loading inventory data...
-    </div>
+    <!-- ==================== VIEW 2: INSTALL PLAN (READ-ONLY) ==================== -->
+    <div id="installPlanViewSection" class="hidden">
+      <!-- Sticky Header -->
+      <div class="p-3.5 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <button onclick="switchAppMode('inventory')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition">
+              ← Stock
+            </button>
+            <div>
+              <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight">📅 Install Plan</h1>
+              <p class="text-[10px] font-medium text-slate-400" id="planUpdatedAtText">Synced: -</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+            Read-Only
+          </span>
+        </div>
 
-    <!-- MAIN BRAND & ITEM CONTAINER -->
-    <div id="contentList" class="p-3.5 space-y-4"></div>
+        <!-- Team & Status Filter Bar -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll" id="planTeamFilterTabs"></div>
+        <div class="flex items-center gap-1.5">
+          <input type="text" id="planSearchInput" oninput="renderInstallPlanView()" placeholder="🔍 Search project name or note..." 
+                 class="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-slate-800">
+          <select id="planStatusFilter" onchange="renderInstallPlanView()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 focus:outline-none">
+            <option value="ACTIVE">Active Jobs</option>
+            <option value="ALL">All Status</option>
+            <option value="1. Confirmed">1. Confirmed</option>
+            <option value="2. Tentative">2. Tentative</option>
+            <option value="3. Team Assigned">3. Team Assigned</option>
+            <option value="4. Subcontractor">4. Subcontractor</option>
+            <option value="5. Done">5. Done</option>
+            <option value="6. Cancel">6. Cancel</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Content Container -->
+      <div id="installPlanContent" class="p-3.5 space-y-4"></div>
+    </div>
 
     <!-- ================= FLOATING ACTION CONTROLS ================= -->
     <div class="fixed right-5 bottom-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
@@ -170,10 +214,15 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.5.9</b></span>
+            <span>Version: <b class="text-slate-600">1.6.0</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
+
+        <!-- ปุ่มสลับโหมด Install Plan (แสดงเฉพาะผู้ที่มีสิทธิ์ ViewInstallPlan หรือ ADMIN) -->
+        <button id="menuInstallPlanBtn" onclick="toggleAppMode(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-indigo-700 active:scale-95 transition border border-indigo-500">
+          <span id="menuInstallPlanLabel">📅 Install Plan</span>
+        </button>
 
         <button id="adminUserMgmtBtn" onclick="openUserModal(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-700 active:scale-95 transition border border-slate-700">
           <span>👥 Manage Users</span>
@@ -189,7 +238,7 @@
       </div>
 
       <div class="flex items-center gap-2.5 pointer-events-auto">
-        <button onclick="openSearchModal()" title="Search Item / Brand" 
+        <button id="floatingSearchBtn" onclick="openSearchModal()" title="Search Item / Brand" 
                 class="w-13 h-13 p-3.5 bg-white text-slate-700 rounded-2xl shadow-xl shadow-slate-200 border border-slate-200 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
           🔍
         </button>
@@ -284,6 +333,17 @@
                 <span class="text-slate-400 text-[10px]">Loading warehouses from Column F...</span>
               </div>
             </div>
+
+            <!-- สิทธิ์ดูหน้า Install Plan (Col E) -->
+            <div class="pt-1">
+              <label class="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer select-none">
+                <input type="checkbox" id="userFormViewInstallPlan" class="w-4 h-4 rounded text-indigo-600 focus:ring-0">
+                <div>
+                  <span class="text-[12px] font-bold text-slate-800 block">📅 View Install Plan (Col E)</span>
+                  <span class="text-[10px] text-slate-400 block">Allow user to view installation schedule (Read-Only)</span>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
@@ -299,18 +359,21 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.5.9
+    // CONFIGURATION - VERSION 1.6.0
     // ==========================================
-    const APP_VERSION = "1.5.9";
+    const APP_VERSION = "1.6.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
     let currentEmail = localStorage.getItem('inv_user_email') || null;
     let currentPin = localStorage.getItem('inv_user_pin') || null;
     let pendingEmail = '';
-    let appData = { items: [], userWarehouses: [], userEmail: '', role: 'USER', syncTime: '' };
+    let appData = { items: [], userWarehouses: [], userEmail: '', role: 'USER', viewInstallPlan: false, syncTime: '', installPlan: null };
     let selectedWarehouses = new Set(['ALL']);
     
+    let currentAppMode = 'inventory'; // 'inventory' | 'installPlan'
+    let selectedPlanTeam = 'ALL';
+
     let activeBrandName = null;
     let openItems = {};
     let activeKeyword = '';
@@ -483,6 +546,7 @@
         pendingEmail = res.userEmail;
         if (res.role) localStorage.setItem('inv_user_role', res.role);
         if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
+        if (res.viewInstallPlan !== undefined) localStorage.setItem('inv_view_plan', res.viewInstallPlan ? 'true' : 'false');
 
         document.getElementById('stepEmail').classList.add('hidden');
 
@@ -544,6 +608,7 @@
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
           if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
+          if (res.viewInstallPlan !== undefined) localStorage.setItem('inv_view_plan', res.viewInstallPlan ? 'true' : 'false');
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -590,6 +655,7 @@
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
           if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
+          if (res.viewInstallPlan !== undefined) localStorage.setItem('inv_view_plan', res.viewInstallPlan ? 'true' : 'false');
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -611,6 +677,7 @@
       localStorage.removeItem('inv_user_pin');
       localStorage.removeItem('inv_user_role');
       localStorage.removeItem('inv_user_wh');
+      localStorage.removeItem('inv_view_plan');
       currentEmail = null;
       currentPin = null;
       await clearLocalDatabase();
@@ -641,6 +708,18 @@
 
       showAppScreen();
 
+      // ซิงก์สิทธิ์ล่าสุดจาก Sheets เงียบๆ ในพื้นหลัง
+      fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(currentEmail)}`, { method: 'GET', redirect: 'follow' })
+        .then(r => r.json())
+        .then(perm => {
+          if (perm && perm.success) {
+            localStorage.setItem('inv_user_role', perm.role || 'USER');
+            localStorage.setItem('inv_user_wh', perm.allowedWarehouses || '');
+            localStorage.setItem('inv_view_plan', perm.viewInstallPlan ? 'true' : 'false');
+            updatePermissionUI();
+          }
+        }).catch(() => {});
+
       if (!forceSync) {
         const cached = await getCache('cached_' + currentEmail);
         if (cached && cached.items && cached.items.length > 0) {
@@ -663,6 +742,7 @@
       .then(async json => {
         const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
         const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
+        const canViewPlan = (userRole === 'ADMIN') || (localStorage.getItem('inv_view_plan') === 'true');
 
         const allWhSet = new Set();
         (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh.trim()); });
@@ -685,8 +765,10 @@
           items: accessibleItems,
           userEmail: currentEmail,
           role: userRole,
+          viewInstallPlan: canViewPlan,
           syncTime: json.syncTime || '',
-          userWarehouses: accessibleWarehouses
+          userWarehouses: accessibleWarehouses,
+          installPlan: json.installPlan || null
         };
 
         renderApp(constructedData);
@@ -703,6 +785,23 @@
       });
     }
 
+    function updatePermissionUI() {
+      const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
+      const canViewPlan = (userRole === 'ADMIN') || (localStorage.getItem('inv_view_plan') === 'true');
+
+      const adminBtn = document.getElementById('adminUserMgmtBtn');
+      if (userRole === 'ADMIN') adminBtn.classList.remove('hidden');
+      else adminBtn.classList.add('hidden');
+
+      const planBtn = document.getElementById('menuInstallPlanBtn');
+      if (canViewPlan) {
+        planBtn.classList.remove('hidden');
+      } else {
+        planBtn.classList.add('hidden');
+        if (currentAppMode === 'installPlan') switchAppMode('inventory');
+      }
+    }
+
     function renderApp(data) {
       if (!data) return;
       appData = data;
@@ -712,18 +811,243 @@
       document.getElementById('hubUserRole').innerText = `${userRole} ACCESS`;
       document.getElementById('hubSyncTime').innerText = data.syncTime || '-';
 
-      const adminBtn = document.getElementById('adminUserMgmtBtn');
-      if (userRole === 'ADMIN') {
-        adminBtn.classList.remove('hidden');
-      } else {
-        adminBtn.classList.add('hidden');
-      }
-
+      updatePermissionUI();
       renderWarehouseTabs();
       renderView();
       initHorizontalScroll();
+
+      if (currentAppMode === 'installPlan') {
+        renderInstallPlanView();
+      }
     }
 
+    // ========================================================
+    // MODE SWITCHER: INVENTORY STOCK <-> INSTALL PLAN (READ-ONLY)
+    // ========================================================
+    function toggleAppMode() {
+      switchAppMode(currentAppMode === 'inventory' ? 'installPlan' : 'inventory');
+    }
+
+    function switchAppMode(mode) {
+      currentAppMode = mode;
+      const invSec = document.getElementById('inventoryViewSection');
+      const planSec = document.getElementById('installPlanViewSection');
+      const searchBtn = document.getElementById('floatingSearchBtn');
+      const menuLabel = document.getElementById('menuInstallPlanLabel');
+
+      if (mode === 'installPlan') {
+        invSec.classList.add('hidden');
+        planSec.classList.remove('hidden');
+        searchBtn.classList.add('hidden');
+        if (menuLabel) menuLabel.innerText = '📦 Inventory Stock';
+        renderInstallPlanView();
+      } else {
+        planSec.classList.add('hidden');
+        invSec.classList.remove('hidden');
+        searchBtn.classList.remove('hidden');
+        if (menuLabel) menuLabel.innerText = '📅 Install Plan';
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function formatShortThaiDate(isoStr) {
+      if (!isoStr || !isoStr.includes('-')) return isoStr || '-';
+      const parts = isoStr.split('-');
+      if (parts.length !== 3) return isoStr;
+      return `${parseInt(parts[2], 10)}/${parseInt(parts[1], 10)}`;
+    }
+
+    function getStatusBadgeStyle(status) {
+      const s = (status || '').trim();
+      if (s.startsWith('1.')) return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' };
+      if (s.startsWith('2.')) return { bg: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' };
+      if (s.startsWith('3.')) return { bg: 'bg-sky-50 text-sky-700 border-sky-200', dot: 'bg-sky-500' };
+      if (s.startsWith('4.')) return { bg: 'bg-slate-200 text-slate-700 border-slate-300', dot: 'bg-slate-600' };
+      if (s.startsWith('5.')) return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500' };
+      if (s.startsWith('6.')) return { bg: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' };
+      return { bg: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' };
+    }
+
+    function selectPlanTeamFilter(teamName) {
+      selectedPlanTeam = teamName;
+      renderInstallPlanView();
+    }
+
+    function renderInstallPlanView() {
+      const container = document.getElementById('installPlanContent');
+      const tabsEl = document.getElementById('planTeamFilterTabs');
+      const updatedEl = document.getElementById('planUpdatedAtText');
+      const plan = appData.installPlan;
+
+      if (!plan || !plan.teams) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-2 shadow-xs">
+            <span class="text-3xl block">📅</span>
+            <p class="text-[13px] font-bold text-slate-700">ยังไม่มีข้อมูลแผนงานติดตั้ง</p>
+            <p class="text-[11px] text-slate-400">กรุณากดเมนู 🛠️ SEARA Planner > 🚀 ซิงก์แผนงานขึ้นแอป ใน Google Sheets</p>
+          </div>
+        `;
+        return;
+      }
+
+      updatedEl.innerText = `Synced: ${plan.updatedAt || '-'}`;
+
+      // 1. Render Team Filter Pills
+      let pillsHtml = `
+        <button onclick="selectPlanTeamFilter('ALL')" 
+                class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${selectedPlanTeam === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+          All Teams (${plan.teams.length})
+        </button>
+      `;
+      plan.teams.forEach(t => {
+        const active = selectedPlanTeam === t.team;
+        pillsHtml += `
+          <button onclick="selectPlanTeamFilter('${escapeHtml(t.team)}')" 
+                  class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${active ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            ${escapeHtml(t.team)}
+          </button>
+        `;
+      });
+      tabsEl.innerHTML = pillsHtml;
+
+      // 2. ตรวจหาคิวชนกันของแต่ละทีม (1 ทีมรับมากกว่า 1 โปรเจคในวันเดียวกัน)
+      const conflictRows = new Set();
+      const activeJobsForConflict = (plan.projects || []).filter(p =>
+        p.team && p.startDate && p.endDate && (p.status === '1. Confirmed' || p.status === '2. Tentative')
+      );
+      for (let i = 0; i < activeJobsForConflict.length; i++) {
+        for (let j = i + 1; j < activeJobsForConflict.length; j++) {
+          const a = activeJobsForConflict[i];
+          const b = activeJobsForConflict[j];
+          if (a.team === b.team && a.projectName !== b.projectName) {
+            if (a.startDate <= b.endDate && a.endDate >= b.startDate) {
+              conflictRows.add(`${a.team}|${a.projectName}|${a.startDate}`);
+              conflictRows.add(`${b.team}|${b.projectName}|${b.startDate}`);
+            }
+          }
+        }
+      }
+
+      // 3. Team Radar Summary Cards
+      const visibleTeams = selectedPlanTeam === 'ALL'
+        ? plan.teams
+        : plan.teams.filter(t => t.team === selectedPlanTeam);
+
+      let html = `
+        <div class="space-y-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">📡 Team Availability Radar (60 Days)</span>
+            <span class="text-[10px] font-bold text-slate-400">From ${formatShortThaiDate(plan.viewStartDate)}</span>
+          </div>
+          <div class="grid grid-cols-1 gap-2">
+            ${visibleTeams.map(t => {
+              const gapVal = String(t.maxGap || '-');
+              const isFreeAll = gapVal === '-';
+              const isZeroGap = gapVal === '0';
+              const badgeClass = isFreeAll
+                ? 'bg-slate-100 text-slate-700 border-slate-200'
+                : (isZeroGap ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
+              return `
+                <div onclick="selectPlanTeamFilter('${escapeHtml(t.team)}')" class="cursor-pointer bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs hover:border-slate-300 transition flex items-center justify-between gap-2.5">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-extrabold text-slate-900 text-[13px]">${escapeHtml(t.team)}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 font-medium mt-0.5 truncate">${escapeHtml(t.summaryText || '-')}</p>
+                  </div>
+                  <div class="flex-shrink-0 text-center px-2.5 py-1.5 rounded-xl border ${badgeClass}">
+                    <span class="text-[9px] font-bold uppercase block opacity-75">Max Gap</span>
+                    <span class="text-[14px] font-black leading-tight">${escapeHtml(gapVal)}<span class="text-[10px] font-bold ml-0.5">${isFreeAll ? '' : 'd'}</span></span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      // 4. Filter Projects List
+      const searchKw = (document.getElementById('planSearchInput').value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('planStatusFilter').value;
+
+      const filteredProjects = (plan.projects || []).filter(p => {
+        if (selectedPlanTeam !== 'ALL' && p.team !== selectedPlanTeam) return false;
+        if (statusFilter === 'ACTIVE') {
+          if (p.status.startsWith('5.') || p.status.startsWith('6.')) return false;
+        } else if (statusFilter !== 'ALL') {
+          if (p.status !== statusFilter) return false;
+        }
+        if (searchKw) {
+          const matchProj = (p.projectName || '').toLowerCase().includes(searchKw);
+          const matchNote = (p.note || '').toLowerCase().includes(searchKw);
+          const matchTeam = (p.team || '').toLowerCase().includes(searchKw);
+          if (!matchProj && !matchNote && !matchTeam) return false;
+        }
+        return true;
+      });
+
+      html += `
+        <div class="space-y-2.5 pt-1">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">📋 Schedule List</span>
+            <span class="text-[10px] font-bold text-slate-400">${filteredProjects.length} Scopes</span>
+          </div>
+      `;
+
+      if (filteredProjects.length === 0) {
+        html += `
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 text-center text-[11px] font-semibold text-slate-400">
+            No matching installation schedules found.
+          </div>
+        `;
+      } else {
+        filteredProjects.forEach(p => {
+          const st = getStatusBadgeStyle(p.status);
+          const hasSub = p.subStart || p.subEnd;
+          const hasSeara = p.startDate || p.endDate;
+          const isConflict = conflictRows.has(`${p.team}|${p.projectName}|${p.startDate}`);
+
+          html += `
+            <div class="bg-white rounded-2xl border ${isConflict ? 'border-rose-400 bg-rose-50/30 ring-1 ring-rose-300' : 'border-slate-200'} p-3.5 shadow-2xs space-y-2">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="font-extrabold text-slate-900 text-[13px] leading-snug">${escapeHtml(p.projectName || 'Untitled Project')}</span>
+                    ${isConflict ? '<span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-rose-600 text-white animate-pulse">⚠️ คิวซ้อน (OVERLAP)</span>' : ''}
+                  </div>
+                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium mt-0.5">${escapeHtml(p.note)}</p>` : ''}
+                </div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border whitespace-nowrap flex-shrink-0 ${st.bg}">
+                  ${escapeHtml(p.status || '-')}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-100 text-[11px]">
+                ${hasSub ? `
+                  <div class="flex items-center justify-between bg-slate-100/90 px-2.5 py-1.5 rounded-xl border border-slate-200/80">
+                    <span class="text-[10px] font-bold text-slate-600">🏗️ Subcontractor</span>
+                    <span class="font-extrabold text-slate-800">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)}</span>
+                  </div>
+                ` : ''}
+                ${(p.team || hasSeara) ? `
+                  <div class="flex items-center justify-between ${isConflict ? 'bg-rose-100/80 border-rose-300' : 'bg-indigo-50/70 border-indigo-100'} px-2.5 py-1.5 rounded-xl border ${!hasSub ? 'sm:col-span-2' : ''}">
+                    <span class="text-[10px] font-extrabold ${isConflict ? 'text-rose-800' : 'text-indigo-700'}">🛠️ ${escapeHtml(p.team || 'Unassigned')}</span>
+                    <span class="font-extrabold ${isConflict ? 'text-rose-900' : 'text-slate-900'}">${hasSeara ? `${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}` : 'TBD'}</span>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // ========================================================
+    // INVENTORY STOCK VIEW FUNCTIONS
+    // ========================================================
     function renderWarehouseTabs() {
       const tabs = document.getElementById('warehouseTabs');
       let tabsHtml = '';
@@ -823,6 +1147,7 @@
     }
 
     function goHome() {
+      switchAppMode('inventory');
       clearSearch();
       selectedWarehouses.clear();
       selectedWarehouses.add('ALL');
@@ -997,10 +1322,6 @@
         .replace(/'/g, "&#039;");
     }
 
-    // ========================================================
-    // BUNDLE DETECTION LOGIC - VERSION 1.5.9
-    // รองรับทั้ง -X/Y (เช่น S14629-2/9) และ (X/Y) (เช่น S12350-01 (2/4))
-    // ========================================================
     function getParentItemNo(itemNo) {
       if (!itemNo) return '';
       const clean = itemNo.trim();
@@ -1032,7 +1353,6 @@
         return;
       }
 
-      // Grouping with Bundle Logic & Stock Completeness
       const itemMap = {};
       filteredRaw.forEach(item => {
         const rawCode = (item.itemNo || '').trim();
@@ -1075,7 +1395,6 @@
         }
       });
 
-      // ตรวจสอบความสมบูรณ์ของชุด (Set Completeness Check)
       Object.values(itemMap).forEach(group => {
         const partsCount = Object.keys(group.partsMap).length;
         if (partsCount > 1) {
@@ -1225,7 +1544,6 @@
                 <span>UoM: <b class="text-slate-900 font-extrabold text-[12px]">${escapeHtml(group.unit) || '-'}</b></span>
               </div>
 
-              <!-- รายการสต็อกคลัง (อ้างอิงรหัสแม่เท่านั้น) -->
               <div class="space-y-2.5">
                 ${group.warehouses.length === 0 ? `
                   <div class="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-center text-amber-800 text-[11px] font-semibold">
@@ -1317,7 +1635,6 @@
                 }).join('')}
               </div>
 
-              <!-- ตารางแจกแจงชิ้นส่วนย่อยของ Bundle พร้อมเตือนของไม่ครบชุด -->
               ${group.isBundle ? `
                 <div class="pt-2 border-t border-slate-200 space-y-2">
                   <div class="flex items-center justify-between px-1">
@@ -1365,7 +1682,7 @@
     }
 
     // ==========================================
-    // ADMIN USER MANAGEMENT
+    // ADMIN USER MANAGEMENT (รวม Col E: ViewInstallPlan)
     // ==========================================
     function openUserModal() {
       document.getElementById('userModal').classList.remove('hidden');
@@ -1401,6 +1718,7 @@
       document.getElementById('userFormEmail').value = '';
       document.getElementById('userFormEmail').disabled = false;
       document.getElementById('userFormRole').value = 'USER';
+      document.getElementById('userFormViewInstallPlan').checked = false;
       selectAllWarehouses(false);
       document.getElementById('formHeaderTitle').innerText = 'Add New User';
       document.getElementById('saveUserBtn').innerText = 'Save User';
@@ -1471,12 +1789,14 @@
         let html = '';
         res.users.forEach(u => {
           const isMe = u.email.toLowerCase() === currentEmail.toLowerCase();
+          const canPlan = u.role === 'ADMIN' || u.viewInstallPlan === true;
           html += `
             <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2.5">
               <div>
                 <div class="flex items-center justify-between gap-1.5">
                   <span class="font-extrabold text-slate-900 text-[13px] truncate flex-1 min-w-0">${escapeHtml(u.email)}</span>
                   <div class="flex items-center gap-1.5 flex-shrink-0">
+                    ${canPlan ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">📅 Plan</span>' : ''}
                     <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'ADMIN' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
                     ${u.hasPin ? '<span class="text-[10px] text-emerald-600 font-bold">● Active</span>' : '<span class="text-[10px] text-amber-500 font-bold">○ No PIN</span>'}
                   </div>
@@ -1487,7 +1807,7 @@
               </div>
 
               <div class="pt-2 border-t border-slate-100 flex items-center justify-end gap-1.5">
-                <button onclick="editUser('${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.allowedWarehouses)}')" 
+                <button onclick="editUser('${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.allowedWarehouses)}', ${canPlan})" 
                         class="px-3 py-1.5 text-[11px] font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-xl transition flex items-center gap-1">
                   ✏️ Edit
                 </button>
@@ -1512,10 +1832,11 @@
       });
     }
 
-    function editUser(email, role, whStr) {
+    function editUser(email, role, whStr, viewPlan) {
       document.getElementById('userFormEmail').value = email;
       document.getElementById('userFormEmail').disabled = true;
       document.getElementById('userFormRole').value = role;
+      document.getElementById('userFormViewInstallPlan').checked = Boolean(viewPlan);
       renderWarehouseCheckboxes(whStr);
       document.getElementById('formHeaderTitle').innerText = `Edit: ${email}`;
       document.getElementById('saveUserBtn').innerText = 'Update User';
@@ -1526,6 +1847,7 @@
       const email = document.getElementById('userFormEmail').value.trim();
       const role = document.getElementById('userFormRole').value;
       const wh = getSelectedWarehousesFromUI();
+      const viewPlan = document.getElementById('userFormViewInstallPlan').checked;
       const btn = document.getElementById('saveUserBtn');
 
       if (!email) {
@@ -1536,7 +1858,7 @@
       btn.innerText = 'Saving...';
       btn.disabled = true;
 
-      fetch(`${API_URL}?action=saveUser&adminEmail=${encodeURIComponent(currentEmail)}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}&allowedWarehouses=${encodeURIComponent(wh)}`, {
+      fetch(`${API_URL}?action=saveUser&adminEmail=${encodeURIComponent(currentEmail)}&email=${encodeURIComponent(email)}&role=${encodeURIComponent(role)}&allowedWarehouses=${encodeURIComponent(wh)}&viewInstallPlan=${viewPlan}`, {
         method: 'GET',
         redirect: 'follow'
       })
