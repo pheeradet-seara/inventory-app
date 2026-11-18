@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.5</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.6</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.5</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.6</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -331,9 +331,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.5
+    // CONFIGURATION - VERSION 1.9.6
     // ==========================================
-    const APP_VERSION = "1.9.5";
+    const APP_VERSION = "1.9.6";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -1172,13 +1172,15 @@
       renderInstallPlanView();
     }
 
-    function selectProjectCalendarDay(isoDate) {
+    function selectProjectCalendarDay(isoDate, shouldScroll = true) {
       selectedProjectCalDate = isoDate;
       renderInstallPlanView();
-      setTimeout(() => {
-        const card = document.getElementById('projectDayInspectorCard');
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 60);
+      if (shouldScroll) {
+        setTimeout(() => {
+          const card = document.getElementById('projectDayInspectorCard');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 60);
+      }
     }
 
     function jumpToProjectMonthAndDate(targetIsoDate) {
@@ -1903,7 +1905,7 @@
     }
 
     // ========================================================
-    // SUB-VIEW B: PROJECT MONTHLY CALENDAR (SUN - SAT, PROJECT NAMES ONLY IN CELLS)
+    // SUB-VIEW B: PROJECT MONTHLY CALENDAR (CONTINUOUS SPANNING BARS)
     // ========================================================
     function renderProjectCalendarTab(container, plan, analytics) {
       const searchKw = (activeProjectKeyword || '').toLowerCase().trim();
@@ -1912,41 +1914,126 @@
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const mStr = String(calMonth + 1).padStart(2, '0');
+      const monthStartIso = `${calYear}-${mStr}-01`;
+      const monthEndIso = `${calYear}-${mStr}-${String(daysInMonth).padStart(2, '0')}`;
 
-      // กรองเฉพาะงาน SEARA Install (ตัด Subcontractor ออก) ที่ตรงกับคำค้นหา
+      // กรองเฉพาะงาน SEARA Install (ตัด Subcontractor และ 6. Cancelled ออก)
       const filteredSearaScopes = analytics.allNonCancelProjects.filter(p => {
-        const hasSeara = Boolean(p.startDate && p.endDate);
-        if (!hasSeara) return false;
+        if (!p.startDate || !p.endDate) return false;
         if (!searchKw) return true;
         return (p.projectName || '').toLowerCase().includes(searchKw) ||
                (p.team || '').toLowerCase().includes(searchKw) ||
                (p.note || '').toLowerCase().includes(searchKw);
       });
 
-      // Helper: ดึงรายชื่อโปรเจค SEARA Install ของวันที่กำหนด
-      const getDayProjectsSnapshot = (isoDate) => {
-        const jobsToday = filteredSearaScopes.filter(p => isoDate >= p.startDate && isoDate <= p.endDate);
-        // รวมชื่อโปรเจคไม่ให้ซ้ำกันในช่องปฏิทินวันเดียวกัน (กรณีโปรเจคเดียวมีหลาย Scope ในวันเดียว)
-        const uniqueProjectNames = [];
-        const seenNames = new Set();
-        jobsToday.forEach(j => {
-          const name = (j.projectName || 'Untitled').trim();
-          if (!seenNames.has(name)) {
-            seenNames.add(name);
-            uniqueProjectNames.push(name);
+      // จัดกลุ่มตามชื่อโปรเจค เพื่อลากแถบสีต่อเนื่องยาวเส้นเดียว
+      const projectSpansMap = {};
+      filteredSearaScopes.forEach(p => {
+        const name = (p.projectName || 'Untitled').trim();
+        const isScopeCompleted = String(p.status || '').trim().startsWith('5.');
+        if (!projectSpansMap[name]) {
+          projectSpansMap[name] = {
+            projectName: name,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            isCompleted: isScopeCompleted
+          };
+        } else {
+          if (p.startDate < projectSpansMap[name].startDate) projectSpansMap[name].startDate = p.startDate;
+          if (p.endDate > projectSpansMap[name].endDate) projectSpansMap[name].endDate = p.endDate;
+          // ถ้ามี scope ใดยังไม่ completed ให้ถือว่าโปรเจคนี้ยังไม่จบ (สีเข้ม)
+          if (!isScopeCompleted) projectSpansMap[name].isCompleted = false;
+        }
+      });
+
+      // สร้างโครงสร้างปฏิทินทีละสัปดาห์ (Rows of 7 days: Sun-Sat)
+      const weeks = [];
+      let currentWeek = [];
+      for (let e = 0; e < firstDayOfMonth; e++) {
+        currentWeek.push(null);
+      }
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dStr = String(day).padStart(2, '0');
+        currentWeek.push(`${calYear}-${mStr}-${dStr}`);
+        if (currentWeek.length === 7) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+      }
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) currentWeek.push(null);
+        weeks.push(currentWeek);
+      }
+
+      // ฟังก์ชันคำนวณ Track แถบสีลากยาวของแต่ละสัปดาห์ (ไม่ทับกัน และแสดงครบทุกโปรเจค)
+      const buildWeekBars = (weekDates) => {
+        const validDates = weekDates.filter(Boolean);
+        if (validDates.length === 0) return { tracks: [] };
+        const wStart = validDates[0];
+        const wEnd = validDates[validDates.length - 1];
+
+        // หาโปรเจคทั้งหมดที่มีช่วงเวลาพาดผ่านสัปดาห์นี้
+        const overlapping = Object.values(projectSpansMap).filter(sp => {
+          return sp.startDate <= wEnd && sp.endDate >= wStart;
+        }).sort((a, b) => {
+          if (a.startDate !== b.startDate) return a.startDate.localeCompare(b.startDate);
+          return b.endDate.localeCompare(a.endDate);
+        });
+
+        const bars = overlapping.map(sp => {
+          let startCol = -1;
+          let endCol = -1;
+          for (let c = 0; c < 7; c++) {
+            const iso = weekDates[c];
+            if (!iso) continue;
+            if (iso >= sp.startDate && iso <= sp.endDate) {
+              if (startCol === -1) startCol = c;
+              endCol = c;
+            }
+          }
+          return {
+            projectName: sp.projectName,
+            startCol,
+            endCol,
+            isCompleted: sp.isCompleted,
+            continuesLeft: sp.startDate < wStart,
+            continuesRight: sp.endDate > wEnd,
+            clickIso: weekDates[startCol] || wStart
+          };
+        }).filter(b => b.startCol !== -1);
+
+        // จัดลง Track (แถวแนวนอน) เพื่อไม่ให้แถบสีชนกัน
+        const tracks = [];
+        bars.forEach(bar => {
+          let placed = false;
+          for (let t = 0; t < tracks.length; t++) {
+            const lastInTrack = tracks[t][tracks[t].length - 1];
+            if (lastInTrack.endCol < bar.startCol) {
+              tracks[t].push(bar);
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            tracks.push([bar]);
           }
         });
 
+        return { tracks };
+      };
+
+      const getDayProjectsSnapshot = (isoDate) => {
+        const jobsToday = filteredSearaScopes.filter(p => isoDate >= p.startDate && isoDate <= p.endDate);
         const globalLoad = analytics.getGlobalDayLoad(isoDate);
         return {
           jobsToday,
-          uniqueProjectNames,
           isOverload: globalLoad.isOverload
         };
       };
 
       let html = `
-        <div class="bg-white rounded-3xl border border-slate-200 p-3 shadow-xs space-y-3">
+        <div class="bg-white rounded-3xl border border-slate-200 p-3 shadow-xs space-y-2.5">
           
           <!-- Month Switcher Header -->
           <div class="flex items-center justify-between px-0.5">
@@ -1960,102 +2047,101 @@
             </button>
           </div>
 
-          <!-- Legend -->
+          <!-- Legend: Active (Solid) vs Completed (Transparent) -->
           <div class="grid grid-cols-3 gap-1 text-center text-[10px] font-bold bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-            <div class="py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80">SEARA Install</div>
-            <div class="py-1 rounded-lg bg-rose-100 text-rose-800 border border-rose-300/80">Overload</div>
-            <div class="py-1 rounded-lg bg-white text-slate-500 border border-slate-200/80">Tap day to view</div>
+            <div class="py-1 rounded-lg bg-emerald-600 text-white">Active / Ongoing</div>
+            <div class="py-1 rounded-lg bg-emerald-600/20 text-emerald-900/75 border border-emerald-600/20">Completed</div>
+            <div class="py-1 rounded-lg bg-white text-slate-500 border border-slate-200/80">Tap to inspect</div>
           </div>
 
           <!-- Sun - Sat Day Headers -->
-          <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-wider">
-            <div class="text-rose-500 py-0.5">Sun</div>
-            <div class="text-slate-500 py-0.5">Mon</div>
-            <div class="text-slate-500 py-0.5">Tue</div>
-            <div class="text-slate-500 py-0.5">Wed</div>
-            <div class="text-slate-500 py-0.5">Thu</div>
-            <div class="text-slate-500 py-0.5">Fri</div>
-            <div class="text-slate-400 py-0.5">Sat</div>
+          <div class="grid grid-cols-7 text-center text-[10px] font-extrabold uppercase tracking-wider border-b border-slate-100 pb-1">
+            <div class="text-rose-500">Sun</div>
+            <div class="text-slate-500">Mon</div>
+            <div class="text-slate-500">Tue</div>
+            <div class="text-slate-500">Wed</div>
+            <div class="text-slate-500">Thu</div>
+            <div class="text-slate-500">Fri</div>
+            <div class="text-slate-400">Sat</div>
           </div>
 
-          <!-- 30-31 Days Calendar Grid (Sun - Sat) -->
-          <div class="grid grid-cols-7 gap-1">
+          <!-- Week-by-Week Spanning Calendar Rows -->
+          <div class="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-200">
       `;
 
-      for (let e = 0; e < firstDayOfMonth; e++) {
-        html += `<div class="min-h-[66px] rounded-xl bg-slate-50/40"></div>`;
-      }
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const mStr = String(calMonth + 1).padStart(2, '0');
-        const dStr = String(day).padStart(2, '0');
-        const isoDate = `${calYear}-${mStr}-${dStr}`;
-        const dayOfWeek = new Date(calYear, calMonth, day).getDay();
-        const isSunday = (dayOfWeek === 0);
-        const isPast = (isoDate < todayIso);
-        const isSelected = (isoDate === selectedProjectCalDate);
-        const isToday = (isoDate === todayIso);
-
-        const snap = getDayProjectsSnapshot(isoDate);
-        const projNames = snap.uniqueProjectNames;
-
-        let cellBg = 'bg-white border-slate-200/80';
-        let dayNumColor = isSunday ? 'text-rose-600' : 'text-slate-800';
-
-        if (isPast && projNames.length === 0) {
-          cellBg = 'bg-slate-100/80 border-slate-200/60';
-          dayNumColor = 'text-slate-400';
-        } else if (isSunday) {
-          cellBg = 'bg-rose-50/60 border-rose-200/80';
-          dayNumColor = 'text-rose-600';
-        } else if (snap.isOverload && projNames.length > 0) {
-          cellBg = 'bg-rose-50/90 border-rose-300';
-        } else if (projNames.length > 0) {
-          cellBg = isPast ? 'bg-slate-100 border-slate-300/80' : 'bg-emerald-50/50 border-emerald-200/90';
-        }
-
-        const selectedClass = isSelected ? 'ring-2 ring-slate-950 scale-[1.03] z-10 shadow-sm' : '';
-
-        // แสดงเฉพาะชื่อโปรเจคในช่องปฏิทิน (สูงสุด 2 บรรทัด + ตัวนับส่วนเกิน)
-        let pillsHtml = '';
-        if (projNames.length > 0) {
-          const maxShow = 2;
-          const visibleNames = projNames.slice(0, maxShow);
-          const extraCount = projNames.length - maxShow;
-          const pillBg = isPast
-            ? 'bg-slate-500 text-white'
-            : (snap.isOverload ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white');
-
-          pillsHtml = `<div class="w-full space-y-0.5 mt-0.5 overflow-hidden">`;
-          visibleNames.forEach(pName => {
-            pillsHtml += `
-              <div class="w-full px-1 py-[1px] rounded-[4px] ${pillBg} text-[7.5px] font-bold leading-tight truncate text-left">
-                ${escapeHtml(pName)}
-              </div>
-            `;
-          });
-          if (extraCount > 0) {
-            pillsHtml += `
-              <div class="w-full text-[7px] font-extrabold text-slate-600 text-center leading-none pt-[1px]">
-                +${extraCount} more
-              </div>
-            `;
-          }
-          pillsHtml += `</div>`;
-        } else if (isSunday) {
-          pillsHtml = `<span class="text-[7.5px] font-bold text-rose-400 mt-auto">Holiday</span>`;
-        }
+      weeks.forEach(weekDates => {
+        const { tracks } = buildWeekBars(weekDates);
+        const trackHeightPx = 15;
+        const headerHeightPx = 22;
+        const bottomPadPx = tracks.length > 0 ? 5 : 14;
+        const rowMinHeight = headerHeightPx + (tracks.length * trackHeightPx) + bottomPadPx;
 
         html += `
-          <button onclick="selectProjectCalendarDay('${isoDate}')" 
-                  class="min-h-[66px] p-1 rounded-xl border transition-all flex flex-col items-center justify-start ${cellBg} ${selectedClass}">
-            <span class="text-[10px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : dayNumColor}">
-              ${day}
-            </span>
-            ${pillsHtml}
-          </button>
+          <div class="relative bg-white" style="min-height: ${rowMinHeight}px;">
+            
+            <!-- 7 Day Background Columns (Clickable) -->
+            <div class="grid grid-cols-7 absolute inset-0">
+              ${weekDates.map((isoDate, colIdx) => {
+                if (!isoDate) {
+                  return `<div class="bg-slate-50/60 ${colIdx < 6 ? 'border-r border-slate-100' : ''}"></div>`;
+                }
+                const dayNum = parseInt(isoDate.split('-')[2], 10);
+                const isSunday = (colIdx === 0);
+                const isToday = (isoDate === todayIso);
+                const isSelected = (isoDate === selectedProjectCalDate);
+                const snap = getDayProjectsSnapshot(isoDate);
+
+                let cellBg = isSunday ? 'bg-rose-50/40' : 'bg-white';
+                if (isSelected) cellBg = 'bg-slate-900/[0.06] ring-2 ring-inset ring-slate-900 z-10';
+                else if (snap.isOverload && snap.jobsToday.length > 0) cellBg = 'bg-rose-50/70';
+
+                const numColor = isSunday ? 'text-rose-600' : 'text-slate-700';
+
+                return `
+                  <button onclick="selectProjectCalendarDay('${isoDate}')" 
+                          class="h-full pt-1 px-0.5 flex flex-col items-center justify-start transition ${cellBg} ${colIdx < 6 ? 'border-r border-slate-100' : ''} hover:bg-slate-50">
+                    <span class="text-[10px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : numColor}">
+                      ${dayNum}
+                    </span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+            <!-- Continuous Spanning Project Bars Overlay -->
+            ${tracks.length > 0 ? `
+              <div class="relative z-10 pt-[22px] pb-1 space-y-[2px] pointer-events-none">
+                ${tracks.map(track => {
+                  return `
+                    <div class="relative h-[13px] w-full">
+                      ${track.map(bar => {
+                        const leftPct = (bar.startCol / 7) * 100;
+                        const widthPct = ((bar.endCol - bar.startCol + 1) / 7) * 100;
+
+                        const barStyle = bar.isCompleted
+                          ? 'bg-emerald-600/20 text-emerald-950/75 border border-emerald-600/25'
+                          : 'bg-emerald-600 text-white shadow-2xs';
+
+                        const roundLeft = bar.continuesLeft ? 'rounded-l-none ml-0' : 'rounded-l-[5px] ml-[2px]';
+                        const roundRight = bar.continuesRight ? 'rounded-r-none mr-0' : 'rounded-r-[5px] mr-[2px]';
+
+                        return `
+                          <div onclick="event.stopPropagation(); selectProjectCalendarDay('${bar.clickIso}')"
+                               style="left: calc(${leftPct}% + ${bar.continuesLeft ? 0 : 2}px); width: calc(${widthPct}% - ${(bar.continuesLeft ? 0 : 2) + (bar.continuesRight ? 0 : 2)}px);"
+                               class="pointer-events-auto cursor-pointer absolute top-0 h-[13px] px-1.5 flex items-center text-[8px] font-extrabold leading-none truncate ${barStyle} ${bar.continuesLeft ? 'rounded-l-none' : 'rounded-l-[4px]'} ${bar.continuesRight ? 'rounded-r-none' : 'rounded-r-[4px]'} hover:brightness-95 transition">
+                            ${escapeHtml(bar.projectName)}
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+
+          </div>
         `;
-      }
+      });
 
       html += `
           </div>
@@ -2087,29 +2173,32 @@
             <p class="text-[11px] text-slate-400 text-center py-3 font-medium">No SEARA installation scheduled on this date</p>
           ` : `
             <div class="space-y-2">
-              ${inspectSnap.jobsToday.map(p => `
-                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white">
-                      ${escapeHtml(p.team || 'Unassigned')}
-                    </span>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
-                      ${escapeHtml(p.status || '-')}
-                    </span>
+              ${inspectSnap.jobsToday.map(p => {
+                const isDone = String(p.status || '').trim().startsWith('5.');
+                return `
+                  <div class="p-3 rounded-2xl ${isDone ? 'bg-slate-50/70 border-slate-200/80 opacity-80' : 'bg-slate-50 border-slate-200'} border space-y-1.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold ${isDone ? 'bg-slate-500 text-white' : 'bg-slate-900 text-white'}">
+                        ${escapeHtml(p.team || 'Unassigned')}
+                      </span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg ${isDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-600 border-slate-200'} border">
+                        ${escapeHtml(p.status || '-')}
+                      </span>
+                    </div>
+                    <p class="font-extrabold text-slate-900 text-[13px] leading-snug">
+                      ${escapeHtml(p.projectName || 'Untitled')}
+                    </p>
+                    ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
+                    <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-1 border-t border-slate-200/70">
+                      <span>Install Period: <b class="text-slate-700">${formatShortDate(p.startDate)} – ${formatShortDate(p.endDate)}</b></span>
+                      <button onclick="jumpToProjectPeriodInCalendar('${encodeURIComponent(p.projectName || '')}', '${p.startDate}')" 
+                              class="text-emerald-700 hover:underline font-extrabold">
+                        Team View →
+                      </button>
+                    </div>
                   </div>
-                  <p class="font-extrabold text-slate-900 text-[13px] leading-snug">
-                    ${escapeHtml(p.projectName || 'Untitled')}
-                  </p>
-                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
-                  <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 pt-1 border-t border-slate-200/70">
-                    <span>Install Period: <b class="text-slate-700">${formatShortDate(p.startDate)} – ${formatShortDate(p.endDate)}</b></span>
-                    <button onclick="jumpToProjectPeriodInCalendar('${encodeURIComponent(p.projectName || '')}', '${p.startDate}')" 
-                            class="text-emerald-700 hover:underline font-extrabold">
-                      Team View →
-                    </button>
-                  </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
           `}
         </div>
@@ -2146,7 +2235,6 @@
 
       let projList = Object.values(projMap).filter(proj => {
         if (!proj.hasOpenScope) return false;
-        if (proj.latestEnd && proj.latestEnd < todayIso) return false;
 
         if (searchKw) {
           const matchName = proj.projectName.toLowerCase().includes(searchKw);
@@ -2183,7 +2271,7 @@
 
                 return `
                   <div onclick="${proj.earliestStart ? `jumpToProjectMonthAndDate('${proj.earliestStart}')` : ''}" 
-                       class="${proj.earliestStart ? 'cursor-pointer hover:border-slate-300' : ''} bg-white rounded-2xl border border-slate-200 px-3.5 py-3 shadow-2xs flex items-center justify-between gap-3 transition">
+                       class="${proj.earliestStart ? 'cursor-pointer hover:border-slate-300' : ''} bg-white rounded-2xl border border-slate-200 px-3.5 py-2.5 shadow-2xs flex items-center justify-between gap-3 transition">
                     <div class="min-w-0 flex-1">
                       <h3 class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(proj.projectName)}</h3>
                       <p class="text-[11px] font-semibold ${rangeText === 'Schedule TBD' ? 'text-slate-400 italic' : 'text-slate-500'} mt-0.5 truncate">
@@ -2207,7 +2295,7 @@
     }
 
     // ========================================================
-    // INVENTORY STOCK VIEW FUNCTIONS
+    // INVENTORY STOCK VIEW FUNCTIONS (COMPACT 2-COLUMN CARDS)
     // ========================================================
     function renderWarehouseTabs() {
       const tabs = document.getElementById('warehouseTabs');
@@ -2453,7 +2541,7 @@
 
     function renderAllBrands(isSingleMatch, keyword) {
       const container = document.getElementById('contentList');
-      let gridHtml = '<div class="grid grid-cols-2 gap-3">';
+      let gridHtml = '<div class="grid grid-cols-2 gap-2">';
 
       for (let i = 0; i < currentRenderList.length; i += 2) {
         const brand1 = currentRenderList[i];
@@ -2479,28 +2567,28 @@
       container.innerHTML = gridHtml;
     }
 
+    // Compact 2-Column Brand Card (Matched to Team Card height & spacing)
     function renderBrandCardHtml(brandObj, isBrandOpen) {
       const initials = getBrandInitials(brandObj.brand);
       return `
         <div onclick="toggleBrand('${escapeHtml(brandObj.brand)}')" 
-             class="cursor-pointer p-3.5 sm:p-4 rounded-3xl border transition-all duration-200 select-none flex flex-col justify-between ${isBrandOpen ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-800' : 'bg-white text-slate-800 border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md'}">
+             class="cursor-pointer px-3 py-2.5 rounded-2xl border transition-all duration-150 select-none flex items-center justify-between gap-2 ${isBrandOpen ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-1 ring-slate-800' : 'bg-white text-slate-800 border-slate-200 shadow-2xs hover:border-slate-300'}">
           
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-[13px] font-black tracking-tight ${isBrandOpen ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700'}">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <div class="w-8 h-8 rounded-xl flex-shrink-0 flex items-center justify-center text-[11px] font-black tracking-tight ${isBrandOpen ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-700'}">
               ${escapeHtml(initials)}
             </div>
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isBrandOpen ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-500'}">
-              ${brandObj.items.length} items
-            </span>
-          </div>
-
-          <div>
-            <span class="font-extrabold text-[13px] tracking-tight block truncate ${isBrandOpen ? 'text-white' : 'text-slate-900'}">${escapeHtml(brandObj.brand)}</span>
-            <div class="flex items-center justify-between text-[10px] mt-1 ${isBrandOpen ? 'text-slate-300' : 'text-slate-400'}">
-              <span>Catalog</span>
-              <span class="font-bold text-[10px]">${isBrandOpen ? '▲ Close' : '▼ View'}</span>
+            <div class="min-w-0 flex-1">
+              <span class="font-extrabold text-[12px] leading-tight block truncate ${isBrandOpen ? 'text-white' : 'text-slate-900'}">${escapeHtml(brandObj.brand)}</span>
+              <span class="text-[10px] font-semibold block mt-0.5 ${isBrandOpen ? 'text-slate-300' : 'text-slate-400'}">
+                ${brandObj.items.length} items
+              </span>
             </div>
           </div>
+
+          <span class="text-[10px] font-extrabold flex-shrink-0 ${isBrandOpen ? 'text-slate-300' : 'text-slate-400'}">
+            ${isBrandOpen ? '▲' : '▼'}
+          </span>
 
         </div>
       `;
@@ -2508,7 +2596,7 @@
 
     function renderActiveItemsPanelHtml(brandObj, isSingleMatch) {
       let html = `
-        <div id="activeBrandPanel" class="col-span-2 bg-white rounded-3xl border border-slate-200 shadow-md p-3.5 sm:p-4 space-y-3 transition-all duration-300 my-1">
+        <div id="activeBrandPanel" class="col-span-2 bg-white rounded-3xl border border-slate-200 shadow-md p-3.5 sm:p-4 space-y-3 transition-all duration-300 my-0.5">
           <div class="flex items-center justify-between px-1 border-b border-slate-100 pb-2.5">
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
