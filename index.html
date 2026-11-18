@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.8.0</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.8.2</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -146,7 +146,7 @@
             <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
           </div>
           <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-            v1.8.0
+            v1.8.2
           </span>
         </div>
       </div>
@@ -214,7 +214,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.8.0</b></span>
+            <span>Version: <b class="text-slate-600">1.8.2</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -357,9 +357,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.8.0
+    // CONFIGURATION - VERSION 1.8.2
     // ==========================================
-    const APP_VERSION = "1.8.0";
+    const APP_VERSION = "1.8.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -972,12 +972,15 @@
       renderInstallPlanView();
     }
 
-    // Helper: คำนวณช่วงวันที่ว่างติดต่อกันของแต่ละทีมใน 60 วันข้างหน้า (นับวันจันทร์-เสาร์)
+    // Helper: คำนวณช่วงวันที่ว่างติดต่อกัน (Free Window) และช่วงวันที่ของ Max Gap ใน 60 วันข้างหน้า
     function computeTeamFreeWindow(teamName, activeProjects, todayIso) {
       const busyDates = new Set();
+      let lastBusyIso = '';
+
       activeProjects.forEach(p => {
         if (p.team === teamName && p.startDate && p.endDate &&
             (p.status === '1. Confirmed' || p.status === '2. Tentative' || p.status === '3. Team Assigned')) {
+          if (!lastBusyIso || p.endDate > lastBusyIso) lastBusyIso = p.endDate;
           let cur = new Date(p.startDate + 'T00:00:00');
           const end = new Date(p.endDate + 'T00:00:00');
           let guard = 0;
@@ -1004,7 +1007,7 @@
         const iso = `${y}-${m}-${d}`;
         const dow = startCur.getDay();
 
-        if (dow !== 0) { // ไม่นับวันอาทิตย์
+        if (dow !== 0) {
           if (!busyDates.has(iso)) {
             totalFreeWorkDays++;
             if (!curStreak) {
@@ -1024,24 +1027,45 @@
       }
       if (curStreak) streaks.push(curStreak);
 
-      if (busyDates.size === 0 || streaks.length === 0 && totalFreeWorkDays > 0) {
-        return { label: 'All 60 days free', longestDays: 60 };
+      if (busyDates.size === 0 || (streaks.length === 0 && totalFreeWorkDays > 0)) {
+        return { label: 'All 60 days free', maxGapRange: 'All 60d', longestDays: 60 };
       }
       if (streaks.length === 0) {
-        return { label: 'Fully booked (Next 60d)', longestDays: 0 };
+        return { label: 'Fully booked (Next 60d)', maxGapRange: 'None', longestDays: 0 };
       }
 
-      // หาช่วงที่ว่างติดต่อกันยาวที่สุด
+      // หาช่วงว่างแทรกกลางระหว่างงาน (Inter-project gaps) สำหรับระบุช่วงวันของ Max Gap
+      const inBetweenGaps = lastBusyIso
+        ? streaks.filter(s => s.end < lastBusyIso)
+        : [];
+
+      let targetGap = null;
+      if (inBetweenGaps.length > 0) {
+        targetGap = inBetweenGaps[0];
+        inBetweenGaps.forEach(g => {
+          if (g.workDays > targetGap.workDays) targetGap = g;
+        });
+      }
+
+      // หาช่วงว่างติดต่อกันยาวที่สุดทั้งหมด (Free Window)
       let best = streaks[0];
       streaks.forEach(s => {
         if (s.workDays > best.workDays) best = s;
       });
 
+      const formatStreak = (st) => st.start === st.end
+        ? `${formatShortDate(st.start)}`
+        : `${formatShortDate(st.start)} – ${formatShortDate(st.end)}`;
+
       const rangeLabel = best.start === best.end
         ? `${formatShortDate(best.start)} (1d)`
         : `${formatShortDate(best.start)} – ${formatShortDate(best.end)} (${best.workDays}d)`;
 
-      return { label: rangeLabel, longestDays: best.workDays };
+      const maxGapRange = targetGap
+        ? formatStreak(targetGap)
+        : (best.start ? `From ${formatShortDate(best.start)}` : '-');
+
+      return { label: rangeLabel, maxGapRange, longestDays: best.workDays };
     }
 
     // Helper: สร้างข้อมูล Overload และ Snapshot รายวัน
@@ -1371,7 +1395,7 @@
         </div>
       `;
 
-      // PROJECT SCOPE DETAILS CARD (เมื่อกดมาจากหน้า Projects)
+      // PROJECT SCOPE DETAILS CARD
       if (isProjectFiltered) {
         html += `
           <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs space-y-2.5">
@@ -1415,7 +1439,7 @@
         `;
       }
 
-      // DAY INSPECTOR CARD (แสดงเฉพาะเมื่อผู้ใช้แตะเลือกวันที่บนปฏิทิน)
+      // DAY INSPECTOR CARD (คลิกดูย้อนหลังในปฏิทินได้ปกติ)
       if (selectedCalDate) {
         const isSelectedPast = (selectedCalDate < todayIso);
         const selectedDayOfWeek = new Date(selectedCalDate + 'T00:00:00').getDay();
@@ -1527,30 +1551,29 @@
         `;
       }
 
-      // TEAM PLANNED PROJECTS LIST (แสดงเฉพาะเมื่อกด Filter เลือกทีมใดทีมหนึ่ง)
+      // TEAM PLANNED PROJECTS LIST (แสดงเฉพาะงานที่ยังไม่จบ: ไม่เอาสถานะ 5. Done และไม่เอางานที่ endDate < วันนี้)
       if (!isProjectFiltered && selectedPlanTeam !== 'ALL') {
-        const teamProjects = analytics.allNonCancelProjects
-          .filter(p => p.team === selectedPlanTeam)
+        const teamProjects = analytics.activeProjects
+          .filter(p => p.team === selectedPlanTeam && (!p.endDate || p.endDate >= todayIso))
           .sort((a, b) => (a.startDate || '9999-12-31').localeCompare(b.startDate || '9999-12-31'));
 
         html += `
           <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs space-y-2.5">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">${escapeHtml(selectedPlanTeam)} — Planned Projects</span>
+              <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-700">${escapeHtml(selectedPlanTeam)} — Upcoming & Active Jobs</span>
               <span class="text-[10px] font-bold text-slate-400">${teamProjects.length} Jobs</span>
             </div>
             ${teamProjects.length === 0 ? `
-              <p class="text-[11px] text-slate-400 text-center py-4">No projects scheduled for this team</p>
+              <p class="text-[11px] text-slate-400 text-center py-4">No active or upcoming jobs scheduled for this team</p>
             ` : `
               <div class="space-y-2">
                 ${teamProjects.map(p => {
-                  const isCompleted = p.endDate && p.endDate < todayIso;
                   const rangeStr = (p.startDate || p.endDate)
                     ? `${formatShortDate(p.startDate)} – ${formatShortDate(p.endDate)}`
                     : 'Schedule TBD';
                   return `
                     <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
-                         class="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition flex items-center justify-between gap-2 ${isCompleted ? 'opacity-60' : ''}">
+                         class="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition flex items-center justify-between gap-2">
                       <div class="min-w-0 flex-1">
                         <p class="font-extrabold text-slate-900 text-[13px] truncate">${escapeHtml(p.projectName || 'Untitled')}</p>
                         <p class="text-[11px] font-semibold text-slate-500 mt-0.5 truncate">
@@ -1569,7 +1592,7 @@
         `;
       }
 
-      // TEAM AVAILABILITY (ช่วงวันว่างติดต่อกัน + Segmented 4-Level Meter)
+      // TEAM AVAILABILITY (ระบุช่วงวันของ Max Gap และ Free Window)
       if (!isProjectFiltered) {
         html += `
           <div class="space-y-2 pt-1">
@@ -1619,12 +1642,13 @@
                   segColor = 'bg-amber-400';
                 }
 
-                // สร้างขีดสเกล 4 ช่อง (Segmented Meter) เข้าใจง่ายกว่า Bar Chart
                 const segmentsHtml = [1, 2, 3, 4].map(step => `
                   <span class="h-1.5 flex-1 rounded-full ${step <= activeSegments ? segColor : 'bg-white/90 border border-slate-200/70'}"></span>
                 `).join('');
 
                 const selectedRing = (selectedPlanTeam === t.team) ? 'ring-2 ring-slate-900' : '';
+                const maxGapText = isFreeAll ? '60d' : `${escapeHtml(gapRaw)}d`;
+                const maxGapPeriodText = isFreeAll ? 'All 60 days' : freeWin.maxGapRange;
 
                 return `
                   <div onclick="selectPlanTeamFilter('${selectedPlanTeam === t.team ? 'ALL' : escapeHtml(t.team)}')" 
@@ -1642,12 +1666,11 @@
                         </p>
                       </div>
                       <div class="flex-shrink-0 text-right">
-                        <span class="text-[9px] font-bold uppercase block text-slate-500">Max Gap</span>
-                        <span class="text-[13px] font-black text-slate-900">${isFreeAll ? '60d' : `${escapeHtml(gapRaw)}d`}</span>
+                        <span class="text-[9px] font-bold uppercase block text-slate-500">Max Gap: <b class="text-slate-900">${maxGapText}</b></span>
+                        <span class="text-[10px] font-extrabold text-slate-700 block mt-0.5">${escapeHtml(maxGapPeriodText)}</span>
                       </div>
                     </div>
 
-                    <!-- Segmented 4-Level Capacity Meter -->
                     <div class="flex items-center gap-1 pt-0.5">
                       ${segmentsHtml}
                     </div>
@@ -1663,10 +1686,11 @@
     }
 
     // ========================================================
-    // SUB-VIEW B: PROJECTS LIST (A-Z SORTED, TBD AT BOTTOM)
+    // SUB-VIEW B: PROJECTS LIST (HIDE COMPLETED, A-Z SORTED, TBD AT BOTTOM)
     // ========================================================
     function renderProjectOverviewTab(container, plan, analytics) {
       const searchKw = (document.getElementById('projectSearchInput').value || '').toLowerCase().trim();
+      const todayIso = getTodayIso();
 
       const projMap = {};
       (plan.projects || []).forEach(p => {
@@ -1678,10 +1702,15 @@
             scopes: [],
             earliestStart: '',
             latestEnd: '',
+            hasOpenScope: false,
             isOverload: false
           };
         }
         projMap[key].scopes.push(p);
+
+        if (!p.status.startsWith('5.')) {
+          projMap[key].hasOpenScope = true;
+        }
 
         const candidateStarts = [p.subStart, p.startDate].filter(Boolean);
         const candidateEnds = [p.subEnd, p.endDate].filter(Boolean);
@@ -1718,6 +1747,9 @@
       });
 
       let projList = Object.values(projMap).filter(proj => {
+        if (!proj.hasOpenScope) return false;
+        if (proj.latestEnd && proj.latestEnd < todayIso) return false;
+
         if (searchKw) {
           const matchName = proj.projectName.toLowerCase().includes(searchKw);
           const matchScope = proj.scopes.some(s =>
@@ -1729,7 +1761,6 @@
         return true;
       });
 
-      // เรียงตามตัวอักษร A-Z / ก-ฮ โดยแยกโปรเจคที่ยังไม่ใส่วันไว้ด้านล่าง
       projList.sort((a, b) => {
         const aHasDate = Boolean(a.earliestStart || a.latestEnd);
         const bHasDate = Boolean(b.earliestStart || b.latestEnd);
@@ -1741,7 +1772,7 @@
       if (projList.length === 0) {
         container.innerHTML = `
           <div class="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-1">
-            <p class="text-[13px] font-bold text-slate-700">No projects found</p>
+            <p class="text-[13px] font-bold text-slate-700">No active projects found</p>
             <p class="text-[11px] text-slate-400">Try a different search keyword</p>
           </div>
         `;
