@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.4</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.5</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -146,7 +146,7 @@
             <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
           </div>
           <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-            v1.6.4
+            v1.6.5
           </span>
         </div>
       </div>
@@ -222,7 +222,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.6.4</b></span>
+            <span>Version: <b class="text-slate-600">1.6.5</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -365,9 +365,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.6.4
+    // CONFIGURATION - VERSION 1.6.5
     // ==========================================
-    const APP_VERSION = "1.6.4";
+    const APP_VERSION = "1.6.5";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -380,6 +380,7 @@
     let currentAppMode = 'inventory';
     let currentPlanSubView = 'team'; // 'team' | 'project'
     let selectedPlanTeam = 'ALL';
+    let highlightedProjectName = null; // เก็บชื่อโปรเจคที่ถูกกดมาจากหน้า Project เพื่อไฮไลท์ในปฏิทิน
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth(); // 0-11
     let selectedCalDate = getTodayIso();
@@ -900,16 +901,22 @@
       switchPlanSubView('project');
     }
 
-    // Cross-Link 2: กดปุ่ม "ดูในปฏิทิน" จากหน้า Project View -> กระโดดไปวันที่เริ่มงานในปฏิทิน
-    function jumpToDateInCalendar(isoDate) {
-      if (isoDate && isoDate.includes('-')) {
-        const parts = isoDate.split('-');
+    // Cross-Link 2: กดปุ่ม "ดูในปฏิทิน" จากหน้า Project View -> เด้งไปหน้าปฏิทินและ Highlight Period ของโปรเจคนี้
+    function jumpToProjectPeriodInCalendar(encodedProjName, targetIsoDate) {
+      highlightedProjectName = decodeURIComponent(encodedProjName);
+      if (targetIsoDate && targetIsoDate.includes('-')) {
+        const parts = targetIsoDate.split('-');
         calYear = parseInt(parts[0], 10);
         calMonth = parseInt(parts[1], 10) - 1;
-        selectedCalDate = isoDate;
+        selectedCalDate = targetIsoDate;
       }
       selectedPlanTeam = 'ALL';
       switchPlanSubView('team');
+    }
+
+    function clearProjectHighlight() {
+      highlightedProjectName = null;
+      renderInstallPlanView();
     }
 
     function onProjectSearchInput() {
@@ -965,14 +972,13 @@
       renderInstallPlanView();
     }
 
-    // Helper: สร้างข้อมูล Overload และ Snapshot รายวัน (นิยาม: งานที่ลงคิวเกินจำนวนทีมทั้งหมด หรือทีมเดิมซ้อนกัน)
+    // Helper: สร้างข้อมูล Overload และ Snapshot รายวัน
     function buildPlanAnalytics(plan) {
       const allTeams = (plan.teams || []).map(t => t.team);
       const totalCompanyTeams = allTeams.length;
       const activeProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.') && !p.status.startsWith('5.'));
       const allNonCancelProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.'));
 
-      // ฟังก์ชันตรวจสอบ Overload ของวันใดวันหนึ่ง (ระดับภาพรวมทั้งบริษัท)
       const getGlobalDayLoad = (isoDate) => {
         const companyJobsToday = activeProjects.filter(p =>
           p.startDate && p.endDate && isoDate >= p.startDate && isoDate <= p.endDate &&
@@ -1000,7 +1006,6 @@
         };
       };
 
-      // ตรวจหาทีมที่มีคิวซ้อน (สำหรับ Rating สีแดงจัดใน Team Availability)
       const teamsWithOverlap = new Set();
       const dateSetToCheck = new Set();
       activeProjects.forEach(p => {
@@ -1056,7 +1061,7 @@
     }
 
     // ========================================================
-    // SUB-VIEW A: TEAM & CALENDAR VIEW
+    // SUB-VIEW A: TEAM & CALENDAR VIEW (รองรับ Highlight Period ของโปรเจค)
     // ========================================================
     function renderTeamCalendarTab(container, plan, analytics) {
       const tabsEl = document.getElementById('teamSubHeaderBar');
@@ -1081,6 +1086,22 @@
       const visibleTeams = selectedPlanTeam === 'ALL'
         ? plan.teams
         : plan.teams.filter(t => t.team === selectedPlanTeam);
+
+      // ดึงช่วงวันของโปรเจคที่กำลัง Highlight (ถ้ามี)
+      const hlScopes = highlightedProjectName
+        ? analytics.allNonCancelProjects.filter(p => (p.projectName || '').trim() === highlightedProjectName.trim())
+        : [];
+
+      const checkDayHighlight = (isoDate) => {
+        if (!highlightedProjectName || hlScopes.length === 0) return { isSub: false, isSeara: false };
+        let isSub = false;
+        let isSeara = false;
+        hlScopes.forEach(sc => {
+          if (sc.subStart && sc.subEnd && isoDate >= sc.subStart && isoDate <= sc.subEnd) isSub = true;
+          if (sc.startDate && sc.endDate && isoDate >= sc.startDate && isoDate <= sc.endDate) isSeara = true;
+        });
+        return { isSub, isSeara };
+      };
 
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
@@ -1117,7 +1138,37 @@
         return { busyTeamSet, freeTeams, searaJobs, subJobs, isOverload, globalLoad };
       };
 
-      let html = `
+      let html = '';
+
+      // แบนเนอร์แจ้งเตือนเมื่อกำลัง Highlight ช่วงทำงานของโปรเจค
+      if (highlightedProjectName) {
+        let subRanges = [];
+        let searaRanges = [];
+        hlScopes.forEach(sc => {
+          if (sc.subStart || sc.subEnd) subRanges.push(`${formatShortThaiDate(sc.subStart)}–${formatShortThaiDate(sc.subEnd)}`);
+          if (sc.startDate || sc.endDate) searaRanges.push(`${sc.team ? sc.team + ': ' : ''}${formatShortThaiDate(sc.startDate)}–${formatShortThaiDate(sc.endDate)}`);
+        });
+
+        html += `
+          <div class="bg-slate-900 text-white rounded-2xl p-3 shadow-md space-y-2 border border-slate-800">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">Highlighting Project Period</span>
+                <p class="text-[13px] font-extrabold text-white truncate">${escapeHtml(highlightedProjectName)}</p>
+              </div>
+              <button onclick="clearProjectHighlight()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold flex-shrink-0">
+                ✕ ล้างไฮไลท์
+              </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-bold pt-1 border-t border-slate-800">
+              ${subRanges.length > 0 ? `<span class="px-2 py-0.5 rounded bg-slate-700 text-slate-200 border border-slate-500">Subcontractor: ${escapeHtml(subRanges.join(', '))}</span>` : ''}
+              ${searaRanges.length > 0 ? `<span class="px-2 py-0.5 rounded bg-indigo-600 text-white border border-indigo-400">SEARA: ${escapeHtml(searaRanges.join(', '))}</span>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      html += `
         <div class="bg-white rounded-3xl border border-slate-200 p-3.5 shadow-xs space-y-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
@@ -1151,7 +1202,7 @@
       `;
 
       for (let e = 0; e < firstDayOfMonth; e++) {
-        html += `<div class="h-12 rounded-xl bg-slate-50/40"></div>`;
+        html += `<div class="h-14 rounded-xl bg-slate-50/40"></div>`;
       }
 
       for (let day = 1; day <= daysInMonth; day++) {
@@ -1165,6 +1216,7 @@
         const isToday = (isoDate === todayIso);
 
         const snap = getDaySnapshot(isoDate);
+        const hl = checkDayHighlight(isoDate);
         const freeCount = snap.freeTeams.length;
         const busyCount = snap.busyTeamSet.size;
 
@@ -1196,15 +1248,34 @@
           labelColor = 'text-sky-700';
         }
 
-        const ringClass = isSelected ? 'ring-2 ring-slate-900 border-slate-900 scale-[1.03] z-10 shadow-xs' : '';
+        // ตกแต่ง Highlight Period เมื่อมาจากหน้า Project
+        let hlRingClass = '';
+        let hlBannerHtml = '';
+        if (highlightedProjectName) {
+          if (hl.isSeara && hl.isSub) {
+            hlRingClass = 'ring-2 ring-indigo-600 border-indigo-600';
+            hlBannerHtml = `<span class="w-full text-[7px] font-black uppercase bg-indigo-600 text-white rounded px-0.5 leading-tight truncate">Sub+SEARA</span>`;
+          } else if (hl.isSeara) {
+            hlRingClass = 'ring-2 ring-indigo-600 border-indigo-600';
+            hlBannerHtml = `<span class="w-full text-[7px] font-black uppercase bg-indigo-600 text-white rounded px-0.5 leading-tight truncate">SEARA</span>`;
+          } else if (hl.isSub) {
+            hlRingClass = 'ring-2 ring-slate-700 border-slate-700';
+            hlBannerHtml = `<span class="w-full text-[7px] font-black uppercase bg-slate-700 text-white rounded px-0.5 leading-tight truncate">Sub</span>`;
+          } else {
+            hlRingClass = 'opacity-45';
+          }
+        }
+
+        const selectedClass = isSelected ? 'ring-2 ring-slate-950 scale-[1.04] z-10 shadow-sm opacity-100' : '';
 
         html += `
           <button onclick="selectCalendarDay('${isoDate}')" 
-                  class="h-12 px-0.5 py-1 rounded-xl border transition-all flex flex-col items-center ${isPast ? 'justify-center' : 'justify-between'} ${cellBg} ${ringClass}">
+                  class="h-14 px-0.5 py-1 rounded-xl border transition-all flex flex-col items-center justify-between ${cellBg} ${hlRingClass} ${selectedClass}">
             <span class="text-[11px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : dayNumColor}">
               ${day}
             </span>
-            ${statusLabel ? `<span class="text-[8px] font-bold leading-tight tracking-tight truncate w-full text-center ${labelColor}">${statusLabel}</span>` : ''}
+            ${hlBannerHtml}
+            ${statusLabel ? `<span class="text-[8px] font-bold leading-tight tracking-tight truncate w-full text-center ${labelColor}">${statusLabel}</span>` : '<span class="h-2"></span>'}
           </button>
         `;
       }
@@ -1214,7 +1285,7 @@
         </div>
       `;
 
-      // DAY INSPECTOR CARD (พร้อมลิงก์กดเข้าไปดูโปรเจคได้ทันที)
+      // DAY INSPECTOR CARD
       const isSelectedPast = (selectedCalDate < todayIso);
       const selectedDayOfWeek = new Date(selectedCalDate + 'T00:00:00').getDay();
       const isSelectedSunday = (selectedDayOfWeek === 0);
@@ -1277,42 +1348,48 @@
             </div>
             ${selectedSnap.searaJobs.length === 0 ? `
               <p class="text-[11px] text-slate-400 px-1">ไม่มีคิวติดตั้งในวันนี้</p>
-            ` : selectedSnap.searaJobs.map(p => `
-              <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
-                   class="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200 transition space-y-1 group">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white">
-                    ${escapeHtml(p.team)}
-                  </span>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
-                      ${escapeHtml(p.status)}
+            ` : selectedSnap.searaJobs.map(p => {
+              const isHighlightedRow = highlightedProjectName && (p.projectName || '').trim() === highlightedProjectName.trim();
+              return `
+                <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                     class="cursor-pointer p-3 rounded-2xl ${isHighlightedRow ? 'bg-indigo-50/80 border-indigo-400 ring-1 ring-indigo-300' : 'bg-slate-50 hover:bg-slate-100/90 border-slate-200'} border transition space-y-1 group">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold ${isHighlightedRow ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-white'}">
+                      ${escapeHtml(p.team)}
                     </span>
-                    <span class="text-[11px] font-bold text-slate-400 group-hover:text-slate-900">→</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
+                        ${escapeHtml(p.status)}
+                      </span>
+                      <span class="text-[11px] font-bold text-slate-400 group-hover:text-slate-900">→</span>
+                    </div>
+                  </div>
+                  <p class="font-extrabold text-slate-900 text-[13px] leading-snug pt-0.5 underline-offset-2 group-hover:underline">${escapeHtml(p.projectName || 'Untitled')}</p>
+                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
+                  <div class="text-[10px] font-bold text-slate-400 pt-0.5">
+                    ช่วงติดตั้ง: <span class="text-slate-700">${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}</span>
                   </div>
                 </div>
-                <p class="font-extrabold text-slate-900 text-[13px] leading-snug pt-0.5 underline-offset-2 group-hover:underline">${escapeHtml(p.projectName || 'Untitled')}</p>
-                ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
-                <div class="text-[10px] font-bold text-slate-400 pt-0.5">
-                  ช่วงติดตั้ง: <span class="text-slate-700">${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}</span>
-                </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
 
           ${selectedSnap.subJobs.length > 0 ? `
             <div class="space-y-2 pt-2 border-t border-slate-100">
               <span class="text-[11px] font-extrabold text-slate-600 block">งานผู้รับเหมา (${selectedSnap.subJobs.length}):</span>
-              ${selectedSnap.subJobs.map(p => `
-                <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
-                     class="cursor-pointer p-2.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200 transition space-y-0.5">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="font-extrabold text-slate-800 text-[12px] truncate">${escapeHtml(p.projectName || 'Untitled')}</span>
-                    <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)} →</span>
+              ${selectedSnap.subJobs.map(p => {
+                const isHighlightedRow = highlightedProjectName && (p.projectName || '').trim() === highlightedProjectName.trim();
+                return `
+                  <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                       class="cursor-pointer p-2.5 rounded-2xl ${isHighlightedRow ? 'bg-slate-200 border-slate-500 ring-1 ring-slate-400' : 'bg-slate-100/80 hover:bg-slate-200/70 border-slate-200'} border transition space-y-0.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="font-extrabold text-slate-800 text-[12px] truncate">${escapeHtml(p.projectName || 'Untitled')}</span>
+                      <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)} →</span>
+                    </div>
+                    ${p.note ? `<p class="text-[10px] text-slate-500 truncate">${escapeHtml(p.note)}</p>` : ''}
                   </div>
-                  ${p.note ? `<p class="text-[10px] text-slate-500 truncate">${escapeHtml(p.note)}</p>` : ''}
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
           ` : ''}
         </div>
@@ -1397,16 +1474,15 @@
     }
 
     // ========================================================
-    // SUB-VIEW B: PROJECT OVERVIEW TIMELINE (สำหรับฝ่ายขาย & Operation)
+    // SUB-VIEW B: PROJECT OVERVIEW TIMELINE
     // ========================================================
     function renderProjectOverviewTab(container, plan, analytics) {
       const searchKw = (document.getElementById('projectSearchInput').value || '').toLowerCase().trim();
       const statusFilter = document.getElementById('projectStatusFilter').value;
 
-      // 1. Group Scopes by Project_Name
       const projMap = {};
       (plan.projects || []).forEach(p => {
-        if (p.status.startsWith('6.')) return; // ข้ามงาน Cancel
+        if (p.status.startsWith('6.')) return;
         const key = (p.projectName || 'Untitled Project').trim();
         if (!projMap[key]) {
           projMap[key] = {
@@ -1427,7 +1503,6 @@
           projMap[key].allDone = false;
         }
 
-        // หาวันเริ่มแรกสุด และวันจบสุดท้ายของทั้งโปรเจค (รวม Subcontractor + ทีมติดตั้ง)
         const candidateStarts = [p.subStart, p.startDate].filter(Boolean);
         const candidateEnds = [p.subEnd, p.endDate].filter(Boolean);
 
@@ -1439,7 +1514,6 @@
         });
       });
 
-      // 2. ตรวจสอบ Overload ของแต่ละโปรเจค (มีวันไหนที่งานทั้งบริษัทเกินจำนวนทีม หรือทีมซ้อนกัน)
       Object.values(projMap).forEach(proj => {
         proj.scopes.forEach(sc => {
           if (sc.startDate && sc.endDate && !sc.status.startsWith('5.')) {
@@ -1467,7 +1541,6 @@
         });
       });
 
-      // 3. Filter & Sort (เรียงตามวันเริ่มงานใกล้สุดขึ้นก่อน)
       let projList = Object.values(projMap).filter(proj => {
         if (statusFilter === 'ACTIVE' && proj.allDone) return false;
         if (statusFilter === 'DONE' && !proj.allDone) return false;
@@ -1493,7 +1566,6 @@
       const totalOverloadProjects = Object.values(projMap).filter(p => p.isOverload).length;
 
       let html = `
-        <!-- Summary Strip -->
         <div class="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-2xl border border-slate-200 shadow-2xs text-[11px]">
           <span class="font-bold text-slate-600">แสดง <b class="text-slate-900">${projList.length}</b> โปรเจค</span>
           ${totalOverloadProjects > 0 ? `
@@ -1528,7 +1600,6 @@
 
         html += `
           <div class="bg-white rounded-3xl border ${proj.isOverload ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200'} p-4 shadow-xs space-y-3">
-            <!-- Project Header -->
             <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
               <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -1544,14 +1615,13 @@
                 </p>
               </div>
               ${jumpTargetDate ? `
-                <button onclick="jumpToDateInCalendar('${jumpTargetDate}')" 
-                        class="flex-shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 text-[10px] font-bold transition">
+                <button onclick="jumpToProjectPeriodInCalendar('${encodeURIComponent(proj.projectName)}', '${jumpTargetDate}')" 
+                        class="flex-shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-[10px] font-bold transition shadow-2xs">
                   ดูในปฏิทิน →
                 </button>
               ` : ''}
             </div>
 
-            <!-- Scopes List inside Project -->
             <div class="space-y-2">
               ${proj.scopes.map(sc => {
                 const hasSub = sc.subStart || sc.subEnd;
@@ -1567,7 +1637,6 @@
                       </span>
                     </div>
 
-                    <!-- Mini Timeline Bars -->
                     <div class="grid grid-cols-1 gap-1 text-[10px]">
                       ${hasSub ? `
                         <div class="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-200/80 text-slate-800 font-bold">
@@ -1576,7 +1645,7 @@
                         </div>
                       ` : ''}
                       ${(sc.team || hasSeara) ? `
-                        <div class="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold">
+                        <div class="flex items-center justify-between px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-bold">
                           <span>${escapeHtml(sc.team || 'รอระบุทีม')}</span>
                           <span>${hasSeara ? `${formatShortThaiDate(sc.startDate)} – ${formatShortThaiDate(sc.endDate)}` : 'รอลงวันที่'}</span>
                         </div>
