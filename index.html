@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.2</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.3</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.2</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.3</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -331,9 +331,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.2
+    // CONFIGURATION - VERSION 1.9.3
     // ==========================================
-    const APP_VERSION = "1.9.2";
+    const APP_VERSION = "1.9.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -734,7 +734,6 @@
       showAppScreen();
       updatePermissionUI();
 
-      // ดึงสิทธิ์ล่าสุดจาก Google Sheets (Permissions Tab) เสมอ
       const permPromise = fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(currentEmail)}`, { method: 'GET', redirect: 'follow' })
         .then(r => r.json())
         .then(perm => {
@@ -756,7 +755,6 @@
         document.getElementById('loading').style.display = 'block';
       }
 
-      // รอให้ได้สิทธิ์ล่าสุดก่อนสร้าง constructedData
       await permPromise;
 
       const freshUrl = `${DATA_URL}?t=${Date.now()}`;
@@ -871,10 +869,11 @@
     }
 
     // ========================================================
-    // UNIFIED 3-TAB NAVIGATION (WITH STRICT PERMISSION GUARD)
+    // UNIFIED 3-TAB NAVIGATION (FIX: คง hidden ไว้เมื่อไม่มีสิทธิ์)
     // ========================================================
     function navigateMainTab(tabName) {
-      if (tabName !== 'stock' && !canUserAccessInstallPlan()) {
+      const canViewPlan = canUserAccessInstallPlan();
+      if (tabName !== 'stock' && !canViewPlan) {
         tabName = 'stock';
       }
 
@@ -889,10 +888,11 @@
 
       const activeBtnClass = 'py-1.5 px-2 rounded-lg bg-slate-900 text-white shadow-2xs transition text-center truncate';
       const inactiveBtnClass = 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition text-center truncate';
+      const hiddenSuffix = canViewPlan ? '' : ' hidden';
 
       btnStock.className = (tabName === 'stock') ? activeBtnClass : inactiveBtnClass;
-      btnCal.className = (tabName === 'calendar') ? activeBtnClass : inactiveBtnClass;
-      btnProj.className = (tabName === 'projects') ? activeBtnClass : inactiveBtnClass;
+      btnCal.className = ((tabName === 'calendar') ? activeBtnClass : inactiveBtnClass) + hiddenSuffix;
+      btnProj.className = ((tabName === 'projects') ? activeBtnClass : inactiveBtnClass) + hiddenSuffix;
 
       const stockSub = document.getElementById('stockSubHeaderBar');
       const teamSub = document.getElementById('teamSubHeaderBar');
