@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.3</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.4</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -146,7 +146,7 @@
             <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
           </div>
           <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-            v1.6.3
+            v1.6.4
           </span>
         </div>
       </div>
@@ -158,7 +158,7 @@
       <div id="contentList" class="p-3.5 space-y-4"></div>
     </div>
 
-    <!-- ==================== VIEW 2: INSTALL PLAN (CLEAN CALENDAR) ==================== -->
+    <!-- ==================== VIEW 2: INSTALL PLAN (TEAM + PROJECT VIEWS) ==================== -->
     <div id="installPlanViewSection" class="hidden">
       <!-- Sticky Header -->
       <div class="p-3.5 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs space-y-2.5">
@@ -172,16 +172,40 @@
               <p class="text-[10px] font-medium text-slate-400" id="planUpdatedAtText">Synced: -</p>
             </div>
           </div>
-          <span class="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 border border-slate-200">
-            Read-Only
-          </span>
+
+          <!-- Sub-View Switcher: Team Calendar vs Project Overview -->
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+            <button id="subTabTeamBtn" onclick="switchPlanSubView('team')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white shadow-2xs transition">
+              ปฏิทิน & ทีม
+            </button>
+            <button id="subTabProjectBtn" onclick="switchPlanSubView('project')" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">
+              โปรเจค
+            </button>
+          </div>
         </div>
 
-        <!-- Team Filter Pills -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll" id="planTeamFilterTabs"></div>
+        <!-- Sub-Header 1: Team Filter Pills (แสดงเฉพาะหน้า Team) -->
+        <div id="teamSubHeaderBar" class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
+
+        <!-- Sub-Header 2: Project Search & Overload Filter (แสดงเฉพาะหน้า Project) -->
+        <div id="projectSubHeaderBar" class="hidden space-y-2">
+          <div class="flex items-center gap-1.5">
+            <div class="relative flex-1">
+              <input type="text" id="projectSearchInput" oninput="onProjectSearchInput()" placeholder="ค้นหาชื่อโปรเจค, ลูกค้า, ทีม..." 
+                     class="w-full pl-3 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-slate-800">
+              <button id="clearProjSearchBtn" onclick="clearProjectSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
+            </div>
+            <select id="projectStatusFilter" onchange="renderInstallPlanView()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 focus:outline-none">
+              <option value="ACTIVE">กำลังดำเนินการ</option>
+              <option value="OVERLOAD">⚠️ เฉพาะงาน Overload</option>
+              <option value="ALL">ทั้งหมด (All)</option>
+              <option value="DONE">เสร็จสิ้น (Done)</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <!-- Clean Calendar & Workload Content -->
+      <!-- Content Container -->
       <div id="installPlanContent" class="p-3.5 space-y-4"></div>
     </div>
 
@@ -198,7 +222,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.6.3</b></span>
+            <span>Version: <b class="text-slate-600">1.6.4</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -341,9 +365,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.6.3
+    // CONFIGURATION - VERSION 1.6.4
     // ==========================================
-    const APP_VERSION = "1.6.3";
+    const APP_VERSION = "1.6.4";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -354,6 +378,7 @@
     let selectedWarehouses = new Set(['ALL']);
     
     let currentAppMode = 'inventory';
+    let currentPlanSubView = 'team'; // 'team' | 'project'
     let selectedPlanTeam = 'ALL';
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth(); // 0-11
@@ -814,7 +839,7 @@
     }
 
     // ========================================================
-    // MODE SWITCHER: INVENTORY STOCK <-> CLEAN CALENDAR PLAN
+    // MODE SWITCHER: INVENTORY STOCK <-> INSTALL PLAN (TEAM / PROJECT)
     // ========================================================
     function toggleAppMode() {
       switchAppMode(currentAppMode === 'inventory' ? 'installPlan' : 'inventory');
@@ -840,6 +865,65 @@
         if (menuLabel) menuLabel.innerText = '📅 Install Plan';
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function switchPlanSubView(subView) {
+      currentPlanSubView = subView;
+      const teamBtn = document.getElementById('subTabTeamBtn');
+      const projBtn = document.getElementById('subTabProjectBtn');
+      const teamBar = document.getElementById('teamSubHeaderBar');
+      const projBar = document.getElementById('projectSubHeaderBar');
+
+      if (subView === 'project') {
+        projBtn.className = 'px-2.5 py-1 rounded-lg bg-slate-900 text-white shadow-2xs transition';
+        teamBtn.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        teamBar.classList.add('hidden');
+        projBar.classList.remove('hidden');
+      } else {
+        teamBtn.className = 'px-2.5 py-1 rounded-lg bg-slate-900 text-white shadow-2xs transition';
+        projBtn.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        projBar.classList.add('hidden');
+        teamBar.classList.remove('hidden');
+      }
+      renderInstallPlanView();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Cross-Link 1: กดที่ชื่อโปรเจคจากมุมมองทีม/ปฏิทิน -> กระโดดไปหน้า Project View
+    function jumpToProjectView(projectName) {
+      const input = document.getElementById('projectSearchInput');
+      const clearBtn = document.getElementById('clearProjSearchBtn');
+      const statusSel = document.getElementById('projectStatusFilter');
+      if (input) input.value = projectName;
+      if (clearBtn) clearBtn.classList.remove('hidden');
+      if (statusSel) statusSel.value = 'ALL';
+      switchPlanSubView('project');
+    }
+
+    // Cross-Link 2: กดปุ่ม "ดูในปฏิทิน" จากหน้า Project View -> กระโดดไปวันที่เริ่มงานในปฏิทิน
+    function jumpToDateInCalendar(isoDate) {
+      if (isoDate && isoDate.includes('-')) {
+        const parts = isoDate.split('-');
+        calYear = parseInt(parts[0], 10);
+        calMonth = parseInt(parts[1], 10) - 1;
+        selectedCalDate = isoDate;
+      }
+      selectedPlanTeam = 'ALL';
+      switchPlanSubView('team');
+    }
+
+    function onProjectSearchInput() {
+      const val = document.getElementById('projectSearchInput').value.trim();
+      const clearBtn = document.getElementById('clearProjSearchBtn');
+      if (val) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+      renderInstallPlanView();
+    }
+
+    function clearProjectSearch() {
+      document.getElementById('projectSearchInput').value = '';
+      document.getElementById('clearProjSearchBtn').classList.add('hidden');
+      renderInstallPlanView();
     }
 
     function formatShortThaiDate(isoStr) {
@@ -881,9 +965,73 @@
       renderInstallPlanView();
     }
 
+    // Helper: สร้างข้อมูล Overload และ Snapshot รายวัน (นิยาม: งานที่ลงคิวเกินจำนวนทีมทั้งหมด หรือทีมเดิมซ้อนกัน)
+    function buildPlanAnalytics(plan) {
+      const allTeams = (plan.teams || []).map(t => t.team);
+      const totalCompanyTeams = allTeams.length;
+      const activeProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.') && !p.status.startsWith('5.'));
+      const allNonCancelProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.'));
+
+      // ฟังก์ชันตรวจสอบ Overload ของวันใดวันหนึ่ง (ระดับภาพรวมทั้งบริษัท)
+      const getGlobalDayLoad = (isoDate) => {
+        const companyJobsToday = activeProjects.filter(p =>
+          p.startDate && p.endDate && isoDate >= p.startDate && isoDate <= p.endDate &&
+          (p.status === '1. Confirmed' || p.status === '2. Tentative' || p.status === '3. Team Assigned')
+        );
+
+        const teamCounts = {};
+        companyJobsToday.forEach(j => {
+          if (j.team) {
+            teamCounts[j.team] = (teamCounts[j.team] || 0) + 1;
+          }
+        });
+
+        const isExceedTotalTeams = (totalCompanyTeams > 0 && companyJobsToday.length > totalCompanyTeams);
+        const sameTeamConflictTeams = Object.keys(teamCounts).filter(t => teamCounts[t] > 1);
+        const isOverload = isExceedTotalTeams || (sameTeamConflictTeams.length > 0);
+
+        return {
+          totalJobsCount: companyJobsToday.length,
+          totalCompanyTeams,
+          isExceedTotalTeams,
+          sameTeamConflictTeams,
+          isOverload,
+          companyJobsToday
+        };
+      };
+
+      // ตรวจหาทีมที่มีคิวซ้อน (สำหรับ Rating สีแดงจัดใน Team Availability)
+      const teamsWithOverlap = new Set();
+      const dateSetToCheck = new Set();
+      activeProjects.forEach(p => {
+        if (p.startDate && p.endDate) {
+          let cur = new Date(p.startDate + 'T00:00:00');
+          const end = new Date(p.endDate + 'T00:00:00');
+          let guard = 0;
+          while (cur <= end && guard < 120) {
+            const y = cur.getFullYear();
+            const m = String(cur.getMonth() + 1).padStart(2, '0');
+            const d = String(cur.getDate()).padStart(2, '0');
+            dateSetToCheck.add(`${y}-${m}-${d}`);
+            cur.setDate(cur.getDate() + 1);
+            guard++;
+          }
+        }
+      });
+
+      dateSetToCheck.forEach(iso => {
+        const gl = getGlobalDayLoad(iso);
+        gl.sameTeamConflictTeams.forEach(t => teamsWithOverlap.add(t));
+        if (gl.isExceedTotalTeams) {
+          gl.companyJobsToday.forEach(j => { if (j.team) teamsWithOverlap.add(j.team); });
+        }
+      });
+
+      return { allTeams, totalCompanyTeams, activeProjects, allNonCancelProjects, getGlobalDayLoad, teamsWithOverlap };
+    }
+
     function renderInstallPlanView() {
       const container = document.getElementById('installPlanContent');
-      const tabsEl = document.getElementById('planTeamFilterTabs');
       const updatedEl = document.getElementById('planUpdatedAtText');
       const plan = appData.installPlan;
 
@@ -898,8 +1046,21 @@
       }
 
       updatedEl.innerText = `Synced: ${plan.updatedAt || '-'}`;
+      const analytics = buildPlanAnalytics(plan);
 
-      // 1. Render Team Filter Pills
+      if (currentPlanSubView === 'project') {
+        renderProjectOverviewTab(container, plan, analytics);
+      } else {
+        renderTeamCalendarTab(container, plan, analytics);
+      }
+    }
+
+    // ========================================================
+    // SUB-VIEW A: TEAM & CALENDAR VIEW
+    // ========================================================
+    function renderTeamCalendarTab(container, plan, analytics) {
+      const tabsEl = document.getElementById('teamSubHeaderBar');
+
       let pillsHtml = `
         <button onclick="selectPlanTeamFilter('ALL')" 
                 class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${selectedPlanTeam === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -921,46 +1082,24 @@
         ? plan.teams
         : plan.teams.filter(t => t.team === selectedPlanTeam);
 
-      // 2. MONTHLY OVERVIEW CALENDAR
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
       const todayIso = getTodayIso();
-
-      const activeProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.'));
       const totalFilterTeamsCount = visibleTeams.length;
-
-      // ตรวจหาทีมที่มีการซ้อนงานใน 60 วัน (สำหรับ Rating สีแดงจัดใน Team Availability)
-      const teamsWithOverlap = new Set();
-      const confirmedOrTentative = activeProjects.filter(p =>
-        p.team && p.startDate && p.endDate && (p.status === '1. Confirmed' || p.status === '2. Tentative')
-      );
-      for (let i = 0; i < confirmedOrTentative.length; i++) {
-        for (let j = i + 1; j < confirmedOrTentative.length; j++) {
-          const a = confirmedOrTentative[i];
-          const b = confirmedOrTentative[j];
-          if (a.team === b.team && a.projectName !== b.projectName) {
-            if (a.startDate <= b.endDate && a.endDate >= b.startDate) {
-              teamsWithOverlap.add(a.team);
-            }
-          }
-        }
-      }
 
       const getDaySnapshot = (isoDate) => {
         const busyTeamSet = new Set();
-        const teamJobCount = {};
         const searaJobs = [];
         const subJobs = [];
 
-        activeProjects.forEach(p => {
+        analytics.allNonCancelProjects.forEach(p => {
           if (selectedPlanTeam !== 'ALL' && p.team !== selectedPlanTeam) return;
 
           if (p.team && p.startDate && p.endDate && isoDate >= p.startDate && isoDate <= p.endDate) {
             searaJobs.push(p);
             if (p.status === '1. Confirmed' || p.status === '2. Tentative') {
               busyTeamSet.add(p.team);
-              teamJobCount[p.team] = (teamJobCount[p.team] || 0) + 1;
             }
           }
           if (p.subStart && p.subEnd && isoDate >= p.subStart && isoDate <= p.subEnd) {
@@ -968,15 +1107,18 @@
           }
         });
 
-        const isOverload = Object.values(teamJobCount).some(cnt => cnt > 1);
+        const globalLoad = analytics.getGlobalDayLoad(isoDate);
+        const isOverload = (selectedPlanTeam === 'ALL')
+          ? globalLoad.isOverload
+          : (globalLoad.sameTeamConflictTeams.includes(selectedPlanTeam) || globalLoad.isExceedTotalTeams);
+
         const freeTeams = visibleTeams.map(t => t.team).filter(tName => !busyTeamSet.has(tName));
 
-        return { busyTeamSet, freeTeams, searaJobs, subJobs, isOverload };
+        return { busyTeamSet, freeTeams, searaJobs, subJobs, isOverload, globalLoad };
       };
 
       let html = `
         <div class="bg-white rounded-3xl border border-slate-200 p-3.5 shadow-xs space-y-3">
-          <!-- Calendar Header -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
               <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">◀</button>
@@ -988,7 +1130,6 @@
             </button>
           </div>
 
-          <!-- Clean Status Legend -->
           <div class="grid grid-cols-4 gap-1 text-center text-[10px] font-bold bg-slate-50 p-1.5 rounded-xl border border-slate-100">
             <div class="py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80">ว่าง</div>
             <div class="py-1 rounded-lg bg-sky-50 text-sky-800 border border-sky-200/80">มีคิวบางทีม</div>
@@ -996,7 +1137,6 @@
             <div class="py-1 rounded-lg bg-rose-100 text-rose-800 border border-rose-300/80">Overload</div>
           </div>
 
-          <!-- Days of Week -->
           <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-wider">
             <div class="text-rose-500 py-1">Sun</div>
             <div class="text-slate-500 py-1">Mon</div>
@@ -1007,7 +1147,6 @@
             <div class="text-slate-400 py-1">Sat</div>
           </div>
 
-          <!-- Calendar Grid -->
           <div class="grid grid-cols-7 gap-1">
       `;
 
@@ -1035,12 +1174,10 @@
         let labelColor = 'text-emerald-700';
 
         if (isPast) {
-          // วันที่ผ่านไปแล้ว: สีเทา และไม่แสดงข้อมูลทีม
           cellBg = 'bg-slate-200/75 border-slate-300/70';
           dayNumColor = 'text-slate-500';
           statusLabel = '';
         } else if (isSunday) {
-          // วันอาทิตย์: ขึ้นสีแดง และขึ้นว่าวันหยุด
           cellBg = 'bg-rose-50 border-rose-200';
           dayNumColor = 'text-rose-600';
           statusLabel = 'วันหยุด';
@@ -1077,7 +1214,7 @@
         </div>
       `;
 
-      // 3. DAY INSPECTOR CARD
+      // DAY INSPECTOR CARD (พร้อมลิงก์กดเข้าไปดูโปรเจคได้ทันที)
       const isSelectedPast = (selectedCalDate < todayIso);
       const selectedDayOfWeek = new Date(selectedCalDate + 'T00:00:00').getDay();
       const isSelectedSunday = (selectedDayOfWeek === 0);
@@ -1092,7 +1229,7 @@
         dayBadgeText = 'วันหยุด';
         dayBadgeStyle = 'bg-rose-50 text-rose-600 border-rose-200';
       } else if (selectedSnap.isOverload) {
-        dayBadgeText = 'Overload';
+        dayBadgeText = `Overload (${selectedSnap.globalLoad.totalJobsCount}/${selectedSnap.globalLoad.totalCompanyTeams} ทีม)`;
         dayBadgeStyle = 'bg-rose-100 text-rose-700 border-rose-300';
       } else if (selectedSnap.freeTeams.length === 0) {
         dayBadgeText = 'ไม่ว่าง';
@@ -1134,20 +1271,27 @@
           ` : ''}
 
           <div class="space-y-2 pt-1">
-            <span class="text-[11px] font-extrabold text-slate-700 block">คิวงานติดตั้ง (${selectedSnap.searaJobs.length}):</span>
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-slate-700">คิวงานติดตั้ง (${selectedSnap.searaJobs.length}):</span>
+              ${selectedSnap.searaJobs.length > 0 ? '<span class="text-[10px] font-semibold text-slate-400">แตะโปรเจคเพื่อดูภาพรวม</span>' : ''}
+            </div>
             ${selectedSnap.searaJobs.length === 0 ? `
               <p class="text-[11px] text-slate-400 px-1">ไม่มีคิวติดตั้งในวันนี้</p>
             ` : selectedSnap.searaJobs.map(p => `
-              <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+              <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                   class="cursor-pointer p-3 rounded-2xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200 transition space-y-1 group">
                 <div class="flex items-center justify-between gap-2">
                   <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white">
                     ${escapeHtml(p.team)}
                   </span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
-                    ${escapeHtml(p.status)}
-                  </span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
+                      ${escapeHtml(p.status)}
+                    </span>
+                    <span class="text-[11px] font-bold text-slate-400 group-hover:text-slate-900">→</span>
+                  </div>
                 </div>
-                <p class="font-extrabold text-slate-900 text-[13px] leading-snug pt-0.5">${escapeHtml(p.projectName || 'Untitled')}</p>
+                <p class="font-extrabold text-slate-900 text-[13px] leading-snug pt-0.5 underline-offset-2 group-hover:underline">${escapeHtml(p.projectName || 'Untitled')}</p>
                 ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
                 <div class="text-[10px] font-bold text-slate-400 pt-0.5">
                   ช่วงติดตั้ง: <span class="text-slate-700">${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}</span>
@@ -1160,10 +1304,11 @@
             <div class="space-y-2 pt-2 border-t border-slate-100">
               <span class="text-[11px] font-extrabold text-slate-600 block">งานผู้รับเหมา (${selectedSnap.subJobs.length}):</span>
               ${selectedSnap.subJobs.map(p => `
-                <div class="p-2.5 rounded-2xl bg-slate-100/80 border border-slate-200 space-y-0.5">
+                <div onclick="jumpToProjectView('${escapeHtml(p.projectName || '')}')" 
+                     class="cursor-pointer p-2.5 rounded-2xl bg-slate-100/80 hover:bg-slate-200/70 border border-slate-200 transition space-y-0.5">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-extrabold text-slate-800 text-[12px] truncate">${escapeHtml(p.projectName || 'Untitled')}</span>
-                    <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)}</span>
+                    <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)} →</span>
                   </div>
                   ${p.note ? `<p class="text-[10px] text-slate-500 truncate">${escapeHtml(p.note)}</p>` : ''}
                 </div>
@@ -1173,7 +1318,7 @@
         </div>
       `;
 
-      // 4. TEAM AVAILABILITY (Rating แสดงสี: เขียว=ว่างมาก, เหลือง=ไม่ค่อยว่าง, แดง=ไม่ว่าง, แดงจัด=ซ้อนงาน/ไม่ว่าง)
+      // TEAM AVAILABILITY RATING
       html += `
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between px-1">
@@ -1181,7 +1326,6 @@
             <span class="text-[10px] font-bold text-slate-400">Tap to filter</span>
           </div>
 
-          <!-- Legend Rating สี -->
           <div class="grid grid-cols-4 gap-1 text-center text-[9px] font-bold bg-white p-1.5 rounded-xl border border-slate-200">
             <div class="py-1 rounded-lg bg-emerald-100 text-emerald-900">ว่างมาก</div>
             <div class="py-1 rounded-lg bg-amber-100 text-amber-900">ไม่ค่อยว่าง</div>
@@ -1194,29 +1338,25 @@
               const gapRaw = String(t.maxGap || '-').trim();
               const isFreeAll = (gapRaw === '-');
               const gapNum = parseInt(gapRaw, 10);
-              const hasOverlap = teamsWithOverlap.has(t.team);
+              const hasOverlap = analytics.teamsWithOverlap.has(t.team);
               const cleanSummary = (t.summaryText || '-').replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/gu, '');
 
-              // Rating 4 ระดับตามเงื่อนไข
               let cardStyle = 'bg-emerald-50/70 border-emerald-300';
               let badgeStyle = 'bg-emerald-500 text-white';
               let ratingLabel = 'ว่างมาก';
               let barColor = 'bg-emerald-500 w-full';
 
               if (hasOverlap) {
-                // แดงจัด = มีการซ้อนงาน และไม่ว่าง
                 cardStyle = 'bg-red-100/90 border-red-500';
                 badgeStyle = 'bg-red-700 text-white';
                 ratingLabel = 'ซ้อนงาน / ไม่ว่าง';
                 barColor = 'bg-red-700 w-full';
               } else if (!isFreeAll && gapNum === 0) {
-                // แดง = ไม่ว่าง
                 cardStyle = 'bg-rose-50/90 border-rose-300';
                 badgeStyle = 'bg-rose-500 text-white';
                 ratingLabel = 'ไม่ว่าง';
                 barColor = 'bg-rose-500 w-1/4';
               } else if (!isFreeAll && gapNum <= 4) {
-                // เหลือง = ไม่ค่อยว่าง
                 cardStyle = 'bg-amber-50/80 border-amber-300';
                 badgeStyle = 'bg-amber-400 text-amber-950';
                 ratingLabel = 'ไม่ค่อยว่าง';
@@ -1252,6 +1392,203 @@
           </div>
         </div>
       `;
+
+      container.innerHTML = html;
+    }
+
+    // ========================================================
+    // SUB-VIEW B: PROJECT OVERVIEW TIMELINE (สำหรับฝ่ายขาย & Operation)
+    // ========================================================
+    function renderProjectOverviewTab(container, plan, analytics) {
+      const searchKw = (document.getElementById('projectSearchInput').value || '').toLowerCase().trim();
+      const statusFilter = document.getElementById('projectStatusFilter').value;
+
+      // 1. Group Scopes by Project_Name
+      const projMap = {};
+      (plan.projects || []).forEach(p => {
+        if (p.status.startsWith('6.')) return; // ข้ามงาน Cancel
+        const key = (p.projectName || 'Untitled Project').trim();
+        if (!projMap[key]) {
+          projMap[key] = {
+            projectName: key,
+            scopes: [],
+            earliestStart: '',
+            latestEnd: '',
+            hasActiveScope: false,
+            allDone: true,
+            isOverload: false,
+            overloadReason: ''
+          };
+        }
+        projMap[key].scopes.push(p);
+
+        if (!p.status.startsWith('5.')) {
+          projMap[key].hasActiveScope = true;
+          projMap[key].allDone = false;
+        }
+
+        // หาวันเริ่มแรกสุด และวันจบสุดท้ายของทั้งโปรเจค (รวม Subcontractor + ทีมติดตั้ง)
+        const candidateStarts = [p.subStart, p.startDate].filter(Boolean);
+        const candidateEnds = [p.subEnd, p.endDate].filter(Boolean);
+
+        candidateStarts.forEach(s => {
+          if (!projMap[key].earliestStart || s < projMap[key].earliestStart) projMap[key].earliestStart = s;
+        });
+        candidateEnds.forEach(e => {
+          if (!projMap[key].latestEnd || e > projMap[key].latestEnd) projMap[key].latestEnd = e;
+        });
+      });
+
+      // 2. ตรวจสอบ Overload ของแต่ละโปรเจค (มีวันไหนที่งานทั้งบริษัทเกินจำนวนทีม หรือทีมซ้อนกัน)
+      Object.values(projMap).forEach(proj => {
+        proj.scopes.forEach(sc => {
+          if (sc.startDate && sc.endDate && !sc.status.startsWith('5.')) {
+            let cur = new Date(sc.startDate + 'T00:00:00');
+            const end = new Date(sc.endDate + 'T00:00:00');
+            let guard = 0;
+            while (cur <= end && guard < 120) {
+              const y = cur.getFullYear();
+              const m = String(cur.getMonth() + 1).padStart(2, '0');
+              const d = String(cur.getDate()).padStart(2, '0');
+              const iso = `${y}-${m}-${d}`;
+              const gl = analytics.getGlobalDayLoad(iso);
+
+              if (gl.isExceedTotalTeams) {
+                proj.isOverload = true;
+                proj.overloadReason = `คิวเกินทีม (${gl.totalJobsCount} งาน / ${gl.totalCompanyTeams} ทีม)`;
+              } else if (sc.team && gl.sameTeamConflictTeams.includes(sc.team)) {
+                proj.isOverload = true;
+                if (!proj.overloadReason) proj.overloadReason = `${sc.team} คิวชน`;
+              }
+              cur.setDate(cur.getDate() + 1);
+              guard++;
+            }
+          }
+        });
+      });
+
+      // 3. Filter & Sort (เรียงตามวันเริ่มงานใกล้สุดขึ้นก่อน)
+      let projList = Object.values(projMap).filter(proj => {
+        if (statusFilter === 'ACTIVE' && proj.allDone) return false;
+        if (statusFilter === 'DONE' && !proj.allDone) return false;
+        if (statusFilter === 'OVERLOAD' && !proj.isOverload) return false;
+
+        if (searchKw) {
+          const matchName = proj.projectName.toLowerCase().includes(searchKw);
+          const matchScope = proj.scopes.some(s =>
+            (s.note || '').toLowerCase().includes(searchKw) ||
+            (s.team || '').toLowerCase().includes(searchKw)
+          );
+          if (!matchName && !matchScope) return false;
+        }
+        return true;
+      });
+
+      projList.sort((a, b) => {
+        const da = a.earliestStart || '9999-12-31';
+        const db = b.earliestStart || '9999-12-31';
+        return da.localeCompare(db);
+      });
+
+      const totalOverloadProjects = Object.values(projMap).filter(p => p.isOverload).length;
+
+      let html = `
+        <!-- Summary Strip -->
+        <div class="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-2xl border border-slate-200 shadow-2xs text-[11px]">
+          <span class="font-bold text-slate-600">แสดง <b class="text-slate-900">${projList.length}</b> โปรเจค</span>
+          ${totalOverloadProjects > 0 ? `
+            <button onclick="document.getElementById('projectStatusFilter').value='OVERLOAD'; renderInstallPlanView();" 
+                    class="px-2.5 py-0.5 rounded-lg bg-rose-100 text-rose-800 border border-rose-300 font-extrabold text-[10px]">
+              ⚠️ พบงาน Overload ${totalOverloadProjects} โปรเจค
+            </button>
+          ` : `
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+              คิวงานอยู่ในเกณฑ์ปกติ (${analytics.totalCompanyTeams} ทีม)
+            </span>
+          `}
+        </div>
+      `;
+
+      if (projList.length === 0) {
+        html += `
+          <div class="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-1.5">
+            <p class="text-[13px] font-bold text-slate-700">ไม่พบโปรเจคที่ตรงกับเงื่อนไข</p>
+            <p class="text-[11px] text-slate-400">ลองเปลี่ยนคำค้นหา หรือเลือกตัวกรองสถานะเป็น "ทั้งหมด (All)"</p>
+          </div>
+        `;
+        container.innerHTML = html;
+        return;
+      }
+
+      projList.forEach(proj => {
+        const jumpTargetDate = proj.scopes.find(s => s.startDate)?.startDate || proj.earliestStart;
+        const rangeText = (proj.earliestStart || proj.latestEnd)
+          ? `${formatShortThaiDate(proj.earliestStart)} – ${formatShortThaiDate(proj.latestEnd)}`
+          : 'ยังไม่กำหนดวัน';
+
+        html += `
+          <div class="bg-white rounded-3xl border ${proj.isOverload ? 'border-rose-400 ring-1 ring-rose-300' : 'border-slate-200'} p-4 shadow-xs space-y-3">
+            <!-- Project Header -->
+            <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h3 class="font-extrabold text-slate-900 text-[14px] leading-snug">${escapeHtml(proj.projectName)}</h3>
+                  ${proj.isOverload ? `
+                    <span class="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-rose-600 text-white">
+                      ⚠️ Overload: ${escapeHtml(proj.overloadReason)}
+                    </span>
+                  ` : ''}
+                </div>
+                <p class="text-[11px] font-bold text-slate-500 mt-0.5">
+                  ภาพรวมช่วงทำงาน: <span class="text-slate-900">${rangeText}</span>
+                </p>
+              </div>
+              ${jumpTargetDate ? `
+                <button onclick="jumpToDateInCalendar('${jumpTargetDate}')" 
+                        class="flex-shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 text-[10px] font-bold transition">
+                  ดูในปฏิทิน →
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- Scopes List inside Project -->
+            <div class="space-y-2">
+              ${proj.scopes.map(sc => {
+                const hasSub = sc.subStart || sc.subEnd;
+                const hasSeara = sc.startDate || sc.endDate;
+                return `
+                  <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-[11px] font-bold text-slate-700 truncate flex-1">
+                        ${escapeHtml(sc.note || 'Main Scope')}
+                      </span>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white text-slate-600 border border-slate-200 flex-shrink-0">
+                        ${escapeHtml(sc.status || '-')}
+                      </span>
+                    </div>
+
+                    <!-- Mini Timeline Bars -->
+                    <div class="grid grid-cols-1 gap-1 text-[10px]">
+                      ${hasSub ? `
+                        <div class="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-200/80 text-slate-800 font-bold">
+                          <span>Subcontractor</span>
+                          <span>${formatShortThaiDate(sc.subStart)} – ${formatShortThaiDate(sc.subEnd)}</span>
+                        </div>
+                      ` : ''}
+                      ${(sc.team || hasSeara) ? `
+                        <div class="flex items-center justify-between px-2.5 py-1 rounded-lg bg-slate-900 text-white font-bold">
+                          <span>${escapeHtml(sc.team || 'รอระบุทีม')}</span>
+                          <span>${hasSeara ? `${formatShortThaiDate(sc.startDate)} – ${formatShortThaiDate(sc.endDate)}` : 'รอลงวันที่'}</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      });
 
       container.innerHTML = html;
     }
