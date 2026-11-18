@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.2</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.3</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -146,7 +146,7 @@
             <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
           </div>
           <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-            v1.6.2
+            v1.6.3
           </span>
         </div>
       </div>
@@ -198,7 +198,7 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.6.2</b></span>
+            <span>Version: <b class="text-slate-600">1.6.3</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
@@ -341,9 +341,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.6.2
+    // CONFIGURATION - VERSION 1.6.3
     // ==========================================
-    const APP_VERSION = "1.6.2";
+    const APP_VERSION = "1.6.3";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -899,7 +899,7 @@
 
       updatedEl.innerText = `Synced: ${plan.updatedAt || '-'}`;
 
-      // 1. Render Team Filter Pills (แบบคลีน ไม่มีจุดสีฉูดฉาด)
+      // 1. Render Team Filter Pills
       let pillsHtml = `
         <button onclick="selectPlanTeamFilter('ALL')" 
                 class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${selectedPlanTeam === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -921,7 +921,7 @@
         ? plan.teams
         : plan.teams.filter(t => t.team === selectedPlanTeam);
 
-      // 2. MONTHLY OVERVIEW CALENDAR (อยู่ด้านบนสุด)
+      // 2. MONTHLY OVERVIEW CALENDAR
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -929,6 +929,23 @@
 
       const activeProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.'));
       const totalFilterTeamsCount = visibleTeams.length;
+
+      // ตรวจหาทีมที่มีการซ้อนงานใน 60 วัน (สำหรับ Rating สีแดงจัดใน Team Availability)
+      const teamsWithOverlap = new Set();
+      const confirmedOrTentative = activeProjects.filter(p =>
+        p.team && p.startDate && p.endDate && (p.status === '1. Confirmed' || p.status === '2. Tentative')
+      );
+      for (let i = 0; i < confirmedOrTentative.length; i++) {
+        for (let j = i + 1; j < confirmedOrTentative.length; j++) {
+          const a = confirmedOrTentative[i];
+          const b = confirmedOrTentative[j];
+          if (a.team === b.team && a.projectName !== b.projectName) {
+            if (a.startDate <= b.endDate && a.endDate >= b.startDate) {
+              teamsWithOverlap.add(a.team);
+            }
+          }
+        }
+      }
 
       const getDaySnapshot = (isoDate) => {
         const busyTeamSet = new Set();
@@ -971,7 +988,7 @@
             </button>
           </div>
 
-          <!-- Clean Status Legend (4 สถานะตามที่กำหนด) -->
+          <!-- Clean Status Legend -->
           <div class="grid grid-cols-4 gap-1 text-center text-[10px] font-bold bg-slate-50 p-1.5 rounded-xl border border-slate-100">
             <div class="py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80">ว่าง</div>
             <div class="py-1 rounded-lg bg-sky-50 text-sky-800 border border-sky-200/80">มีคิวบางทีม</div>
@@ -981,7 +998,7 @@
 
           <!-- Days of Week -->
           <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-wider">
-            <div class="text-slate-400 py-1">Sun</div>
+            <div class="text-rose-500 py-1">Sun</div>
             <div class="text-slate-500 py-1">Mon</div>
             <div class="text-slate-500 py-1">Tue</div>
             <div class="text-slate-500 py-1">Wed</div>
@@ -990,7 +1007,7 @@
             <div class="text-slate-400 py-1">Sat</div>
           </div>
 
-          <!-- Calendar Grid (ไม่มี Icon สีในช่องวันที่) -->
+          <!-- Calendar Grid -->
           <div class="grid grid-cols-7 gap-1">
       `;
 
@@ -1004,6 +1021,7 @@
         const isoDate = `${calYear}-${mStr}-${dStr}`;
         const dayOfWeek = new Date(calYear, calMonth, day).getDay();
         const isSunday = (dayOfWeek === 0);
+        const isPast = (isoDate < todayIso);
         const isSelected = (isoDate === selectedCalDate);
         const isToday = (isoDate === todayIso);
 
@@ -1011,26 +1029,33 @@
         const freeCount = snap.freeTeams.length;
         const busyCount = snap.busyTeamSet.size;
 
-        // กำหนดสีและข้อความสถานะ 4 แบบ: ว่าง / มีคิวบางทีม / ไม่ว่าง / Overload
-        let cellBg = 'bg-emerald-50/80 border-emerald-200/80 text-emerald-900';
-        let statusLabel = 'ว่าง';
+        let cellBg = 'bg-emerald-50/80 border-emerald-200/80';
+        let dayNumColor = isSunday ? 'text-rose-600' : 'text-slate-800';
+        let statusLabel = `ว่าง ${freeCount} ทีม`;
         let labelColor = 'text-emerald-700';
 
-        if (isSunday && busyCount === 0) {
-          cellBg = 'bg-slate-50 border-slate-200/60 text-slate-400';
-          statusLabel = 'หยุด';
-          labelColor = 'text-slate-400';
+        if (isPast) {
+          // วันที่ผ่านไปแล้ว: สีเทา และไม่แสดงข้อมูลทีม
+          cellBg = 'bg-slate-200/75 border-slate-300/70';
+          dayNumColor = 'text-slate-500';
+          statusLabel = '';
+        } else if (isSunday) {
+          // วันอาทิตย์: ขึ้นสีแดง และขึ้นว่าวันหยุด
+          cellBg = 'bg-rose-50 border-rose-200';
+          dayNumColor = 'text-rose-600';
+          statusLabel = 'วันหยุด';
+          labelColor = 'text-rose-600';
         } else if (snap.isOverload) {
-          cellBg = 'bg-rose-100 border-rose-300 text-rose-900';
+          cellBg = 'bg-rose-100 border-rose-300';
           statusLabel = 'Overload';
           labelColor = 'text-rose-700';
         } else if (totalFilterTeamsCount > 0 && freeCount === 0) {
-          cellBg = 'bg-amber-50 border-amber-300 text-amber-900';
+          cellBg = 'bg-amber-50 border-amber-300';
           statusLabel = 'ไม่ว่าง';
           labelColor = 'text-amber-700';
         } else if (busyCount > 0) {
-          cellBg = 'bg-sky-50 border-sky-200 text-sky-900';
-          statusLabel = 'มีคิวบางทีม';
+          cellBg = 'bg-sky-50 border-sky-200';
+          statusLabel = `ว่าง ${freeCount} ทีม`;
           labelColor = 'text-sky-700';
         }
 
@@ -1038,13 +1063,11 @@
 
         html += `
           <button onclick="selectCalendarDay('${isoDate}')" 
-                  class="h-12 px-0.5 py-1 rounded-xl border transition-all flex flex-col items-center justify-between ${cellBg} ${ringClass}">
-            <span class="text-[11px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : (dayOfWeek === 0 || dayOfWeek === 6 ? 'text-slate-500' : 'text-slate-800')}">
+                  class="h-12 px-0.5 py-1 rounded-xl border transition-all flex flex-col items-center ${isPast ? 'justify-center' : 'justify-between'} ${cellBg} ${ringClass}">
+            <span class="text-[11px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : dayNumColor}">
               ${day}
             </span>
-            <span class="text-[8px] font-bold leading-tight tracking-tight truncate w-full text-center ${labelColor}">
-              ${statusLabel}
-            </span>
+            ${statusLabel ? `<span class="text-[8px] font-bold leading-tight tracking-tight truncate w-full text-center ${labelColor}">${statusLabel}</span>` : ''}
           </button>
         `;
       }
@@ -1054,18 +1077,28 @@
         </div>
       `;
 
-      // 3. DAY INSPECTOR CARD (รายละเอียดวันที่แตะเลือก)
+      // 3. DAY INSPECTOR CARD
+      const isSelectedPast = (selectedCalDate < todayIso);
+      const selectedDayOfWeek = new Date(selectedCalDate + 'T00:00:00').getDay();
+      const isSelectedSunday = (selectedDayOfWeek === 0);
       const selectedSnap = getDaySnapshot(selectedCalDate);
-      let dayBadgeText = 'ว่าง';
+
+      let dayBadgeText = `ว่าง ${selectedSnap.freeTeams.length} ทีม`;
       let dayBadgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-      if (selectedSnap.isOverload) {
+      if (isSelectedPast) {
+        dayBadgeText = 'วันที่ผ่านมาแล้ว';
+        dayBadgeStyle = 'bg-slate-100 text-slate-500 border-slate-200';
+      } else if (isSelectedSunday) {
+        dayBadgeText = 'วันหยุด';
+        dayBadgeStyle = 'bg-rose-50 text-rose-600 border-rose-200';
+      } else if (selectedSnap.isOverload) {
         dayBadgeText = 'Overload';
         dayBadgeStyle = 'bg-rose-100 text-rose-700 border-rose-300';
       } else if (selectedSnap.freeTeams.length === 0) {
         dayBadgeText = 'ไม่ว่าง';
         dayBadgeStyle = 'bg-amber-50 text-amber-700 border-amber-200';
       } else if (selectedSnap.busyTeamSet.size > 0) {
-        dayBadgeText = 'มีคิวบางทีม';
+        dayBadgeText = `ว่าง ${selectedSnap.freeTeams.length} ทีม`;
         dayBadgeStyle = 'bg-sky-50 text-sky-700 border-sky-200';
       }
 
@@ -1081,25 +1114,25 @@
             </span>
           </div>
 
-          <!-- ทีมที่ว่างพร้อมรับงาน -->
-          <div class="space-y-1.5">
-            <span class="text-[11px] font-extrabold text-slate-700 block">ทีมที่ว่างพร้อมรับงาน:</span>
-            ${selectedSnap.freeTeams.length === 0 ? `
-              <p class="text-[11px] text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 font-semibold">
-                ไม่มีทีมว่างในวันนี้
-              </p>
-            ` : `
-              <div class="flex flex-wrap gap-1.5">
-                ${selectedSnap.freeTeams.map(tName => `
-                  <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
-                    ${escapeHtml(tName)}
-                  </span>
-                `).join('')}
-              </div>
-            `}
-          </div>
+          ${!isSelectedPast && !isSelectedSunday ? `
+            <div class="space-y-1.5">
+              <span class="text-[11px] font-extrabold text-slate-700 block">ทีมที่ว่างพร้อมรับงาน (${selectedSnap.freeTeams.length} ทีม):</span>
+              ${selectedSnap.freeTeams.length === 0 ? `
+                <p class="text-[11px] text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 font-semibold">
+                  ไม่ว่าง (ไม่มีทีมว่างในวันนี้)
+                </p>
+              ` : `
+                <div class="flex flex-wrap gap-1.5">
+                  ${selectedSnap.freeTeams.map(tName => `
+                    <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      ${escapeHtml(tName)}
+                    </span>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+          ` : ''}
 
-          <!-- งานทีมติดตั้งวันนี้ -->
           <div class="space-y-2 pt-1">
             <span class="text-[11px] font-extrabold text-slate-700 block">คิวงานติดตั้ง (${selectedSnap.searaJobs.length}):</span>
             ${selectedSnap.searaJobs.length === 0 ? `
@@ -1123,7 +1156,6 @@
             `).join('')}
           </div>
 
-          <!-- งานผู้รับเหมาวันนี้ (ถ้ามี) -->
           ${selectedSnap.subJobs.length > 0 ? `
             <div class="space-y-2 pt-2 border-t border-slate-100">
               <span class="text-[11px] font-extrabold text-slate-600 block">งานผู้รับเหมา (${selectedSnap.subJobs.length}):</span>
@@ -1141,28 +1173,78 @@
         </div>
       `;
 
-      // 4. TEAM AVAILABILITY SUMMARY (ย้ายมาไว้ด้านล่างสุด แบบคลีน)
+      // 4. TEAM AVAILABILITY (Rating แสดงสี: เขียว=ว่างมาก, เหลือง=ไม่ค่อยว่าง, แดง=ไม่ว่าง, แดงจัด=ซ้อนงาน/ไม่ว่าง)
       html += `
         <div class="space-y-2 pt-1">
           <div class="flex items-center justify-between px-1">
             <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Team Availability (60 Days)</span>
             <span class="text-[10px] font-bold text-slate-400">Tap to filter</span>
           </div>
+
+          <!-- Legend Rating สี -->
+          <div class="grid grid-cols-4 gap-1 text-center text-[9px] font-bold bg-white p-1.5 rounded-xl border border-slate-200">
+            <div class="py-1 rounded-lg bg-emerald-100 text-emerald-900">ว่างมาก</div>
+            <div class="py-1 rounded-lg bg-amber-100 text-amber-900">ไม่ค่อยว่าง</div>
+            <div class="py-1 rounded-lg bg-rose-100 text-rose-800">ไม่ว่าง</div>
+            <div class="py-1 rounded-lg bg-red-600 text-white">ซ้อนงาน</div>
+          </div>
+
           <div class="grid grid-cols-1 gap-2">
             ${visibleTeams.map(t => {
-              const gapVal = String(t.maxGap || '-');
-              const isFreeAll = gapVal === '-';
+              const gapRaw = String(t.maxGap || '-').trim();
+              const isFreeAll = (gapRaw === '-');
+              const gapNum = parseInt(gapRaw, 10);
+              const hasOverlap = teamsWithOverlap.has(t.team);
               const cleanSummary = (t.summaryText || '-').replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/gu, '');
+
+              // Rating 4 ระดับตามเงื่อนไข
+              let cardStyle = 'bg-emerald-50/70 border-emerald-300';
+              let badgeStyle = 'bg-emerald-500 text-white';
+              let ratingLabel = 'ว่างมาก';
+              let barColor = 'bg-emerald-500 w-full';
+
+              if (hasOverlap) {
+                // แดงจัด = มีการซ้อนงาน และไม่ว่าง
+                cardStyle = 'bg-red-100/90 border-red-500';
+                badgeStyle = 'bg-red-700 text-white';
+                ratingLabel = 'ซ้อนงาน / ไม่ว่าง';
+                barColor = 'bg-red-700 w-full';
+              } else if (!isFreeAll && gapNum === 0) {
+                // แดง = ไม่ว่าง
+                cardStyle = 'bg-rose-50/90 border-rose-300';
+                badgeStyle = 'bg-rose-500 text-white';
+                ratingLabel = 'ไม่ว่าง';
+                barColor = 'bg-rose-500 w-1/4';
+              } else if (!isFreeAll && gapNum <= 4) {
+                // เหลือง = ไม่ค่อยว่าง
+                cardStyle = 'bg-amber-50/80 border-amber-300';
+                badgeStyle = 'bg-amber-400 text-amber-950';
+                ratingLabel = 'ไม่ค่อยว่าง';
+                barColor = 'bg-amber-400 w-2/4';
+              }
+
+              const selectedRing = (selectedPlanTeam === t.team) ? 'ring-2 ring-slate-900' : '';
+
               return `
                 <div onclick="selectPlanTeamFilter('${selectedPlanTeam === t.team ? 'ALL' : escapeHtml(t.team)}')" 
-                     class="cursor-pointer bg-white rounded-2xl border ${selectedPlanTeam === t.team ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'} p-3 shadow-2xs hover:border-slate-300 transition flex items-center justify-between gap-2.5">
-                  <div class="min-w-0 flex-1">
-                    <span class="font-extrabold text-slate-900 text-[13px] block">${escapeHtml(t.team)}</span>
-                    <p class="text-[11px] text-slate-500 font-medium mt-0.5 truncate">${escapeHtml(cleanSummary)}</p>
+                     class="cursor-pointer rounded-2xl border ${cardStyle} ${selectedRing} p-3 shadow-2xs transition space-y-2">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-slate-900 text-[13px]">${escapeHtml(t.team)}</span>
+                        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-md ${badgeStyle}">
+                          ${ratingLabel}
+                        </span>
+                      </div>
+                      <p class="text-[11px] text-slate-700 font-medium mt-0.5 truncate">${escapeHtml(cleanSummary)}</p>
+                    </div>
+                    <div class="flex-shrink-0 text-right">
+                      <span class="text-[9px] font-bold uppercase block text-slate-500">แทรกสูงสุด</span>
+                      <span class="text-[13px] font-black text-slate-900">${isFreeAll ? 'ว่าง 60 วัน' : `${escapeHtml(gapRaw)} วัน`}</span>
+                    </div>
                   </div>
-                  <div class="flex-shrink-0 text-center px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
-                    <span class="text-[9px] font-bold uppercase block text-slate-400">แทรกสูงสุด</span>
-                    <span class="text-[12px] font-extrabold text-slate-800 leading-tight">${isFreeAll ? 'ว่าง 60 วัน' : `${escapeHtml(gapVal)} วัน`}</span>
+                  <div class="w-full h-1.5 bg-white/80 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full ${barColor}"></div>
                   </div>
                 </div>
               `;
