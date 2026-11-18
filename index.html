@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.1</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.6.2</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -146,7 +146,7 @@
             <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
           </div>
           <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-            v1.6.1
+            v1.6.2
           </span>
         </div>
       </div>
@@ -158,7 +158,7 @@
       <div id="contentList" class="p-3.5 space-y-4"></div>
     </div>
 
-    <!-- ==================== VIEW 2: INSTALL PLAN (FRIENDLY CALENDAR) ==================== -->
+    <!-- ==================== VIEW 2: INSTALL PLAN (CLEAN CALENDAR) ==================== -->
     <div id="installPlanViewSection" class="hidden">
       <!-- Sticky Header -->
       <div class="p-3.5 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs space-y-2.5">
@@ -168,11 +168,11 @@
               ← Stock
             </button>
             <div>
-              <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight">📅 Install Plan</h1>
+              <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight">Install Plan</h1>
               <p class="text-[10px] font-medium text-slate-400" id="planUpdatedAtText">Synced: -</p>
             </div>
           </div>
-          <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+          <span class="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 text-slate-600 border border-slate-200">
             Read-Only
           </span>
         </div>
@@ -181,7 +181,7 @@
         <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll" id="planTeamFilterTabs"></div>
       </div>
 
-      <!-- Friendly Calendar & Workload Content -->
+      <!-- Clean Calendar & Workload Content -->
       <div id="installPlanContent" class="p-3.5 space-y-4"></div>
     </div>
 
@@ -198,12 +198,12 @@
           </div>
           
           <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.6.1</b></span>
+            <span>Version: <b class="text-slate-600">1.6.2</b></span>
             <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
           </div>
         </div>
 
-        <button id="menuInstallPlanBtn" onclick="toggleAppMode(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-indigo-700 active:scale-95 transition border border-indigo-500">
+        <button id="menuInstallPlanBtn" onclick="toggleAppMode(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-800 active:scale-95 transition border border-slate-800">
           <span id="menuInstallPlanLabel">📅 Install Plan</span>
         </button>
 
@@ -319,9 +319,9 @@
 
             <div class="pt-1">
               <label class="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer select-none">
-                <input type="checkbox" id="userFormViewInstallPlan" class="w-4 h-4 rounded text-indigo-600 focus:ring-0">
+                <input type="checkbox" id="userFormViewInstallPlan" class="w-4 h-4 rounded text-slate-900 focus:ring-0">
                 <div>
-                  <span class="text-[12px] font-bold text-slate-800 block">📅 View Install Plan (Col E)</span>
+                  <span class="text-[12px] font-bold text-slate-800 block">View Install Plan (Col E)</span>
                   <span class="text-[10px] text-slate-400 block">Allow user to view installation schedule (Read-Only)</span>
                 </div>
               </label>
@@ -341,9 +341,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.6.1
+    // CONFIGURATION - VERSION 1.6.2
     // ==========================================
-    const APP_VERSION = "1.6.1";
+    const APP_VERSION = "1.6.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -369,15 +369,6 @@
 
     const DB_NAME = 'InventoryAppDB';
     const STORE_NAME = 'inventory_store';
-
-    const TEAM_COLORS = [
-      { dot: 'bg-indigo-600', pill: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
-      { dot: 'bg-emerald-600', pill: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-      { dot: 'bg-amber-600', pill: 'bg-amber-100 text-amber-800 border-amber-200' },
-      { dot: 'bg-sky-600', pill: 'bg-sky-100 text-sky-800 border-sky-200' },
-      { dot: 'bg-purple-600', pill: 'bg-purple-100 text-purple-800 border-purple-200' },
-      { dot: 'bg-rose-600', pill: 'bg-rose-100 text-rose-800 border-rose-200' }
-    ];
 
     function getTodayIso() {
       const d = new Date();
@@ -823,7 +814,7 @@
     }
 
     // ========================================================
-    // MODE SWITCHER: INVENTORY STOCK <-> FRIENDLY CALENDAR PLAN
+    // MODE SWITCHER: INVENTORY STOCK <-> CLEAN CALENDAR PLAN
     // ========================================================
     function toggleAppMode() {
       switchAppMode(currentAppMode === 'inventory' ? 'installPlan' : 'inventory');
@@ -858,17 +849,6 @@
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const mIdx = parseInt(parts[1], 10) - 1;
       return `${parseInt(parts[2], 10)} ${months[mIdx] || parts[1]}`;
-    }
-
-    function getStatusBadgeStyle(status) {
-      const s = (status || '').trim();
-      if (s.startsWith('1.')) return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Confirmed' };
-      if (s.startsWith('2.')) return { bg: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Tentative' };
-      if (s.startsWith('3.')) return { bg: 'bg-sky-50 text-sky-700 border-sky-200', label: 'Team Assigned' };
-      if (s.startsWith('4.')) return { bg: 'bg-slate-200 text-slate-700 border-slate-300', label: 'Subcontractor' };
-      if (s.startsWith('5.')) return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Done' };
-      if (s.startsWith('6.')) return { bg: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Cancel' };
-      return { bg: 'bg-slate-100 text-slate-600 border-slate-200', label: s || '-' };
     }
 
     function selectPlanTeamFilter(teamName) {
@@ -910,9 +890,8 @@
       if (!plan || !plan.teams) {
         container.innerHTML = `
           <div class="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-2 shadow-xs">
-            <span class="text-3xl block">📅</span>
             <p class="text-[13px] font-bold text-slate-700">ยังไม่มีข้อมูลแผนงานติดตั้ง</p>
-            <p class="text-[11px] text-slate-400">กรุณากดเมนู 🛠️ SEARA Planner > 🚀 ซิงก์แผนงานขึ้นแอป ใน Google Sheets</p>
+            <p class="text-[11px] text-slate-400">กรุณากดเมนู SEARA Planner > ซิงก์แผนงานขึ้นแอป ใน Google Sheets</p>
           </div>
         `;
         return;
@@ -920,12 +899,7 @@
 
       updatedEl.innerText = `Synced: ${plan.updatedAt || '-'}`;
 
-      const teamColorMap = {};
-      plan.teams.forEach((t, idx) => {
-        teamColorMap[t.team] = TEAM_COLORS[idx % TEAM_COLORS.length];
-      });
-
-      // 1. Render Team Filter Pills
+      // 1. Render Team Filter Pills (แบบคลีน ไม่มีจุดสีฉูดฉาด)
       let pillsHtml = `
         <button onclick="selectPlanTeamFilter('ALL')" 
                 class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${selectedPlanTeam === 'ALL' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
@@ -934,59 +908,20 @@
       `;
       plan.teams.forEach(t => {
         const active = selectedPlanTeam === t.team;
-        const c = teamColorMap[t.team];
         pillsHtml += `
           <button onclick="selectPlanTeamFilter('${escapeHtml(t.team)}')" 
-                  class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1.5 ${active ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-            <span class="w-2 h-2 rounded-full ${c.dot}"></span>
-            <span>${escapeHtml(t.team)}</span>
+                  class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${active ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            ${escapeHtml(t.team)}
           </button>
         `;
       });
       tabsEl.innerHTML = pillsHtml;
 
-      // 2. Team Workload Radar
       const visibleTeams = selectedPlanTeam === 'ALL'
         ? plan.teams
         : plan.teams.filter(t => t.team === selectedPlanTeam);
 
-      let html = `
-        <div class="space-y-2">
-          <div class="flex items-center justify-between px-1">
-            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">📡 Team Availability Summary</span>
-            <span class="text-[10px] font-bold text-slate-400">Tap team to filter</span>
-          </div>
-          <div class="grid grid-cols-1 gap-2">
-            ${visibleTeams.map(t => {
-              const c = teamColorMap[t.team];
-              const gapVal = String(t.maxGap || '-');
-              const isFreeAll = gapVal === '-';
-              const isZeroGap = gapVal === '0';
-              const badgeClass = isFreeAll
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : (isZeroGap ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200');
-              return `
-                <div onclick="selectPlanTeamFilter('${selectedPlanTeam === t.team ? 'ALL' : escapeHtml(t.team)}')" 
-                     class="cursor-pointer bg-white rounded-2xl border ${selectedPlanTeam === t.team ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'} p-3 shadow-2xs hover:border-slate-300 transition flex items-center justify-between gap-2.5">
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
-                      <span class="w-2.5 h-2.5 rounded-full ${c.dot}"></span>
-                      <span class="font-extrabold text-slate-900 text-[13px]">${escapeHtml(t.team)}</span>
-                    </div>
-                    <p class="text-[11px] text-slate-600 font-medium mt-0.5 truncate">${escapeHtml(t.summaryText || '-')}</p>
-                  </div>
-                  <div class="flex-shrink-0 text-center px-2.5 py-1.5 rounded-xl border ${badgeClass}">
-                    <span class="text-[9px] font-bold uppercase block opacity-75">แทรกสูงสุด</span>
-                    <span class="text-[13px] font-black leading-tight">${isFreeAll ? 'ว่าง 60d' : `${escapeHtml(gapVal)} วัน`}</span>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-      `;
-
-      // 3. Monthly Calendar Builder
+      // 2. MONTHLY OVERVIEW CALENDAR (อยู่ด้านบนสุด)
       const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
       const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -1016,51 +951,51 @@
           }
         });
 
-        const hasConflict = Object.values(teamJobCount).some(cnt => cnt > 1);
+        const isOverload = Object.values(teamJobCount).some(cnt => cnt > 1);
         const freeTeams = visibleTeams.map(t => t.team).filter(tName => !busyTeamSet.has(tName));
 
-        return { busyTeamSet, freeTeams, searaJobs, subJobs, hasConflict };
+        return { busyTeamSet, freeTeams, searaJobs, subJobs, isOverload };
       };
 
-      html += `
+      let html = `
         <div class="bg-white rounded-3xl border border-slate-200 p-3.5 shadow-xs space-y-3">
           <!-- Calendar Header -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-              <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700">◀</button>
+              <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">◀</button>
               <h2 class="text-[15px] font-extrabold text-slate-900 min-w-[130px] text-center">${monthNames[calMonth]} ${calYear}</h2>
-              <button onclick="changeCalendarMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700">▶</button>
+              <button onclick="changeCalendarMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700 text-xs">▶</button>
             </div>
             <button onclick="jumpToTodayCalendar()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800">
               Today
             </button>
           </div>
 
-          <!-- Legend -->
-          <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-100 border border-emerald-300 inline-block"></span> ว่าง</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-sky-100 border border-sky-300 inline-block"></span> มีคิวบางทีม</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-amber-100 border border-amber-300 inline-block"></span> ไม่ว่าง</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-rose-200 border border-rose-400 inline-block"></span> ซ้อน</span>
+          <!-- Clean Status Legend (4 สถานะตามที่กำหนด) -->
+          <div class="grid grid-cols-4 gap-1 text-center text-[10px] font-bold bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+            <div class="py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/80">ว่าง</div>
+            <div class="py-1 rounded-lg bg-sky-50 text-sky-800 border border-sky-200/80">มีคิวบางทีม</div>
+            <div class="py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/80">ไม่ว่าง</div>
+            <div class="py-1 rounded-lg bg-rose-100 text-rose-800 border border-rose-300/80">Overload</div>
           </div>
 
           <!-- Days of Week -->
           <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-wider">
-            <div class="text-rose-500 py-1">Sun</div>
+            <div class="text-slate-400 py-1">Sun</div>
             <div class="text-slate-500 py-1">Mon</div>
             <div class="text-slate-500 py-1">Tue</div>
             <div class="text-slate-500 py-1">Wed</div>
             <div class="text-slate-500 py-1">Thu</div>
             <div class="text-slate-500 py-1">Fri</div>
-            <div class="text-rose-500 py-1">Sat</div>
+            <div class="text-slate-400 py-1">Sat</div>
           </div>
 
-          <!-- Calendar Grid -->
+          <!-- Calendar Grid (ไม่มี Icon สีในช่องวันที่) -->
           <div class="grid grid-cols-7 gap-1">
       `;
 
       for (let e = 0; e < firstDayOfMonth; e++) {
-        html += `<div class="h-14 rounded-xl bg-slate-50/50"></div>`;
+        html += `<div class="h-12 rounded-xl bg-slate-50/40"></div>`;
       }
 
       for (let day = 1; day <= daysInMonth; day++) {
@@ -1076,50 +1011,39 @@
         const freeCount = snap.freeTeams.length;
         const busyCount = snap.busyTeamSet.size;
 
-        let cellBg = 'bg-emerald-50/70 border-emerald-200/80 hover:bg-emerald-100/70';
+        // กำหนดสีและข้อความสถานะ 4 แบบ: ว่าง / มีคิวบางทีม / ไม่ว่าง / Overload
+        let cellBg = 'bg-emerald-50/80 border-emerald-200/80 text-emerald-900';
+        let statusLabel = 'ว่าง';
+        let labelColor = 'text-emerald-700';
+
         if (isSunday && busyCount === 0) {
-          cellBg = 'bg-slate-50 border-slate-200/70';
-        } else if (snap.hasConflict) {
-          cellBg = 'bg-rose-100/90 border-rose-400';
+          cellBg = 'bg-slate-50 border-slate-200/60 text-slate-400';
+          statusLabel = 'หยุด';
+          labelColor = 'text-slate-400';
+        } else if (snap.isOverload) {
+          cellBg = 'bg-rose-100 border-rose-300 text-rose-900';
+          statusLabel = 'Overload';
+          labelColor = 'text-rose-700';
         } else if (totalFilterTeamsCount > 0 && freeCount === 0) {
-          cellBg = 'bg-amber-100/80 border-amber-300';
+          cellBg = 'bg-amber-50 border-amber-300 text-amber-900';
+          statusLabel = 'ไม่ว่าง';
+          labelColor = 'text-amber-700';
         } else if (busyCount > 0) {
-          cellBg = 'bg-sky-50/90 border-sky-200';
+          cellBg = 'bg-sky-50 border-sky-200 text-sky-900';
+          statusLabel = 'มีคิวบางทีม';
+          labelColor = 'text-sky-700';
         }
 
-        const ringClass = isSelected ? 'ring-2 ring-slate-900 border-slate-900 scale-[1.03] z-10 shadow-sm' : '';
-
-        const dotsHtml = Array.from(snap.busyTeamSet).slice(0, 4).map(tName => {
-          const c = teamColorMap[tName] || TEAM_COLORS[0];
-          return `<span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>`;
-        }).join('');
-
-        const cellLabelText = snap.hasConflict
-          ? 'ซ้อน!'
-          : (isSunday && busyCount === 0
-              ? 'หยุด'
-              : (freeCount === 0
-                  ? 'ไม่ว่าง'
-                  : (totalFilterTeamsCount === 1 || freeCount === totalFilterTeamsCount
-                      ? 'ว่าง'
-                      : `ว่าง ${freeCount}`)));
+        const ringClass = isSelected ? 'ring-2 ring-slate-900 border-slate-900 scale-[1.03] z-10 shadow-xs' : '';
 
         html += `
           <button onclick="selectCalendarDay('${isoDate}')" 
-                  class="h-14 p-1 rounded-xl border transition-all flex flex-col items-center justify-between relative ${cellBg} ${ringClass}">
-            <div class="w-full flex items-center justify-between px-0.5">
-              <span class="text-[11px] font-extrabold ${isToday ? 'bg-slate-900 text-white px-1.5 rounded-md' : (dayOfWeek === 0 || dayOfWeek === 6 ? 'text-rose-600' : 'text-slate-800')}">
-                ${day}
-              </span>
-              ${snap.subJobs.length > 0 ? '<span class="w-1.5 h-1.5 rounded-sm bg-slate-500" title="Subcontractor"></span>' : ''}
-            </div>
-
-            <div class="flex items-center justify-center gap-0.5 h-2">
-              ${dotsHtml}
-            </div>
-
-            <span class="text-[9px] font-bold leading-none ${snap.hasConflict ? 'text-rose-700' : (freeCount === 0 ? 'text-amber-800' : 'text-emerald-800')}">
-              ${cellLabelText}
+                  class="h-12 px-0.5 py-1 rounded-xl border transition-all flex flex-col items-center justify-between ${cellBg} ${ringClass}">
+            <span class="text-[11px] font-extrabold leading-none ${isToday ? 'bg-slate-900 text-white px-1.5 py-0.5 rounded-md' : (dayOfWeek === 0 || dayOfWeek === 6 ? 'text-slate-500' : 'text-slate-800')}">
+              ${day}
+            </span>
+            <span class="text-[8px] font-bold leading-tight tracking-tight truncate w-full text-center ${labelColor}">
+              ${statusLabel}
             </span>
           </button>
         `;
@@ -1130,78 +1054,81 @@
         </div>
       `;
 
-      // 4. Day Inspector Card
+      // 3. DAY INSPECTOR CARD (รายละเอียดวันที่แตะเลือก)
       const selectedSnap = getDaySnapshot(selectedCalDate);
-      const headerStatusText = selectedSnap.freeTeams.length === 0
-        ? 'ไม่ว่าง'
-        : (totalFilterTeamsCount === 1 || selectedSnap.freeTeams.length === totalFilterTeamsCount
-            ? 'ว่าง'
-            : `ว่าง ${selectedSnap.freeTeams.length}/${totalFilterTeamsCount} ทีม`);
+      let dayBadgeText = 'ว่าง';
+      let dayBadgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      if (selectedSnap.isOverload) {
+        dayBadgeText = 'Overload';
+        dayBadgeStyle = 'bg-rose-100 text-rose-700 border-rose-300';
+      } else if (selectedSnap.freeTeams.length === 0) {
+        dayBadgeText = 'ไม่ว่าง';
+        dayBadgeStyle = 'bg-amber-50 text-amber-700 border-amber-200';
+      } else if (selectedSnap.busyTeamSet.size > 0) {
+        dayBadgeText = 'มีคิวบางทีม';
+        dayBadgeStyle = 'bg-sky-50 text-sky-700 border-sky-200';
+      }
 
       html += `
         <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs space-y-3">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <div>
               <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Selected Date</span>
-              <h3 class="text-[16px] font-extrabold text-slate-900">📆 ${formatShortThaiDate(selectedCalDate)} ${selectedCalDate.split('-')[0]}</h3>
+              <h3 class="text-[15px] font-extrabold text-slate-900">${formatShortThaiDate(selectedCalDate)} ${selectedCalDate.split('-')[0]}</h3>
             </div>
-            <span class="text-[11px] font-bold px-2.5 py-1 rounded-xl ${selectedSnap.freeTeams.length > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-              ${headerStatusText}
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-xl border ${dayBadgeStyle}">
+              ${dayBadgeText}
             </span>
           </div>
 
+          <!-- ทีมที่ว่างพร้อมรับงาน -->
           <div class="space-y-1.5">
-            <span class="text-[11px] font-extrabold text-emerald-700 block">✅ ทีมที่ว่างพร้อมรับงานวันนี้:</span>
+            <span class="text-[11px] font-extrabold text-slate-700 block">ทีมที่ว่างพร้อมรับงาน:</span>
             ${selectedSnap.freeTeams.length === 0 ? `
-              <p class="text-[11px] text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 font-semibold">
-                ⚠️ ไม่ว่าง (มีคิวงานเต็มหมดแล้วในวันนี้)
+              <p class="text-[11px] text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 font-semibold">
+                ไม่มีทีมว่างในวันนี้
               </p>
             ` : `
               <div class="flex flex-wrap gap-1.5">
-                ${selectedSnap.freeTeams.map(tName => {
-                  const c = teamColorMap[tName] || TEAM_COLORS[0];
-                  return `
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      <span class="w-2 h-2 rounded-full ${c.dot}"></span>
-                      ${escapeHtml(tName)}
-                    </span>
-                  `;
-                }).join('')}
+                ${selectedSnap.freeTeams.map(tName => `
+                  <span class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                    ${escapeHtml(tName)}
+                  </span>
+                `).join('')}
               </div>
             `}
           </div>
 
+          <!-- งานทีมติดตั้งวันนี้ -->
           <div class="space-y-2 pt-1">
-            <span class="text-[11px] font-extrabold text-slate-700 block">🛠️ คิวงานทีมติดตั้งวันนี้ (${selectedSnap.searaJobs.length}):</span>
+            <span class="text-[11px] font-extrabold text-slate-700 block">คิวงานติดตั้ง (${selectedSnap.searaJobs.length}):</span>
             ${selectedSnap.searaJobs.length === 0 ? `
-              <p class="text-[11px] text-slate-400 italic px-1">ไม่มีคิวติดตั้งของทีม SEARA ในวันนี้</p>
-            ` : selectedSnap.searaJobs.map(p => {
-              const st = getStatusBadgeStyle(p.status);
-              const c = teamColorMap[p.team] || TEAM_COLORS[0];
-              return `
-                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${c.pill}">
-                      <span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>
-                      ${escapeHtml(p.team)}
-                    </span>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border ${st.bg}">${escapeHtml(p.status)}</span>
-                  </div>
-                  <p class="font-extrabold text-slate-900 text-[13px] leading-snug">${escapeHtml(p.projectName || 'Untitled')}</p>
-                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
-                  <div class="text-[10px] font-bold text-slate-500 pt-1">
-                    🗓️ ช่วงติดตั้ง: <span class="text-slate-800">${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}</span>
-                  </div>
+              <p class="text-[11px] text-slate-400 px-1">ไม่มีคิวติดตั้งในวันนี้</p>
+            ` : selectedSnap.searaJobs.map(p => `
+              <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-slate-900 text-white">
+                    ${escapeHtml(p.team)}
+                  </span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-slate-200">
+                    ${escapeHtml(p.status)}
+                  </span>
                 </div>
-              `;
-            }).join('')}
+                <p class="font-extrabold text-slate-900 text-[13px] leading-snug pt-0.5">${escapeHtml(p.projectName || 'Untitled')}</p>
+                ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
+                <div class="text-[10px] font-bold text-slate-400 pt-0.5">
+                  ช่วงติดตั้ง: <span class="text-slate-700">${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}</span>
+                </div>
+              </div>
+            `).join('')}
           </div>
 
+          <!-- งานผู้รับเหมาวันนี้ (ถ้ามี) -->
           ${selectedSnap.subJobs.length > 0 ? `
             <div class="space-y-2 pt-2 border-t border-slate-100">
-              <span class="text-[11px] font-extrabold text-slate-600 block">🏗️ งานผู้รับเหมาเตรียมพื้นที่วันนี้ (${selectedSnap.subJobs.length}):</span>
+              <span class="text-[11px] font-extrabold text-slate-600 block">งานผู้รับเหมา (${selectedSnap.subJobs.length}):</span>
               ${selectedSnap.subJobs.map(p => `
-                <div class="p-2.5 rounded-2xl bg-slate-100/80 border border-slate-200 space-y-1">
+                <div class="p-2.5 rounded-2xl bg-slate-100/80 border border-slate-200 space-y-0.5">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-extrabold text-slate-800 text-[12px] truncate">${escapeHtml(p.projectName || 'Untitled')}</span>
                     <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)}</span>
@@ -1211,6 +1138,36 @@
               `).join('')}
             </div>
           ` : ''}
+        </div>
+      `;
+
+      // 4. TEAM AVAILABILITY SUMMARY (ย้ายมาไว้ด้านล่างสุด แบบคลีน)
+      html += `
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Team Availability (60 Days)</span>
+            <span class="text-[10px] font-bold text-slate-400">Tap to filter</span>
+          </div>
+          <div class="grid grid-cols-1 gap-2">
+            ${visibleTeams.map(t => {
+              const gapVal = String(t.maxGap || '-');
+              const isFreeAll = gapVal === '-';
+              const cleanSummary = (t.summaryText || '-').replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\s]+/gu, '');
+              return `
+                <div onclick="selectPlanTeamFilter('${selectedPlanTeam === t.team ? 'ALL' : escapeHtml(t.team)}')" 
+                     class="cursor-pointer bg-white rounded-2xl border ${selectedPlanTeam === t.team ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'} p-3 shadow-2xs hover:border-slate-300 transition flex items-center justify-between gap-2.5">
+                  <div class="min-w-0 flex-1">
+                    <span class="font-extrabold text-slate-900 text-[13px] block">${escapeHtml(t.team)}</span>
+                    <p class="text-[11px] text-slate-500 font-medium mt-0.5 truncate">${escapeHtml(cleanSummary)}</p>
+                  </div>
+                  <div class="flex-shrink-0 text-center px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <span class="text-[9px] font-bold uppercase block text-slate-400">แทรกสูงสุด</span>
+                    <span class="text-[12px] font-extrabold text-slate-800 leading-tight">${isFreeAll ? 'ว่าง 60 วัน' : `${escapeHtml(gapVal)} วัน`}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
         </div>
       `;
 
@@ -1968,7 +1925,7 @@
                 <div class="flex items-center justify-between gap-1.5">
                   <span class="font-extrabold text-slate-900 text-[13px] truncate flex-1 min-w-0">${escapeHtml(u.email)}</span>
                   <div class="flex items-center gap-1.5 flex-shrink-0">
-                    ${canPlan ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">📅 Plan</span>' : ''}
+                    ${canPlan ? '<span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">Plan</span>' : ''}
                     <span class="text-[9px] font-bold px-1.5 py-0.5 rounded ${u.role === 'ADMIN' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600'}">${u.role}</span>
                     ${u.hasPin ? '<span class="text-[10px] text-emerald-600 font-bold">● Active</span>' : '<span class="text-[10px] text-amber-500 font-bold">○ No PIN</span>'}
                   </div>
