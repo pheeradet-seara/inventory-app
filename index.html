@@ -43,7 +43,7 @@
     }
   </script>
 </head>
-<body class="max-w-xl mx-auto min-h-screen bg-slate-100/90 pb-28 text-slate-800 antialiased relative">
+<body class="max-w-xl mx-auto min-h-screen bg-slate-100/90 pb-12 text-slate-800 antialiased relative">
 
   <!-- ================= UPDATE TOAST BANNER ================= -->
   <div id="updateBanner" class="hidden fixed top-3 left-4 right-4 z-50 max-w-sm mx-auto bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/80 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300">
@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.8.3</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.0</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -134,136 +134,111 @@
 
   <!-- ================= MAIN APP SCREEN ================= -->
   <div id="appScreen" class="hidden">
-    
-    <!-- ==================== VIEW 1: INVENTORY STOCK ==================== -->
-    <div id="inventoryViewSection">
-      <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs flex items-center justify-between gap-2">
-        <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
-        
-        <div class="flex items-center gap-1.5 flex-shrink-0">
-          <div id="searchBadge" onclick="openSearchModal()" class="hidden bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer">
-            <span id="searchBadgeText"></span>
-            <span onclick="event.stopPropagation(); clearSearch();" class="text-slate-400 hover:text-slate-600 ml-1">✕</span>
+
+    <!-- ==================== UNIFIED TOP NAVIGATION HEADER ==================== -->
+    <div class="p-3.5 bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200 shadow-xs space-y-2.5">
+      
+      <!-- Row 1: Brand + Sync Info + Account Menu Button -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <img src="./logo.png" alt="SEARA" class="w-8 h-8 object-contain flex-shrink-0">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.0</span>
+            </div>
+            <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
-          <span class="text-[10px] font-bold px-2 py-1 rounded-xl bg-slate-100 text-slate-500 border border-slate-200 select-none">
-            v1.8.3
-          </span>
+        </div>
+
+        <button onclick="toggleAccountDrawer()" id="accountMenuBtn" 
+                class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 border border-slate-200/80 flex items-center gap-1.5 text-[11px] font-bold transition flex-shrink-0">
+          <span class="truncate max-w-[110px]" id="topUserBadge">Account</span>
+          <span id="accountMenuIcon">☰</span>
+        </button>
+      </div>
+
+      <!-- Account Dropdown Panel (เปิดจากปุ่มมุมขวาบนแทนปุ่ม Floating) -->
+      <div id="accountDropdownPanel" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2.5 shadow-inner">
+        <div class="flex items-center justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <span class="text-[9px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
+            <p class="text-[12px] font-extrabold text-slate-900 truncate" id="hubUserEmail">-</p>
+          </div>
+          <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200 flex-shrink-0" id="hubUserRole">USER</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-200/80">
+          <button id="adminUserMgmtBtn" onclick="openUserModal(); closeAccountDrawer();" class="hidden flex-1 py-2 px-2.5 rounded-xl bg-slate-900 text-white text-[11px] font-bold hover:bg-slate-800 transition text-center">
+            👥 Manage Users
+          </button>
+          <button onclick="clearCacheAndReload()" id="clearCacheBtn" class="flex-1 py-2 px-2.5 rounded-xl bg-white text-slate-700 border border-slate-200 text-[11px] font-bold hover:bg-slate-100 transition text-center">
+            🔄 Sync & Clear Cache
+          </button>
+          <button onclick="logoutApp()" class="py-2 px-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold hover:bg-rose-100 transition">
+            Log out
+          </button>
         </div>
       </div>
 
+      <!-- Row 2: Main Mode Switcher (3 ปุ่มสำหรับคนมี Permission / 1 ปุ่มสำหรับคนไม่มี Permission) -->
+      <div id="mainModeNavBar" class="grid grid-cols-1 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold">
+        <button id="navBtnStock" onclick="navigateMainTab('stock')" class="py-1.5 px-2 rounded-lg bg-slate-900 text-white shadow-2xs transition text-center truncate">
+          Stock
+        </button>
+        <button id="navBtnCalendar" onclick="navigateMainTab('calendar')" class="hidden py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition text-center truncate">
+          Calendar & Team
+        </button>
+        <button id="navBtnProjects" onclick="navigateMainTab('projects')" class="hidden py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition text-center truncate">
+          Projects
+        </button>
+      </div>
+
+      <!-- Row 3A: Contextual Bar for STOCK (Warehouse Tabs + Unified Search Bar) -->
+      <div id="stockSubHeaderBar" class="space-y-2">
+        <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-0.5 text-[11px] custom-scroll select-none cursor-grab active:cursor-grabbing"></div>
+        
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
+          <input type="text" id="stockSearchInput" oninput="onStockSearchInput()" onfocus="onStockSearchFocus()"
+                 placeholder="Search brand, item no. or description..." 
+                 autocomplete="off"
+                 class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800 placeholder:text-slate-400">
+          <button id="clearStockSearchBtn" onclick="clearStockSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
+
+          <!-- Suggestion Dropdown เฉพาะหน้า Stock -->
+          <div id="stockSuggestionDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200 max-h-64 overflow-y-auto divide-y divide-slate-100 text-[11px] z-50 custom-scroll"></div>
+        </div>
+      </div>
+
+      <!-- Row 3B: Contextual Bar for CALENDAR & TEAM -->
+      <div id="teamSubHeaderBar" class="hidden flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
+
+      <!-- Row 3C: Contextual Bar for PROJECTS (Unified Search Bar แพทเทิร์นเดียวกับ Stock) -->
+      <div id="projectSubHeaderBar" class="hidden">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
+          <input type="text" id="projectSearchInput" oninput="onProjectSearchInput()" 
+                 placeholder="Search project or team..." 
+                 autocomplete="off"
+                 class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800 placeholder:text-slate-400">
+          <button id="clearProjSearchBtn" onclick="clearProjectSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== CONTENT AREA 1: INVENTORY STOCK ==================== -->
+    <div id="inventoryViewSection">
       <div id="loading" class="text-center py-20 text-slate-400 text-[11px] font-semibold">
         Loading inventory data...
       </div>
-
       <div id="contentList" class="p-3.5 space-y-4"></div>
     </div>
 
-    <!-- ==================== VIEW 2: INSTALL PLAN (CALENDAR & TEAM / PROJECTS) ==================== -->
+    <!-- ==================== CONTENT AREA 2: INSTALL PLAN (CALENDAR & TEAM / PROJECTS) ==================== -->
     <div id="installPlanViewSection" class="hidden">
-      <!-- Sticky Header -->
-      <div class="p-3.5 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs space-y-2.5">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <button onclick="switchAppMode('inventory')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition">
-              ← Stock
-            </button>
-            <div>
-              <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight">Install Plan</h1>
-              <p class="text-[10px] font-medium text-slate-400" id="planUpdatedAtText">Synced: -</p>
-            </div>
-          </div>
-
-          <!-- Sub-View Switcher -->
-          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold">
-            <button id="subTabTeamBtn" onclick="switchPlanSubView('team')" class="px-2.5 py-1 rounded-lg bg-slate-900 text-white shadow-2xs transition">
-              Calendar & Team
-            </button>
-            <button id="subTabProjectBtn" onclick="switchPlanSubView('project')" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">
-              Projects
-            </button>
-          </div>
-        </div>
-
-        <!-- Sub-Header 1: Team Filter Pills -->
-        <div id="teamSubHeaderBar" class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
-
-        <!-- Sub-Header 2: Project Search Only -->
-        <div id="projectSubHeaderBar" class="hidden">
-          <div class="relative">
-            <input type="text" id="projectSearchInput" oninput="onProjectSearchInput()" placeholder="Search project or team..." 
-                   class="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-slate-800">
-            <button id="clearProjSearchBtn" onclick="clearProjectSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Content Container -->
       <div id="installPlanContent" class="p-3.5 space-y-4"></div>
-    </div>
-
-    <!-- ================= FLOATING ACTION CONTROLS ================= -->
-    <div class="fixed right-5 bottom-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
-      <div id="hubActionsMenu" class="hidden flex flex-col items-end gap-2.5 pointer-events-auto transition-all duration-200 scale-95 origin-bottom-right mb-1">
-        
-        <div class="bg-white/95 backdrop-blur-md border border-slate-200 shadow-xl rounded-2xl p-3.5 text-right min-w-[210px] max-w-[250px]">
-          <span class="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Signed In As</span>
-          <p class="text-[14px] font-bold text-slate-900 truncate" id="hubUserEmail">-</p>
-          <div class="flex items-center justify-end gap-2 mt-1.5">
-            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200" id="hubUserRole">USER</span>
-            <button onclick="logoutApp()" class="text-[11px] font-bold text-red-600 hover:underline">Log out</button>
-          </div>
-          
-          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-medium text-slate-400 leading-tight">
-            <span>Version: <b class="text-slate-600">1.8.3</b></span>
-            <span>DB: <span id="hubSyncTime" class="text-slate-500 font-semibold">-</span></span>
-          </div>
-        </div>
-
-        <button id="menuInstallPlanBtn" onclick="toggleAppMode(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-800 active:scale-95 transition border border-slate-800">
-          <span id="menuInstallPlanLabel">📅 Install Plan</span>
-        </button>
-
-        <button id="adminUserMgmtBtn" onclick="openUserModal(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-700 active:scale-95 transition border border-slate-700">
-          <span>👥 Manage Users</span>
-        </button>
-
-        <button onclick="clearCacheAndReload()" id="clearCacheBtn" class="flex items-center gap-2 bg-white text-slate-700 px-4 py-2.5 rounded-2xl border border-slate-200 shadow-lg text-[11px] font-bold hover:bg-slate-50 active:scale-95 transition">
-          <span>🧹 Clear Cache & Reload</span>
-        </button>
-
-        <button onclick="goHome(); toggleHubMenu();" class="flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-slate-800 active:scale-95 transition">
-          <span>🏠 Reset to Home</span>
-        </button>
-      </div>
-
-      <div class="flex items-center gap-2.5 pointer-events-auto">
-        <button id="floatingSearchBtn" onclick="openSearchModal()" title="Search Item / Brand" 
-                class="w-13 h-13 p-3.5 bg-white text-slate-700 rounded-2xl shadow-xl shadow-slate-200 border border-slate-200 flex items-center justify-center text-xl active:scale-95 hover:bg-slate-50 transition">
-          🔍
-        </button>
-        <button onclick="toggleHubMenu()" id="hubToggleBtn" title="Menu & Actions" 
-                class="w-13 h-13 p-2 bg-white text-slate-800 rounded-2xl shadow-xl shadow-slate-300/60 border border-slate-200/90 flex items-center justify-center active:scale-95 hover:bg-slate-50 transition overflow-hidden">
-          <img id="hubToggleImg" src="./logo.png" alt="Logo" class="w-8 h-8 object-contain">
-          <span id="hubToggleClose" class="hidden text-xl font-bold text-slate-700">✕</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- ================= SEARCH MODAL OVERLAY ================= -->
-    <div id="searchModal" class="hidden fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm p-4 flex flex-col justify-start pt-16">
-      <div class="bg-white w-full max-w-lg mx-auto rounded-3xl shadow-2xl border border-slate-200 overflow-hidden space-y-2">
-        <div class="p-3.5 border-b border-slate-100 flex items-center gap-2">
-          <span class="text-[15px] text-slate-400 pl-1">🔍</span>
-          <input type="text" id="modalSearchInput" oninput="onSearchInputDebounced()" 
-                 placeholder="Search Brand, Item No. or Description..." 
-                 class="w-full px-2 py-2 text-[14px] font-semibold text-slate-800 focus:outline-none placeholder:text-slate-400"
-                 autocomplete="off">
-          <button onclick="closeSearchModal()" class="text-slate-400 hover:text-slate-600 text-[11px] px-2.5 py-1.5 rounded-lg bg-slate-100 font-bold">
-            Close
-          </button>
-        </div>
-        <div id="suggestionBox" class="max-h-80 overflow-y-auto divide-y divide-slate-100 text-[11px] pb-2 custom-scroll"></div>
-      </div>
     </div>
 
     <!-- ================= ADMIN USER MANAGEMENT MODAL ================= -->
@@ -357,9 +332,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.8.3
+    // CONFIGURATION - VERSION 1.9.0
     // ==========================================
-    const APP_VERSION = "1.8.3";
+    const APP_VERSION = "1.9.0";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -369,20 +344,23 @@
     let appData = { items: [], userWarehouses: [], userEmail: '', role: 'USER', viewInstallPlan: false, syncTime: '', installPlan: null };
     let selectedWarehouses = new Set(['ALL']);
     
-    let currentAppMode = 'inventory';
-    let currentPlanSubView = 'team'; // 'team' | 'project'
+    // Main Navigation State: 'stock' | 'calendar' | 'projects'
+    let activeMainTab = 'stock';
     let selectedPlanTeam = 'ALL';
     let highlightedProjectName = null;
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth(); // 0-11
     let selectedCalDate = null;
 
+    // Independent Search States
+    let activeStockKeyword = '';
+    let activeProjectKeyword = '';
+
     let activeBrandName = null;
     let openItems = {};
-    let activeKeyword = '';
 
     let masterWarehouseList = [];
-    let searchDebounceTimer = null;
+    let stockSearchDebounceTimer = null;
     let currentRenderList = [];
 
     const DB_NAME = 'InventoryAppDB';
@@ -496,7 +474,7 @@
     async function clearCacheAndReload() {
       const btn = document.getElementById('clearCacheBtn');
       const originalText = btn.innerHTML;
-      btn.innerHTML = '<span>⏳ Clearing...</span>';
+      btn.innerHTML = '<span>⏳ Syncing...</span>';
       btn.disabled = true;
 
       await clearLocalDatabase();
@@ -506,11 +484,11 @@
       }
       await loadData(true);
 
-      btn.innerHTML = '<span>✅ Updated!</span>';
+      btn.innerHTML = '<span>✅ Synced!</span>';
       setTimeout(() => {
         btn.innerHTML = originalText;
         btn.disabled = false;
-        toggleHubMenu();
+        closeAccountDrawer();
       }, 700);
     }
 
@@ -692,7 +670,7 @@
       currentEmail = null;
       currentPin = null;
       await clearLocalDatabase();
-      document.getElementById('hubActionsMenu').classList.add('hidden');
+      closeAccountDrawer();
       document.getElementById('loginEmailInput').value = '';
       document.getElementById('loginPinInput').value = '';
       document.getElementById('newPinInput').value = '';
@@ -705,6 +683,29 @@
     function showAppScreen() {
       document.getElementById('loginScreen').classList.add('hidden');
       document.getElementById('appScreen').classList.remove('hidden');
+    }
+
+    // ========================================================
+    // ACCOUNT DROPDOWN DRAWER (TOP RIGHT)
+    // ========================================================
+    function toggleAccountDrawer() {
+      const panel = document.getElementById('accountDropdownPanel');
+      const icon = document.getElementById('accountMenuIcon');
+      const isHidden = panel.classList.contains('hidden');
+      if (isHidden) {
+        panel.classList.remove('hidden');
+        if (icon) icon.innerText = '✕';
+      } else {
+        panel.classList.add('hidden');
+        if (icon) icon.innerText = '☰';
+      }
+    }
+
+    function closeAccountDrawer() {
+      const panel = document.getElementById('accountDropdownPanel');
+      const icon = document.getElementById('accountMenuIcon');
+      if (panel) panel.classList.add('hidden');
+      if (icon) icon.innerText = '☰';
     }
 
     // ========================================================
@@ -803,12 +804,19 @@
       if (userRole === 'ADMIN') adminBtn.classList.remove('hidden');
       else adminBtn.classList.add('hidden');
 
-      const planBtn = document.getElementById('menuInstallPlanBtn');
+      const navBar = document.getElementById('mainModeNavBar');
+      const btnCal = document.getElementById('navBtnCalendar');
+      const btnProj = document.getElementById('navBtnProjects');
+
       if (canViewPlan) {
-        planBtn.classList.remove('hidden');
+        navBar.className = 'grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold';
+        btnCal.classList.remove('hidden');
+        btnProj.classList.remove('hidden');
       } else {
-        planBtn.classList.add('hidden');
-        if (currentAppMode === 'installPlan') switchAppMode('inventory');
+        navBar.className = 'grid grid-cols-1 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold';
+        btnCal.classList.add('hidden');
+        btnProj.classList.add('hidden');
+        if (activeMainTab !== 'stock') navigateMainTab('stock');
       }
     }
 
@@ -817,85 +825,101 @@
       appData = data;
 
       const userRole = (data.role || 'USER').toUpperCase();
-      document.getElementById('hubUserEmail').innerText = data.userEmail || currentEmail || '-';
-      document.getElementById('hubUserRole').innerText = `${userRole} ACCESS`;
-      document.getElementById('hubSyncTime').innerText = data.syncTime || '-';
+      const emailStr = data.userEmail || currentEmail || '-';
+      document.getElementById('hubUserEmail').innerText = emailStr;
+      document.getElementById('topUserBadge').innerText = emailStr.split('@')[0];
+      document.getElementById('hubUserRole').innerText = `${userRole}`;
+      updateSyncHeaderLabel();
 
       updatePermissionUI();
       renderWarehouseTabs();
       renderView();
       initHorizontalScroll();
 
-      if (currentAppMode === 'installPlan') {
+      if (activeMainTab === 'calendar' || activeMainTab === 'projects') {
         renderInstallPlanView();
       }
     }
 
-    // ========================================================
-    // MODE SWITCHER: INVENTORY STOCK <-> INSTALL PLAN
-    // ========================================================
-    function toggleAppMode() {
-      switchAppMode(currentAppMode === 'inventory' ? 'installPlan' : 'inventory');
+    function updateSyncHeaderLabel() {
+      const el = document.getElementById('globalSyncText');
+      if (!el) return;
+      if (activeMainTab === 'stock') {
+        el.innerText = `Stock Synced: ${appData.syncTime || '-'}`;
+      } else {
+        const planTime = (appData.installPlan && appData.installPlan.updatedAt) ? appData.installPlan.updatedAt : (appData.syncTime || '-');
+        el.innerText = `Plan Synced: ${planTime}`;
+      }
     }
 
-    function switchAppMode(mode) {
-      currentAppMode = mode;
+    // ========================================================
+    // UNIFIED 3-TAB NAVIGATION: STOCK | CALENDAR & TEAM | PROJECTS
+    // ========================================================
+    function navigateMainTab(tabName) {
+      activeMainTab = tabName;
+      selectedCalDate = null;
+      hideStockSuggestions();
+      closeAccountDrawer();
+
+      const btnStock = document.getElementById('navBtnStock');
+      const btnCal = document.getElementById('navBtnCalendar');
+      const btnProj = document.getElementById('navBtnProjects');
+
+      const activeBtnClass = 'py-1.5 px-2 rounded-lg bg-slate-900 text-white shadow-2xs transition text-center truncate';
+      const inactiveBtnClass = 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-slate-900 transition text-center truncate';
+
+      btnStock.className = (tabName === 'stock') ? activeBtnClass : inactiveBtnClass;
+      btnCal.className = (tabName === 'calendar') ? activeBtnClass : inactiveBtnClass;
+      btnProj.className = (tabName === 'projects') ? activeBtnClass : inactiveBtnClass;
+
+      const stockSub = document.getElementById('stockSubHeaderBar');
+      const teamSub = document.getElementById('teamSubHeaderBar');
+      const projSub = document.getElementById('projectSubHeaderBar');
+
       const invSec = document.getElementById('inventoryViewSection');
       const planSec = document.getElementById('installPlanViewSection');
-      const searchBtn = document.getElementById('floatingSearchBtn');
-      const menuLabel = document.getElementById('menuInstallPlanLabel');
 
-      if (mode === 'installPlan') {
-        selectedCalDate = null;
+      if (tabName === 'stock') {
+        stockSub.classList.remove('hidden');
+        teamSub.classList.add('hidden');
+        projSub.classList.add('hidden');
+        invSec.classList.remove('hidden');
+        planSec.classList.add('hidden');
+      } else if (tabName === 'calendar') {
+        stockSub.classList.add('hidden');
+        projSub.classList.add('hidden');
+        if (highlightedProjectName) teamSub.classList.add('hidden');
+        else teamSub.classList.remove('hidden');
         invSec.classList.add('hidden');
         planSec.classList.remove('hidden');
-        searchBtn.classList.add('hidden');
-        if (menuLabel) menuLabel.innerText = '📦 Inventory Stock';
         renderInstallPlanView();
-      } else {
-        planSec.classList.add('hidden');
-        invSec.classList.remove('hidden');
-        searchBtn.classList.remove('hidden');
-        if (menuLabel) menuLabel.innerText = '📅 Install Plan';
+      } else if (tabName === 'projects') {
+        stockSub.classList.add('hidden');
+        teamSub.classList.add('hidden');
+        projSub.classList.remove('hidden');
+        invSec.classList.add('hidden');
+        planSec.classList.remove('hidden');
+        renderInstallPlanView();
       }
+
+      updateSyncHeaderLabel();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function switchPlanSubView(subView) {
-      currentPlanSubView = subView;
-      selectedCalDate = null;
-      const teamBtn = document.getElementById('subTabTeamBtn');
-      const projBtn = document.getElementById('subTabProjectBtn');
-      const teamBar = document.getElementById('teamSubHeaderBar');
-      const projBar = document.getElementById('projectSubHeaderBar');
-
-      if (subView === 'project') {
-        projBtn.className = 'px-2.5 py-1 rounded-lg bg-slate-900 text-white shadow-2xs transition';
-        teamBtn.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
-        teamBar.classList.add('hidden');
-        projBar.classList.remove('hidden');
-      } else {
-        teamBtn.className = 'px-2.5 py-1 rounded-lg bg-slate-900 text-white shadow-2xs transition';
-        projBtn.className = 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
-        projBar.classList.add('hidden');
-        if (highlightedProjectName) {
-          teamBar.classList.add('hidden');
-        } else {
-          teamBar.classList.remove('hidden');
-        }
-      }
-      renderInstallPlanView();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
+    // Cross-Link 1: กดที่ชื่อโปรเจคจากมุมมองทีม/ปฏิทิน -> กระโดดไปหน้า Projects พร้อมใส่คำค้นหาเฉพาะหน้า Projects
     function jumpToProjectView(projectName) {
+      activeProjectKeyword = projectName || '';
       const input = document.getElementById('projectSearchInput');
       const clearBtn = document.getElementById('clearProjSearchBtn');
-      if (input) input.value = projectName;
-      if (clearBtn) clearBtn.classList.remove('hidden');
-      switchPlanSubView('project');
+      if (input) input.value = activeProjectKeyword;
+      if (clearBtn) {
+        if (activeProjectKeyword) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+      }
+      navigateMainTab('projects');
     }
 
+    // Cross-Link 2: กดปุ่ม "Calendar →" จากหน้า Projects -> เด้งไปหน้า Calendar & Team พร้อมไฮไลท์โปรเจคนั้น
     function jumpToProjectPeriodInCalendar(encodedProjName, targetIsoDate) {
       highlightedProjectName = decodeURIComponent(encodedProjName);
       if (targetIsoDate && targetIsoDate.includes('-')) {
@@ -904,32 +928,172 @@
         calMonth = parseInt(parts[1], 10) - 1;
       }
       selectedPlanTeam = 'ALL';
-      switchPlanSubView('team');
+      navigateMainTab('calendar');
     }
 
     function clearProjectHighlight() {
       highlightedProjectName = null;
       selectedCalDate = null;
       const teamBar = document.getElementById('teamSubHeaderBar');
-      if (teamBar && currentPlanSubView === 'team') {
+      if (teamBar && activeMainTab === 'calendar') {
         teamBar.classList.remove('hidden');
       }
       renderInstallPlanView();
     }
 
+    // ========================================================
+    // INDEPENDENT SEARCH 1: PROJECTS SEARCH
+    // ========================================================
     function onProjectSearchInput() {
-      const val = document.getElementById('projectSearchInput').value.trim();
+      const input = document.getElementById('projectSearchInput');
+      activeProjectKeyword = input.value.trim();
       const clearBtn = document.getElementById('clearProjSearchBtn');
-      if (val) clearBtn.classList.remove('hidden');
+      if (activeProjectKeyword) clearBtn.classList.remove('hidden');
       else clearBtn.classList.add('hidden');
       renderInstallPlanView();
     }
 
     function clearProjectSearch() {
+      activeProjectKeyword = '';
       document.getElementById('projectSearchInput').value = '';
       document.getElementById('clearProjSearchBtn').classList.add('hidden');
       renderInstallPlanView();
     }
+
+    // ========================================================
+    // INDEPENDENT SEARCH 2: STOCK SEARCH (SAME PATTERN)
+    // ========================================================
+    function onStockSearchInput() {
+      const input = document.getElementById('stockSearchInput');
+      const val = input.value.trim();
+      activeStockKeyword = val;
+
+      const clearBtn = document.getElementById('clearStockSearchBtn');
+      if (val) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+
+      clearTimeout(stockSearchDebounceTimer);
+      stockSearchDebounceTimer = setTimeout(() => {
+        renderStockSuggestions();
+        renderView();
+      }, 150);
+    }
+
+    function onStockSearchFocus() {
+      if (activeStockKeyword.length >= 1) {
+        renderStockSuggestions();
+      }
+    }
+
+    function hideStockSuggestions() {
+      const box = document.getElementById('stockSuggestionDropdown');
+      if (box) box.classList.add('hidden');
+    }
+
+    function renderStockSuggestions() {
+      const val = activeStockKeyword;
+      const box = document.getElementById('stockSuggestionDropdown');
+      if (!box) return;
+
+      if (val.length < 1) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      const term = val.toLowerCase();
+      const matches = [];
+      const seen = new Set();
+
+      for (let i = 0; i < (appData.items || []).length; i++) {
+        const item = appData.items[i];
+        if (!isWarehouseSelected(item.wh)) continue;
+
+        const brandName = (item.brand || '').trim();
+        if (brandName && brandName.toLowerCase().includes(term)) {
+          const key = 'b_' + brandName.toLowerCase();
+          if (!seen.has(key)) {
+            matches.push({ type: 'Brand', primary: brandName, secondary: 'Category', fillVal: brandName, isBrandOnly: true });
+            seen.add(key);
+          }
+        }
+        if (matches.length >= 3) break;
+      }
+
+      for (let i = 0; i < (appData.items || []).length; i++) {
+        const item = appData.items[i];
+        if (!isWarehouseSelected(item.wh)) continue;
+
+        const itemNoMatch = (item.itemNo || '').toLowerCase().includes(term);
+        const descMatch = (item.desc || '').toLowerCase().includes(term);
+
+        if (itemNoMatch && !seen.has(item.itemNo)) {
+          matches.push({ type: 'Code', primary: item.itemNo, secondary: item.desc, fillVal: item.itemNo, brand: item.brand });
+          seen.add(item.itemNo);
+        } else if (descMatch && !seen.has(item.desc)) {
+          matches.push({ type: 'Desc', primary: item.desc, secondary: item.itemNo, fillVal: item.itemNo, brand: item.brand });
+          seen.add(item.desc);
+        }
+
+        if (matches.length >= 6) break;
+      }
+
+      if (matches.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      let html = '';
+      matches.forEach(m => {
+        let badgeColor = m.type === 'Brand' ? 'bg-slate-200 text-slate-800 font-bold' : (m.type === 'Code' ? 'bg-slate-100 text-slate-800 font-bold' : 'bg-slate-50 text-slate-500');
+        html += `
+          <div onclick="applyStockSuggestion('${encodeURIComponent(m.fillVal)}', '${encodeURIComponent(m.brand || '')}', ${m.isBrandOnly ? true : false})" 
+               class="p-2.5 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition">
+            <div class="truncate mr-2">
+              <span class="font-bold text-slate-900 text-[12px]">${escapeHtml(m.primary)}</span>
+              <span class="text-[10px] text-slate-500 block truncate">${escapeHtml(m.secondary)}</span>
+            </div>
+            <span class="text-[9px] uppercase px-2 py-0.5 rounded-md ${badgeColor}">${m.type}</span>
+          </div>
+        `;
+      });
+      box.innerHTML = html;
+      box.classList.remove('hidden');
+    }
+
+    function applyStockSuggestion(encodedVal, encodedBrand, isBrandOnly) {
+      const val = decodeURIComponent(encodedVal);
+      const brand = decodeURIComponent(encodedBrand);
+      activeStockKeyword = val;
+      document.getElementById('stockSearchInput').value = val;
+      document.getElementById('clearStockSearchBtn').classList.remove('hidden');
+      hideStockSuggestions();
+
+      if (isBrandOnly) {
+        activeBrandName = val;
+      } else {
+        if (brand) activeBrandName = brand;
+        const parentKey = getParentItemNo(val);
+        openItems[parentKey] = true;
+      }
+
+      renderView();
+    }
+
+    function clearStockSearch() {
+      activeStockKeyword = '';
+      document.getElementById('stockSearchInput').value = '';
+      document.getElementById('clearStockSearchBtn').classList.add('hidden');
+      hideStockSuggestions();
+      renderView();
+    }
+
+    // ปิด Suggestion Dropdown เมื่อคลิกพื้นที่อื่น
+    document.addEventListener('click', (e) => {
+      const stockSub = document.getElementById('stockSubHeaderBar');
+      if (stockSub && !stockSub.contains(e.target)) {
+        hideStockSuggestions();
+      }
+    });
 
     function formatShortDate(isoStr) {
       if (!isoStr || !isoStr.includes('-')) return isoStr || '-';
@@ -1034,7 +1198,6 @@
         return { isAllFree: false, label: 'Fully booked (Next 60d)', maxGapDays: 0, maxGapRange: 'None', longestDays: 0 };
       }
 
-      // หาช่วงว่างแทรกกลางระหว่างงาน (Inter-project gaps) สำหรับระบุ Max Gap และช่วงวันของ Max Gap
       const inBetweenGaps = lastBusyIso
         ? streaks.filter(s => s.end < lastBusyIso)
         : [];
@@ -1047,7 +1210,6 @@
         });
       }
 
-      // หาช่วงว่างติดต่อกันยาวที่สุดทั้งหมด (Free Window)
       let best = streaks[0];
       streaks.forEach(s => {
         if (s.workDays > best.workDays) best = s;
@@ -1134,7 +1296,6 @@
 
     function renderInstallPlanView() {
       const container = document.getElementById('installPlanContent');
-      const updatedEl = document.getElementById('planUpdatedAtText');
       const plan = appData.installPlan;
 
       if (!plan || !plan.teams) {
@@ -1147,10 +1308,9 @@
         return;
       }
 
-      updatedEl.innerText = `Synced: ${plan.updatedAt || '-'}`;
       const analytics = buildPlanAnalytics(plan);
 
-      if (currentPlanSubView === 'project') {
+      if (activeMainTab === 'projects') {
         renderProjectOverviewTab(container, plan, analytics);
       } else {
         renderTeamCalendarTab(container, plan, analytics);
@@ -1440,7 +1600,7 @@
         `;
       }
 
-      // DAY INSPECTOR CARD (คลิกดูย้อนหลังในปฏิทินได้ปกติ)
+      // DAY INSPECTOR CARD
       if (selectedCalDate) {
         const isSelectedPast = (selectedCalDate < todayIso);
         const selectedDayOfWeek = new Date(selectedCalDate + 'T00:00:00').getDay();
@@ -1593,7 +1753,7 @@
         `;
       }
 
-      // TEAM AVAILABILITY (ตัวเลข MAX GAP และช่วงวันที่ตรงกัน 100%)
+      // TEAM AVAILABILITY
       if (!isProjectFiltered) {
         html += `
           <div class="space-y-2 pt-1">
@@ -1688,7 +1848,7 @@
     // SUB-VIEW B: PROJECTS LIST (HIDE COMPLETED, A-Z SORTED, TBD AT BOTTOM)
     // ========================================================
     function renderProjectOverviewTab(container, plan, analytics) {
-      const searchKw = (document.getElementById('projectSearchInput').value || '').toLowerCase().trim();
+      const searchKw = (activeProjectKeyword || '').toLowerCase().trim();
       const todayIso = getTodayIso();
 
       const projMap = {};
@@ -1822,7 +1982,7 @@
       
       tabsHtml += `
         <button onclick="toggleWarehouseFilter('ALL')" 
-                class="px-3.5 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${isAllSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                class="px-3.5 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${isAllSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
           All WH
         </button>
       `;
@@ -1831,7 +1991,7 @@
         const isSelected = !isAllSelected && selectedWarehouses.has(wh);
         tabsHtml += `
           <button onclick="toggleWarehouseFilter('${wh}')" 
-                  class="px-3.5 py-1.5 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1 ${isSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                  class="px-3.5 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1 ${isSelected ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
             <span>${wh}</span>
             ${isSelected ? '<span class="text-[9px] bg-slate-700 px-1 rounded-full text-slate-200">✓</span>' : ''}
           </button>
@@ -1896,152 +2056,9 @@
       }, { passive: false });
     }
 
-    function toggleHubMenu() {
-      const menu = document.getElementById('hubActionsMenu');
-      const logoImg = document.getElementById('hubToggleImg');
-      const closeIcon = document.getElementById('hubToggleClose');
-      const isClosed = menu.classList.contains('hidden');
-
-      if (isClosed) {
-        menu.classList.remove('hidden');
-        if (logoImg) logoImg.classList.add('hidden');
-        if (closeIcon) closeIcon.classList.remove('hidden');
-      } else {
-        menu.classList.add('hidden');
-        if (logoImg) logoImg.classList.remove('hidden');
-        if (closeIcon) closeIcon.classList.add('hidden');
-      }
-    }
-
-    function goHome() {
-      switchAppMode('inventory');
-      clearSearch();
-      selectedWarehouses.clear();
-      selectedWarehouses.add('ALL');
-      activeBrandName = null;
-      openItems = {};
-      renderWarehouseTabs();
-      renderApp(appData);
-    }
-
-    function openSearchModal() {
-      const modal = document.getElementById('searchModal');
-      const input = document.getElementById('modalSearchInput');
-      modal.classList.remove('hidden');
-      input.value = activeKeyword;
-      input.focus();
-      handleSearchInput();
-    }
-
-    function closeSearchModal() {
-      document.getElementById('searchModal').classList.add('hidden');
-    }
-
-    function onSearchInputDebounced() {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => {
-        handleSearchInput();
-      }, 150);
-    }
-
     function isWarehouseSelected(wh) {
       if (selectedWarehouses.has('ALL') || selectedWarehouses.size === 0) return true;
       return selectedWarehouses.has(wh);
-    }
-
-    function handleSearchInput() {
-      const input = document.getElementById('modalSearchInput');
-      const val = input.value.trim();
-      const box = document.getElementById('suggestionBox');
-
-      if (val.length < 1) {
-        box.innerHTML = '<div class="p-4 text-center text-slate-400">Type brand, item no., or description to search</div>';
-        return;
-      }
-
-      const term = val.toLowerCase();
-      const matches = [];
-      const seen = new Set();
-
-      for (let i = 0; i < (appData.items || []).length; i++) {
-        const item = appData.items[i];
-        if (!isWarehouseSelected(item.wh)) continue;
-
-        const brandName = (item.brand || '').trim();
-        if (brandName && brandName.toLowerCase().includes(term)) {
-          const key = 'b_' + brandName.toLowerCase();
-          if (!seen.has(key)) {
-            matches.push({ type: 'Brand', primary: brandName, secondary: 'Category', fillVal: brandName, isBrandOnly: true });
-            seen.add(key);
-          }
-        }
-        if (matches.length >= 3) break;
-      }
-
-      for (let i = 0; i < (appData.items || []).length; i++) {
-        const item = appData.items[i];
-        if (!isWarehouseSelected(item.wh)) continue;
-
-        const itemNoMatch = (item.itemNo || '').toLowerCase().includes(term);
-        const descMatch = (item.desc || '').toLowerCase().includes(term);
-
-        if (itemNoMatch && !seen.has(item.itemNo)) {
-          matches.push({ type: 'Code', primary: item.itemNo, secondary: item.desc, fillVal: item.itemNo, brand: item.brand });
-          seen.add(item.itemNo);
-        } else if (descMatch && !seen.has(item.desc)) {
-          matches.push({ type: 'Desc', primary: item.desc, secondary: item.itemNo, fillVal: item.itemNo, brand: item.brand });
-          seen.add(item.desc);
-        }
-
-        if (matches.length >= 8) break;
-      }
-
-      if (matches.length === 0) {
-        box.innerHTML = '<div class="p-4 text-center text-slate-400">No matching items found</div>';
-      } else {
-        let html = '';
-        matches.forEach(m => {
-          let badgeColor = m.type === 'Brand' ? 'bg-slate-200 text-slate-800 font-bold' : (m.type === 'Code' ? 'bg-slate-100 text-slate-800 font-bold' : 'bg-slate-50 text-slate-500');
-
-          html += `
-            <div onclick="applySuggestion('${encodeURIComponent(m.fillVal)}', '${encodeURIComponent(m.brand || '')}', ${m.isBrandOnly ? true : false})" class="p-3.5 hover:bg-slate-50 cursor-pointer flex justify-between items-center transition">
-              <div class="truncate mr-2">
-                <span class="font-bold text-slate-900 text-[14px]">${escapeHtml(m.primary)}</span>
-                <span class="text-[11px] text-slate-500 block truncate mt-0.5">${escapeHtml(m.secondary)}</span>
-              </div>
-              <span class="text-[10px] uppercase px-2 py-0.5 rounded-md ${badgeColor}">${m.type}</span>
-            </div>
-          `;
-        });
-        box.innerHTML = html;
-      }
-    }
-
-    function applySuggestion(encodedVal, encodedBrand, isBrandOnly) {
-      const val = decodeURIComponent(encodedVal);
-      const brand = decodeURIComponent(encodedBrand);
-      activeKeyword = val;
-      closeSearchModal();
-
-      const badge = document.getElementById('searchBadge');
-      document.getElementById('searchBadgeText').innerText = `🔍 ${val}`;
-      badge.classList.remove('hidden');
-
-      if (isBrandOnly) {
-        activeBrandName = val;
-      } else {
-        if (brand) activeBrandName = brand;
-        const parentKey = getParentItemNo(val);
-        openItems[parentKey] = true;
-      }
-
-      renderView();
-    }
-
-    function clearSearch() {
-      activeKeyword = '';
-      document.getElementById('searchBadge').classList.add('hidden');
-      renderView();
     }
 
     function toggleBrand(brandName) {
@@ -2097,7 +2114,7 @@
     }
 
     function renderView() {
-      const keyword = (activeKeyword || '').toLowerCase().trim();
+      const keyword = (activeStockKeyword || '').toLowerCase().trim();
       const container = document.getElementById('contentList');
 
       const filteredRaw = (appData.items || []).filter(item => {
