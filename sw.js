@@ -1,11 +1,11 @@
 /**
  * =======================================================
- * SEARA INVENTORY SYSTEM - VERSION 1.6.0
+ * SEARA INVENTORY SYSTEM - VERSION 1.6.1
  * Service Worker: Offline Cache & Background Fetch
  * =======================================================
  */
 
-const CACHE_NAME = 'seara-inventory-v1.6.0';
+const CACHE_NAME = 'seara-inventory-v1.6.1';
 
 const STATIC_ASSETS = [
   './',
