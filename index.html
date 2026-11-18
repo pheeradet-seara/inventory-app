@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.1</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.2</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.1</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.2</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -181,7 +181,7 @@
         </div>
       </div>
 
-      <!-- Row 2: Main Mode Switcher (แสดง 3 ปุ่มเฉพาะคนที่มีสิทธิ์ / แสดง 1 ปุ่มสำหรับคนที่ไม่มีสิทธิ์) -->
+      <!-- Row 2: Main Mode Switcher (Default: 1 ปุ่ม Stock เท่านั้น จนกว่า API จะยืนยันสิทธิ์) -->
       <div id="mainModeNavBar" class="grid grid-cols-1 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold">
         <button id="navBtnStock" onclick="navigateMainTab('stock')" class="py-1.5 px-2 rounded-lg bg-slate-900 text-white shadow-2xs transition text-center truncate">
           Stock
@@ -331,9 +331,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.1
+    // CONFIGURATION - VERSION 1.9.2
     // ==========================================
-    const APP_VERSION = "1.9.1";
+    const APP_VERSION = "1.9.2";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -366,13 +366,23 @@
     const STORE_NAME = 'inventory_store';
 
     function canUserAccessInstallPlan() {
-      const userRole = (localStorage.getItem('inv_user_role') || appData.role || 'USER').toUpperCase().trim();
+      const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase().trim();
       if (userRole === 'ADMIN') return true;
-      const storedPlanFlag = localStorage.getItem('inv_view_plan');
-      if (storedPlanFlag !== null) {
-        return storedPlanFlag === 'true';
+      return localStorage.getItem('inv_view_plan') === 'true';
+    }
+
+    function applyServerPermissions(res) {
+      const role = String(res.role || 'USER').trim().toUpperCase();
+      const hasPlan = (role === 'ADMIN') || (res.viewInstallPlan === true || String(res.viewInstallPlan || '').trim().toUpperCase() === 'TRUE');
+      localStorage.setItem('inv_user_role', role);
+      localStorage.setItem('inv_view_plan', hasPlan ? 'true' : 'false');
+      if (res.allowedWarehouses !== undefined) {
+        localStorage.setItem('inv_user_wh', String(res.allowedWarehouses || '').trim());
       }
-      return appData.viewInstallPlan === true;
+      appData.role = role;
+      appData.viewInstallPlan = hasPlan;
+      updatePermissionUI();
+      return hasPlan;
     }
 
     function getTodayIso() {
@@ -542,11 +552,7 @@
         }
 
         pendingEmail = res.userEmail;
-        if (res.role) localStorage.setItem('inv_user_role', res.role);
-        if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-        if (res.viewInstallPlan !== undefined) {
-          localStorage.setItem('inv_view_plan', (res.viewInstallPlan === true || String(res.viewInstallPlan).toUpperCase() === 'TRUE') ? 'true' : 'false');
-        }
+        applyServerPermissions(res);
 
         document.getElementById('stepEmail').classList.add('hidden');
 
@@ -606,11 +612,7 @@
           currentPin = pin;
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
-          localStorage.setItem('inv_user_role', res.role || 'USER');
-          if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-          if (res.viewInstallPlan !== undefined) {
-            localStorage.setItem('inv_view_plan', (res.viewInstallPlan === true || String(res.viewInstallPlan).toUpperCase() === 'TRUE') ? 'true' : 'false');
-          }
+          applyServerPermissions(res);
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -655,11 +657,7 @@
           currentPin = pin;
           localStorage.setItem('inv_user_email', currentEmail);
           localStorage.setItem('inv_user_pin', currentPin);
-          localStorage.setItem('inv_user_role', res.role || 'USER');
-          if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-          if (res.viewInstallPlan !== undefined) {
-            localStorage.setItem('inv_view_plan', (res.viewInstallPlan === true || String(res.viewInstallPlan).toUpperCase() === 'TRUE') ? 'true' : 'false');
-          }
+          applyServerPermissions(res);
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -736,19 +734,15 @@
       showAppScreen();
       updatePermissionUI();
 
-      fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(currentEmail)}`, { method: 'GET', redirect: 'follow' })
+      // ดึงสิทธิ์ล่าสุดจาก Google Sheets (Permissions Tab) เสมอ
+      const permPromise = fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(currentEmail)}`, { method: 'GET', redirect: 'follow' })
         .then(r => r.json())
         .then(perm => {
           if (perm && perm.success) {
-            localStorage.setItem('inv_user_role', perm.role || 'USER');
-            localStorage.setItem('inv_user_wh', perm.allowedWarehouses || '');
-            const hasPlanPerm = (perm.viewInstallPlan === true || String(perm.viewInstallPlan).toUpperCase() === 'TRUE');
-            localStorage.setItem('inv_view_plan', hasPlanPerm ? 'true' : 'false');
-            appData.role = perm.role || 'USER';
-            appData.viewInstallPlan = hasPlanPerm;
-            updatePermissionUI();
+            applyServerPermissions(perm);
           }
-        }).catch(() => {});
+          return perm;
+        }).catch(() => null);
 
       if (!forceSync) {
         const cached = await getCache('cached_' + currentEmail);
@@ -761,6 +755,9 @@
       } else {
         document.getElementById('loading').style.display = 'block';
       }
+
+      // รอให้ได้สิทธิ์ล่าสุดก่อนสร้าง constructedData
+      await permPromise;
 
       const freshUrl = `${DATA_URL}?t=${Date.now()}`;
 
@@ -816,7 +813,7 @@
     }
 
     function updatePermissionUI() {
-      const userRole = (localStorage.getItem('inv_user_role') || appData.role || 'USER').toUpperCase().trim();
+      const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase().trim();
       const canViewPlan = canUserAccessInstallPlan();
 
       const adminBtn = document.getElementById('adminUserMgmtBtn');
@@ -845,7 +842,7 @@
       if (!data) return;
       appData = data;
 
-      const userRole = (data.role || 'USER').toUpperCase();
+      const userRole = (localStorage.getItem('inv_user_role') || data.role || 'USER').toUpperCase();
       const emailStr = data.userEmail || currentEmail || '-';
       document.getElementById('hubUserEmail').innerText = emailStr;
       document.getElementById('topUserBadge').innerText = emailStr.split('@')[0];
@@ -877,7 +874,6 @@
     // UNIFIED 3-TAB NAVIGATION (WITH STRICT PERMISSION GUARD)
     // ========================================================
     function navigateMainTab(tabName) {
-      // ป้องกันการเข้าถึงหน้า Calendar & Projects หากไม่มี Permission
       if (tabName !== 'stock' && !canUserAccessInstallPlan()) {
         tabName = 'stock';
       }
@@ -987,7 +983,7 @@
     }
 
     // ========================================================
-    // INDEPENDENT SEARCH 2: STOCK SEARCH (SAME PATTERN)
+    // INDEPENDENT SEARCH 2: STOCK SEARCH
     // ========================================================
     function onStockSearchInput() {
       const input = document.getElementById('stockSearchInput');
@@ -1161,7 +1157,6 @@
       renderInstallPlanView();
     }
 
-    // Helper: คำนวณช่วงวันที่ว่างติดต่อกัน (Free Window) และ Max Gap แบบ Real-time ตรงกัน 100%
     function computeTeamFreeWindow(teamName, activeProjects, todayIso) {
       const busyDates = new Set();
       let lastBusyIso = '';
@@ -1256,7 +1251,6 @@
       return { isAllFree: false, label: rangeLabel, maxGapDays, maxGapRange, longestDays: best.workDays };
     }
 
-    // Helper: สร้างข้อมูล Overload และ Snapshot รายวัน
     function buildPlanAnalytics(plan) {
       const allTeams = (plan.teams || []).map(t => t.team);
       const totalCompanyTeams = allTeams.length;
@@ -1742,7 +1736,7 @@
         `;
       }
 
-      // TEAM PLANNED PROJECTS LIST (แสดงเฉพาะงานที่ยังไม่จบ)
+      // TEAM PLANNED PROJECTS LIST
       if (!isProjectFiltered && selectedPlanTeam !== 'ALL') {
         const teamProjects = analytics.activeProjects
           .filter(p => p.team === selectedPlanTeam && (!p.endDate || p.endDate >= todayIso))
