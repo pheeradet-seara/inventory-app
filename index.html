@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.0</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.1</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.0</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.1</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -158,7 +158,7 @@
         </button>
       </div>
 
-      <!-- Account Dropdown Panel (เปิดจากปุ่มมุมขวาบนแทนปุ่ม Floating) -->
+      <!-- Account Dropdown Panel -->
       <div id="accountDropdownPanel" class="hidden bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2.5 shadow-inner">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0 flex-1">
@@ -181,7 +181,7 @@
         </div>
       </div>
 
-      <!-- Row 2: Main Mode Switcher (3 ปุ่มสำหรับคนมี Permission / 1 ปุ่มสำหรับคนไม่มี Permission) -->
+      <!-- Row 2: Main Mode Switcher (แสดง 3 ปุ่มเฉพาะคนที่มีสิทธิ์ / แสดง 1 ปุ่มสำหรับคนที่ไม่มีสิทธิ์) -->
       <div id="mainModeNavBar" class="grid grid-cols-1 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold">
         <button id="navBtnStock" onclick="navigateMainTab('stock')" class="py-1.5 px-2 rounded-lg bg-slate-900 text-white shadow-2xs transition text-center truncate">
           Stock
@@ -194,7 +194,7 @@
         </button>
       </div>
 
-      <!-- Row 3A: Contextual Bar for STOCK (Warehouse Tabs + Unified Search Bar) -->
+      <!-- Row 3A: Contextual Bar for STOCK -->
       <div id="stockSubHeaderBar" class="space-y-2">
         <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-0.5 text-[11px] custom-scroll select-none cursor-grab active:cursor-grabbing"></div>
         
@@ -206,7 +206,6 @@
                  class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800 placeholder:text-slate-400">
           <button id="clearStockSearchBtn" onclick="clearStockSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
 
-          <!-- Suggestion Dropdown เฉพาะหน้า Stock -->
           <div id="stockSuggestionDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200 max-h-64 overflow-y-auto divide-y divide-slate-100 text-[11px] z-50 custom-scroll"></div>
         </div>
       </div>
@@ -214,7 +213,7 @@
       <!-- Row 3B: Contextual Bar for CALENDAR & TEAM -->
       <div id="teamSubHeaderBar" class="hidden flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
 
-      <!-- Row 3C: Contextual Bar for PROJECTS (Unified Search Bar แพทเทิร์นเดียวกับ Stock) -->
+      <!-- Row 3C: Contextual Bar for PROJECTS -->
       <div id="projectSubHeaderBar" class="hidden">
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
@@ -332,9 +331,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.0
+    // CONFIGURATION - VERSION 1.9.1
     // ==========================================
-    const APP_VERSION = "1.9.0";
+    const APP_VERSION = "1.9.1";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -365,6 +364,16 @@
 
     const DB_NAME = 'InventoryAppDB';
     const STORE_NAME = 'inventory_store';
+
+    function canUserAccessInstallPlan() {
+      const userRole = (localStorage.getItem('inv_user_role') || appData.role || 'USER').toUpperCase().trim();
+      if (userRole === 'ADMIN') return true;
+      const storedPlanFlag = localStorage.getItem('inv_view_plan');
+      if (storedPlanFlag !== null) {
+        return storedPlanFlag === 'true';
+      }
+      return appData.viewInstallPlan === true;
+    }
 
     function getTodayIso() {
       const d = new Date();
@@ -535,7 +544,9 @@
         pendingEmail = res.userEmail;
         if (res.role) localStorage.setItem('inv_user_role', res.role);
         if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-        if (res.viewInstallPlan !== undefined) localStorage.setItem('inv_view_plan', res.viewInstallPlan ? 'true' : 'false');
+        if (res.viewInstallPlan !== undefined) {
+          localStorage.setItem('inv_view_plan', (res.viewInstallPlan === true || String(res.viewInstallPlan).toUpperCase() === 'TRUE') ? 'true' : 'false');
+        }
 
         document.getElementById('stepEmail').classList.add('hidden');
 
@@ -597,7 +608,9 @@
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
           if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-          if (res.viewInstallPlan !== undefined) localStorage.setItem('inv_view_plan', res.viewInstallPlan ? 'true' : 'false');
+          if (res.viewInstallPlan !== undefined) {
+            localStorage.setItem('inv_view_plan', (res.viewInstallPlan === true || String(res.viewInstallPlan).toUpperCase() === 'TRUE') ? 'true' : 'false');
+          }
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -644,7 +657,9 @@
           localStorage.setItem('inv_user_pin', currentPin);
           localStorage.setItem('inv_user_role', res.role || 'USER');
           if (res.allowedWarehouses !== undefined) localStorage.setItem('inv_user_wh', res.allowedWarehouses);
-          if (res.viewInstallPlan !== undefined) localStorage.setItem('inv_view_plan', res.viewInstallPlan ? 'true' : 'false');
+          if (res.viewInstallPlan !== undefined) {
+            localStorage.setItem('inv_view_plan', (res.viewInstallPlan === true || String(res.viewInstallPlan).toUpperCase() === 'TRUE') ? 'true' : 'false');
+          }
           await clearLocalDatabase();
           showAppScreen();
           loadData(true);
@@ -719,6 +734,7 @@
       }
 
       showAppScreen();
+      updatePermissionUI();
 
       fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(currentEmail)}`, { method: 'GET', redirect: 'follow' })
         .then(r => r.json())
@@ -726,7 +742,10 @@
           if (perm && perm.success) {
             localStorage.setItem('inv_user_role', perm.role || 'USER');
             localStorage.setItem('inv_user_wh', perm.allowedWarehouses || '');
-            localStorage.setItem('inv_view_plan', perm.viewInstallPlan ? 'true' : 'false');
+            const hasPlanPerm = (perm.viewInstallPlan === true || String(perm.viewInstallPlan).toUpperCase() === 'TRUE');
+            localStorage.setItem('inv_view_plan', hasPlanPerm ? 'true' : 'false');
+            appData.role = perm.role || 'USER';
+            appData.viewInstallPlan = hasPlanPerm;
             updatePermissionUI();
           }
         }).catch(() => {});
@@ -753,7 +772,7 @@
       .then(async json => {
         const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
         const rawAllowedWH = (localStorage.getItem('inv_user_wh') || '').trim();
-        const canViewPlan = (userRole === 'ADMIN') || (localStorage.getItem('inv_view_plan') === 'true');
+        const canViewPlan = canUserAccessInstallPlan();
 
         const allWhSet = new Set();
         (json.items || []).forEach(i => { if (i.wh) allWhSet.add(i.wh.trim()); });
@@ -779,7 +798,7 @@
           viewInstallPlan: canViewPlan,
           syncTime: json.syncTime || '',
           userWarehouses: accessibleWarehouses,
-          installPlan: json.installPlan || null
+          installPlan: canViewPlan ? (json.installPlan || null) : null
         };
 
         renderApp(constructedData);
@@ -797,8 +816,8 @@
     }
 
     function updatePermissionUI() {
-      const userRole = (localStorage.getItem('inv_user_role') || 'USER').toUpperCase();
-      const canViewPlan = (userRole === 'ADMIN') || (localStorage.getItem('inv_view_plan') === 'true');
+      const userRole = (localStorage.getItem('inv_user_role') || appData.role || 'USER').toUpperCase().trim();
+      const canViewPlan = canUserAccessInstallPlan();
 
       const adminBtn = document.getElementById('adminUserMgmtBtn');
       if (userRole === 'ADMIN') adminBtn.classList.remove('hidden');
@@ -816,7 +835,9 @@
         navBar.className = 'grid grid-cols-1 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-[11px] font-bold';
         btnCal.classList.add('hidden');
         btnProj.classList.add('hidden');
-        if (activeMainTab !== 'stock') navigateMainTab('stock');
+        if (activeMainTab !== 'stock') {
+          navigateMainTab('stock');
+        }
       }
     }
 
@@ -836,7 +857,7 @@
       renderView();
       initHorizontalScroll();
 
-      if (activeMainTab === 'calendar' || activeMainTab === 'projects') {
+      if (canUserAccessInstallPlan() && (activeMainTab === 'calendar' || activeMainTab === 'projects')) {
         renderInstallPlanView();
       }
     }
@@ -853,9 +874,14 @@
     }
 
     // ========================================================
-    // UNIFIED 3-TAB NAVIGATION: STOCK | CALENDAR & TEAM | PROJECTS
+    // UNIFIED 3-TAB NAVIGATION (WITH STRICT PERMISSION GUARD)
     // ========================================================
     function navigateMainTab(tabName) {
+      // ป้องกันการเข้าถึงหน้า Calendar & Projects หากไม่มี Permission
+      if (tabName !== 'stock' && !canUserAccessInstallPlan()) {
+        tabName = 'stock';
+      }
+
       activeMainTab = tabName;
       selectedCalDate = null;
       hideStockSuggestions();
@@ -906,8 +932,8 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Cross-Link 1: กดที่ชื่อโปรเจคจากมุมมองทีม/ปฏิทิน -> กระโดดไปหน้า Projects พร้อมใส่คำค้นหาเฉพาะหน้า Projects
     function jumpToProjectView(projectName) {
+      if (!canUserAccessInstallPlan()) return;
       activeProjectKeyword = projectName || '';
       const input = document.getElementById('projectSearchInput');
       const clearBtn = document.getElementById('clearProjSearchBtn');
@@ -919,8 +945,8 @@
       navigateMainTab('projects');
     }
 
-    // Cross-Link 2: กดปุ่ม "Calendar →" จากหน้า Projects -> เด้งไปหน้า Calendar & Team พร้อมไฮไลท์โปรเจคนั้น
     function jumpToProjectPeriodInCalendar(encodedProjName, targetIsoDate) {
+      if (!canUserAccessInstallPlan()) return;
       highlightedProjectName = decodeURIComponent(encodedProjName);
       if (targetIsoDate && targetIsoDate.includes('-')) {
         const parts = targetIsoDate.split('-');
@@ -1087,7 +1113,6 @@
       renderView();
     }
 
-    // ปิด Suggestion Dropdown เมื่อคลิกพื้นที่อื่น
     document.addEventListener('click', (e) => {
       const stockSub = document.getElementById('stockSubHeaderBar');
       if (stockSub && !stockSub.contains(e.target)) {
@@ -1295,6 +1320,11 @@
     }
 
     function renderInstallPlanView() {
+      if (!canUserAccessInstallPlan()) {
+        navigateMainTab('stock');
+        return;
+      }
+
       const container = document.getElementById('installPlanContent');
       const plan = appData.installPlan;
 
