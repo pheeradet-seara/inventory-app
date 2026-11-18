@@ -137,7 +137,6 @@
     
     <!-- ==================== VIEW 1: INVENTORY STOCK ==================== -->
     <div id="inventoryViewSection">
-      <!-- Top Header Sticky -->
       <div class="p-3 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs flex items-center justify-between gap-2">
         <div id="warehouseTabs" class="flex gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scroll flex-1 select-none cursor-grab active:cursor-grabbing"></div>
         
@@ -156,11 +155,10 @@
         Loading inventory data...
       </div>
 
-      <!-- MAIN BRAND & ITEM CONTAINER -->
       <div id="contentList" class="p-3.5 space-y-4"></div>
     </div>
 
-    <!-- ==================== VIEW 2: INSTALL PLAN (READ-ONLY) ==================== -->
+    <!-- ==================== VIEW 2: INSTALL PLAN (FRIENDLY CALENDAR) ==================== -->
     <div id="installPlanViewSection" class="hidden">
       <!-- Sticky Header -->
       <div class="p-3.5 bg-white/95 backdrop-blur-md sticky top-0 z-30 border-b border-slate-200 shadow-xs space-y-2.5">
@@ -179,25 +177,11 @@
           </span>
         </div>
 
-        <!-- Team & Status Filter Bar -->
+        <!-- Team Filter Pills -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll" id="planTeamFilterTabs"></div>
-        <div class="flex items-center gap-1.5">
-          <input type="text" id="planSearchInput" oninput="renderInstallPlanView()" placeholder="🔍 Search project name or note..." 
-                 class="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold focus:outline-none focus:ring-2 focus:ring-slate-800">
-          <select id="planStatusFilter" onchange="renderInstallPlanView()" class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 focus:outline-none">
-            <option value="ACTIVE">Active Jobs</option>
-            <option value="ALL">All Status</option>
-            <option value="1. Confirmed">1. Confirmed</option>
-            <option value="2. Tentative">2. Tentative</option>
-            <option value="3. Team Assigned">3. Team Assigned</option>
-            <option value="4. Subcontractor">4. Subcontractor</option>
-            <option value="5. Done">5. Done</option>
-            <option value="6. Cancel">6. Cancel</option>
-          </select>
-        </div>
       </div>
 
-      <!-- Content Container -->
+      <!-- Friendly Calendar & Workload Content -->
       <div id="installPlanContent" class="p-3.5 space-y-4"></div>
     </div>
 
@@ -219,7 +203,6 @@
           </div>
         </div>
 
-        <!-- ปุ่มสลับโหมด Install Plan (แสดงเฉพาะผู้ที่มีสิทธิ์ ViewInstallPlan หรือ ADMIN) -->
         <button id="menuInstallPlanBtn" onclick="toggleAppMode(); toggleHubMenu();" class="hidden flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-2xl shadow-lg text-[11px] font-bold hover:bg-indigo-700 active:scale-95 transition border border-indigo-500">
           <span id="menuInstallPlanLabel">📅 Install Plan</span>
         </button>
@@ -334,7 +317,6 @@
               </div>
             </div>
 
-            <!-- สิทธิ์ดูหน้า Install Plan (Col E) -->
             <div class="pt-1">
               <label class="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer select-none">
                 <input type="checkbox" id="userFormViewInstallPlan" class="w-4 h-4 rounded text-indigo-600 focus:ring-0">
@@ -371,8 +353,11 @@
     let appData = { items: [], userWarehouses: [], userEmail: '', role: 'USER', viewInstallPlan: false, syncTime: '', installPlan: null };
     let selectedWarehouses = new Set(['ALL']);
     
-    let currentAppMode = 'inventory'; // 'inventory' | 'installPlan'
+    let currentAppMode = 'inventory';
     let selectedPlanTeam = 'ALL';
+    let calYear = new Date().getFullYear();
+    let calMonth = new Date().getMonth(); // 0-11
+    let selectedCalDate = getTodayIso();
 
     let activeBrandName = null;
     let openItems = {};
@@ -384,6 +369,23 @@
 
     const DB_NAME = 'InventoryAppDB';
     const STORE_NAME = 'inventory_store';
+
+    const TEAM_COLORS = [
+      { dot: 'bg-indigo-600', pill: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+      { dot: 'bg-emerald-600', pill: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
+      { dot: 'bg-amber-600', pill: 'bg-amber-100 text-amber-800 border-amber-200' },
+      { dot: 'bg-sky-600', pill: 'bg-sky-100 text-sky-800 border-sky-200' },
+      { dot: 'bg-purple-600', pill: 'bg-purple-100 text-purple-800 border-purple-200' },
+      { dot: 'bg-rose-600', pill: 'bg-rose-100 text-rose-800 border-rose-200' }
+    ];
+
+    function getTodayIso() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
 
     function formatNumber(num) {
       return (Number(num) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -708,7 +710,6 @@
 
       showAppScreen();
 
-      // ซิงก์สิทธิ์ล่าสุดจาก Sheets เงียบๆ ในพื้นหลัง
       fetch(`${API_URL}?action=checkEmail&email=${encodeURIComponent(currentEmail)}`, { method: 'GET', redirect: 'follow' })
         .then(r => r.json())
         .then(perm => {
@@ -822,7 +823,7 @@
     }
 
     // ========================================================
-    // MODE SWITCHER: INVENTORY STOCK <-> INSTALL PLAN (READ-ONLY)
+    // MODE SWITCHER: INVENTORY STOCK <-> FRIENDLY CALENDAR PLAN
     // ========================================================
     function toggleAppMode() {
       switchAppMode(currentAppMode === 'inventory' ? 'installPlan' : 'inventory');
@@ -854,22 +855,49 @@
       if (!isoStr || !isoStr.includes('-')) return isoStr || '-';
       const parts = isoStr.split('-');
       if (parts.length !== 3) return isoStr;
-      return `${parseInt(parts[2], 10)}/${parseInt(parts[1], 10)}`;
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const mIdx = parseInt(parts[1], 10) - 1;
+      return `${parseInt(parts[2], 10)} ${months[mIdx] || parts[1]}`;
     }
 
     function getStatusBadgeStyle(status) {
       const s = (status || '').trim();
-      if (s.startsWith('1.')) return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' };
-      if (s.startsWith('2.')) return { bg: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500' };
-      if (s.startsWith('3.')) return { bg: 'bg-sky-50 text-sky-700 border-sky-200', dot: 'bg-sky-500' };
-      if (s.startsWith('4.')) return { bg: 'bg-slate-200 text-slate-700 border-slate-300', dot: 'bg-slate-600' };
-      if (s.startsWith('5.')) return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500' };
-      if (s.startsWith('6.')) return { bg: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' };
-      return { bg: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' };
+      if (s.startsWith('1.')) return { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Confirmed' };
+      if (s.startsWith('2.')) return { bg: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Tentative' };
+      if (s.startsWith('3.')) return { bg: 'bg-sky-50 text-sky-700 border-sky-200', label: 'Team Assigned' };
+      if (s.startsWith('4.')) return { bg: 'bg-slate-200 text-slate-700 border-slate-300', label: 'Subcontractor' };
+      if (s.startsWith('5.')) return { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', label: 'Done' };
+      if (s.startsWith('6.')) return { bg: 'bg-rose-50 text-rose-700 border-rose-200', label: 'Cancel' };
+      return { bg: 'bg-slate-100 text-slate-600 border-slate-200', label: s || '-' };
     }
 
     function selectPlanTeamFilter(teamName) {
       selectedPlanTeam = teamName;
+      renderInstallPlanView();
+    }
+
+    function changeCalendarMonth(delta) {
+      calMonth += delta;
+      if (calMonth > 11) {
+        calMonth = 0;
+        calYear++;
+      } else if (calMonth < 0) {
+        calMonth = 11;
+        calYear--;
+      }
+      renderInstallPlanView();
+    }
+
+    function jumpToTodayCalendar() {
+      const now = new Date();
+      calYear = now.getFullYear();
+      calMonth = now.getMonth();
+      selectedCalDate = getTodayIso();
+      renderInstallPlanView();
+    }
+
+    function selectCalendarDay(isoDate) {
+      selectedCalDate = isoDate;
       renderInstallPlanView();
     }
 
@@ -892,6 +920,12 @@
 
       updatedEl.innerText = `Synced: ${plan.updatedAt || '-'}`;
 
+      // Map สีประจำทีม
+      const teamColorMap = {};
+      plan.teams.forEach((t, idx) => {
+        teamColorMap[t.team] = TEAM_COLORS[idx % TEAM_COLORS.length];
+      });
+
       // 1. Render Team Filter Pills
       let pillsHtml = `
         <button onclick="selectPlanTeamFilter('ALL')" 
@@ -901,34 +935,18 @@
       `;
       plan.teams.forEach(t => {
         const active = selectedPlanTeam === t.team;
+        const c = teamColorMap[t.team];
         pillsHtml += `
           <button onclick="selectPlanTeamFilter('${escapeHtml(t.team)}')" 
-                  class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 ${active ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-            ${escapeHtml(t.team)}
+                  class="px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-bold transition flex-shrink-0 flex items-center gap-1.5 ${active ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            <span class="w-2 h-2 rounded-full ${c.dot}"></span>
+            <span>${escapeHtml(t.team)}</span>
           </button>
         `;
       });
       tabsEl.innerHTML = pillsHtml;
 
-      // 2. ตรวจหาคิวชนกันของแต่ละทีม (1 ทีมรับมากกว่า 1 โปรเจคในวันเดียวกัน)
-      const conflictRows = new Set();
-      const activeJobsForConflict = (plan.projects || []).filter(p =>
-        p.team && p.startDate && p.endDate && (p.status === '1. Confirmed' || p.status === '2. Tentative')
-      );
-      for (let i = 0; i < activeJobsForConflict.length; i++) {
-        for (let j = i + 1; j < activeJobsForConflict.length; j++) {
-          const a = activeJobsForConflict[i];
-          const b = activeJobsForConflict[j];
-          if (a.team === b.team && a.projectName !== b.projectName) {
-            if (a.startDate <= b.endDate && a.endDate >= b.startDate) {
-              conflictRows.add(`${a.team}|${a.projectName}|${a.startDate}`);
-              conflictRows.add(`${b.team}|${b.projectName}|${b.startDate}`);
-            }
-          }
-        }
-      }
-
-      // 3. Team Radar Summary Cards
+      // 2. Team Workload Radar (สรุปช่วงแทรกงานและวันว่างถัดไป)
       const visibleTeams = selectedPlanTeam === 'ALL'
         ? plan.teams
         : plan.teams.filter(t => t.team === selectedPlanTeam);
@@ -936,28 +954,31 @@
       let html = `
         <div class="space-y-2">
           <div class="flex items-center justify-between px-1">
-            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">📡 Team Availability Radar (60 Days)</span>
-            <span class="text-[10px] font-bold text-slate-400">From ${formatShortThaiDate(plan.viewStartDate)}</span>
+            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">📡 Team Availability Summary</span>
+            <span class="text-[10px] font-bold text-slate-400">Tap team to filter</span>
           </div>
           <div class="grid grid-cols-1 gap-2">
             ${visibleTeams.map(t => {
+              const c = teamColorMap[t.team];
               const gapVal = String(t.maxGap || '-');
               const isFreeAll = gapVal === '-';
               const isZeroGap = gapVal === '0';
               const badgeClass = isFreeAll
-                ? 'bg-slate-100 text-slate-700 border-slate-200'
-                : (isZeroGap ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200');
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : (isZeroGap ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200');
               return `
-                <div onclick="selectPlanTeamFilter('${escapeHtml(t.team)}')" class="cursor-pointer bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs hover:border-slate-300 transition flex items-center justify-between gap-2.5">
+                <div onclick="selectPlanTeamFilter('${selectedPlanTeam === t.team ? 'ALL' : escapeHtml(t.team)}')" 
+                     class="cursor-pointer bg-white rounded-2xl border ${selectedPlanTeam === t.team ? 'border-slate-900 ring-1 ring-slate-900' : 'border-slate-200'} p-3 shadow-2xs hover:border-slate-300 transition flex items-center justify-between gap-2.5">
                   <div class="min-w-0 flex-1">
                     <div class="flex items-center gap-2">
+                      <span class="w-2.5 h-2.5 rounded-full ${c.dot}"></span>
                       <span class="font-extrabold text-slate-900 text-[13px]">${escapeHtml(t.team)}</span>
                     </div>
                     <p class="text-[11px] text-slate-600 font-medium mt-0.5 truncate">${escapeHtml(t.summaryText || '-')}</p>
                   </div>
                   <div class="flex-shrink-0 text-center px-2.5 py-1.5 rounded-xl border ${badgeClass}">
-                    <span class="text-[9px] font-bold uppercase block opacity-75">Max Gap</span>
-                    <span class="text-[14px] font-black leading-tight">${escapeHtml(gapVal)}<span class="text-[10px] font-bold ml-0.5">${isFreeAll ? '' : 'd'}</span></span>
+                    <span class="text-[9px] font-bold uppercase block opacity-75">แทรกสูงสุด</span>
+                    <span class="text-[13px] font-black leading-tight">${isFreeAll ? 'ว่าง 60d' : `${escapeHtml(gapVal)} วัน`}</span>
                   </div>
                 </div>
               `;
@@ -966,82 +987,227 @@
         </div>
       `;
 
-      // 4. Filter Projects List
-      const searchKw = (document.getElementById('planSearchInput').value || '').toLowerCase().trim();
-      const statusFilter = document.getElementById('planStatusFilter').value;
+      // 3. Monthly Calendar Builder
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay(); // 0=Sun..6=Sat
+      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+      const todayIso = getTodayIso();
 
-      const filteredProjects = (plan.projects || []).filter(p => {
-        if (selectedPlanTeam !== 'ALL' && p.team !== selectedPlanTeam) return false;
-        if (statusFilter === 'ACTIVE') {
-          if (p.status.startsWith('5.') || p.status.startsWith('6.')) return false;
-        } else if (statusFilter !== 'ALL') {
-          if (p.status !== statusFilter) return false;
-        }
-        if (searchKw) {
-          const matchProj = (p.projectName || '').toLowerCase().includes(searchKw);
-          const matchNote = (p.note || '').toLowerCase().includes(searchKw);
-          const matchTeam = (p.team || '').toLowerCase().includes(searchKw);
-          if (!matchProj && !matchNote && !matchTeam) return false;
-        }
-        return true;
-      });
+      const activeProjects = (plan.projects || []).filter(p => !p.status.startsWith('6.'));
+      const totalFilterTeamsCount = visibleTeams.length;
+
+      // Helper เช็กงานในวันนั้นๆ
+      const getDaySnapshot = (isoDate) => {
+        const busyTeamSet = new Set();
+        const teamJobCount = {};
+        const searaJobs = [];
+        const subJobs = [];
+
+        activeProjects.forEach(p => {
+          if (selectedPlanTeam !== 'ALL' && p.team !== selectedPlanTeam) return;
+
+          // งานทีม SEARA
+          if (p.team && p.startDate && p.endDate && isoDate >= p.startDate && isoDate <= p.endDate) {
+            searaJobs.push(p);
+            if (p.status === '1. Confirmed' || p.status === '2. Tentative') {
+              busyTeamSet.add(p.team);
+              teamJobCount[p.team] = (teamJobCount[p.team] || 0) + 1;
+            }
+          }
+          // งานผู้รับเหมา
+          if (p.subStart && p.subEnd && isoDate >= p.subStart && isoDate <= p.subEnd) {
+            subJobs.push(p);
+          }
+        });
+
+        const hasConflict = Object.values(teamJobCount).some(cnt => cnt > 1);
+        const freeTeams = visibleTeams.map(t => t.team).filter(tName => !busyTeamSet.has(tName));
+
+        return { busyTeamSet, freeTeams, searaJobs, subJobs, hasConflict };
+      };
 
       html += `
-        <div class="space-y-2.5 pt-1">
-          <div class="flex items-center justify-between px-1">
-            <span class="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">📋 Schedule List</span>
-            <span class="text-[10px] font-bold text-slate-400">${filteredProjects.length} Scopes</span>
+        <div class="bg-white rounded-3xl border border-slate-200 p-3.5 shadow-xs space-y-3">
+          <!-- Calendar Header -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <button onclick="changeCalendarMonth(-1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700">◀</button>
+              <h2 class="text-[15px] font-extrabold text-slate-900 min-w-[130px] text-center">${monthNames[calMonth]} ${calYear}</h2>
+              <button onclick="changeCalendarMonth(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-slate-700">▶</button>
+            </div>
+            <button onclick="jumpToTodayCalendar()" class="px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-[10px] font-bold hover:bg-slate-800">
+              Today
+            </button>
           </div>
+
+          <!-- Legend -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-[10px] font-semibold text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-emerald-100 border border-emerald-300 inline-block"></span> ว่างครบ</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-sky-100 border border-sky-300 inline-block"></span> มีคิวบางทีม</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-amber-100 border border-amber-300 inline-block"></span> เต็มทุกทีม</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-rose-200 border border-rose-400 inline-block"></span> คิวซ้อน</span>
+          </div>
+
+          <!-- Days of Week -->
+          <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-extrabold uppercase tracking-wider">
+            <div class="text-rose-500 py-1">Sun</div>
+            <div class="text-slate-500 py-1">Mon</div>
+            <div class="text-slate-500 py-1">Tue</div>
+            <div class="text-slate-500 py-1">Wed</div>
+            <div class="text-slate-500 py-1">Thu</div>
+            <div class="text-slate-500 py-1">Fri</div>
+            <div class="text-rose-500 py-1">Sat</div>
+          </div>
+
+          <!-- Calendar Grid -->
+          <div class="grid grid-cols-7 gap-1">
       `;
 
-      if (filteredProjects.length === 0) {
-        html += `
-          <div class="bg-white rounded-2xl border border-slate-200 p-6 text-center text-[11px] font-semibold text-slate-400">
-            No matching installation schedules found.
-          </div>
-        `;
-      } else {
-        filteredProjects.forEach(p => {
-          const st = getStatusBadgeStyle(p.status);
-          const hasSub = p.subStart || p.subEnd;
-          const hasSeara = p.startDate || p.endDate;
-          const isConflict = conflictRows.has(`${p.team}|${p.projectName}|${p.startDate}`);
-
-          html += `
-            <div class="bg-white rounded-2xl border ${isConflict ? 'border-rose-400 bg-rose-50/30 ring-1 ring-rose-300' : 'border-slate-200'} p-3.5 shadow-2xs space-y-2">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="font-extrabold text-slate-900 text-[13px] leading-snug">${escapeHtml(p.projectName || 'Untitled Project')}</span>
-                    ${isConflict ? '<span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-rose-600 text-white animate-pulse">⚠️ คิวซ้อน (OVERLAP)</span>' : ''}
-                  </div>
-                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium mt-0.5">${escapeHtml(p.note)}</p>` : ''}
-                </div>
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border whitespace-nowrap flex-shrink-0 ${st.bg}">
-                  ${escapeHtml(p.status || '-')}
-                </span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1.5 border-t border-slate-100 text-[11px]">
-                ${hasSub ? `
-                  <div class="flex items-center justify-between bg-slate-100/90 px-2.5 py-1.5 rounded-xl border border-slate-200/80">
-                    <span class="text-[10px] font-bold text-slate-600">🏗️ Subcontractor</span>
-                    <span class="font-extrabold text-slate-800">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)}</span>
-                  </div>
-                ` : ''}
-                ${(p.team || hasSeara) ? `
-                  <div class="flex items-center justify-between ${isConflict ? 'bg-rose-100/80 border-rose-300' : 'bg-indigo-50/70 border-indigo-100'} px-2.5 py-1.5 rounded-xl border ${!hasSub ? 'sm:col-span-2' : ''}">
-                    <span class="text-[10px] font-extrabold ${isConflict ? 'text-rose-800' : 'text-indigo-700'}">🛠️ ${escapeHtml(p.team || 'Unassigned')}</span>
-                    <span class="font-extrabold ${isConflict ? 'text-rose-900' : 'text-slate-900'}">${hasSeara ? `${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}` : 'TBD'}</span>
-                  </div>
-                ` : ''}
-              </div>
-            </div>
-          `;
-        });
+      // Empty cells before 1st day
+      for (let e = 0; e < firstDayOfMonth; e++) {
+        html += `<div class="h-14 rounded-xl bg-slate-50/50"></div>`;
       }
 
-      html += `</div>`;
+      for (let day = 1; day <= daysInMonth; day++) {
+        const mStr = String(calMonth + 1).padStart(2, '0');
+        const dStr = String(day).padStart(2, '0');
+        const isoDate = `${calYear}-${mStr}-${dStr}`;
+        const dayOfWeek = new Date(calYear, calMonth, day).getDay();
+        const isSunday = (dayOfWeek === 0);
+        const isSelected = (isoDate === selectedCalDate);
+        const isToday = (isoDate === todayIso);
+
+        const snap = getDaySnapshot(isoDate);
+        const freeCount = snap.freeTeams.length;
+        const busyCount = snap.busyTeamSet.size;
+
+        // กำหนดสีพื้นหลังช่องวันที่ตาม Load
+        let cellBg = 'bg-emerald-50/70 border-emerald-200/80 hover:bg-emerald-100/70';
+        if (isSunday && busyCount === 0) {
+          cellBg = 'bg-slate-50 border-slate-200/70';
+        } else if (snap.hasConflict) {
+          cellBg = 'bg-rose-100/90 border-rose-400';
+        } else if (totalFilterTeamsCount > 0 && freeCount === 0) {
+          cellBg = 'bg-amber-100/80 border-amber-300';
+        } else if (busyCount > 0) {
+          cellBg = 'bg-sky-50/90 border-sky-200';
+        }
+
+        const ringClass = isSelected ? 'ring-2 ring-slate-900 border-slate-900 scale-[1.03] z-10 shadow-sm' : '';
+
+        // จุดสีของทีมที่ติดงานในวันนั้น
+        const dotsHtml = Array.from(snap.busyTeamSet).slice(0, 4).map(tName => {
+          const c = teamColorMap[tName] || TEAM_COLORS[0];
+          return `<span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>`;
+        }).join('');
+
+        html += `
+          <button onclick="selectCalendarDay('${isoDate}')" 
+                  class="h-14 p-1 rounded-xl border transition-all flex flex-col items-center justify-between relative ${cellBg} ${ringClass}">
+            <div class="w-full flex items-center justify-between px-0.5">
+              <span class="text-[11px] font-extrabold ${isToday ? 'bg-slate-900 text-white px-1.5 rounded-md' : (dayOfWeek === 0 || dayOfWeek === 6 ? 'text-rose-600' : 'text-slate-800')}">
+                ${day}
+              </span>
+              ${snap.subJobs.length > 0 ? '<span class="w-1.5 h-1.5 rounded-sm bg-slate-500" title="Subcontractor"></span>' : ''}
+            </div>
+
+            <div class="flex items-center justify-center gap-0.5 h-2">
+              ${dotsHtml}
+            </div>
+
+            <span class="text-[9px] font-bold leading-none ${snap.hasConflict ? 'text-rose-700' : (freeCount === 0 ? 'text-amber-800' : 'text-emerald-800')}">
+              ${snap.hasConflict ? 'ซ้อน!' : (isSunday && busyCount === 0 ? 'หยุด' : (freeCount === totalFilterTeamsCount ? 'ว่าง' : `ว่าง ${freeCount}`))}
+            </span>
+          </button>
+        `;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      // 4. Day Inspector Card (รายละเอียดของวันที่แตะเลือกอยู่)
+      const selectedSnap = getDaySnapshot(selectedCalDate);
+      html += `
+        <div class="bg-white rounded-3xl border border-slate-200 p-4 shadow-xs space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+            <div>
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Selected Date</span>
+              <h3 class="text-[16px] font-extrabold text-slate-900">📆 ${formatShortThaiDate(selectedCalDate)} ${selectedCalDate.split('-')[0]}</h3>
+            </div>
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-xl ${selectedSnap.freeTeams.length > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+              ว่าง ${selectedSnap.freeTeams.length} / ${totalFilterTeamsCount} ทีม
+            </span>
+          </div>
+
+          <!-- ทีมที่ว่างพร้อมรับงานวันนี้ -->
+          <div class="space-y-1.5">
+            <span class="text-[11px] font-extrabold text-emerald-700 block">✅ ทีมที่ว่างพร้อมรับงานวันนี้:</span>
+            ${selectedSnap.freeTeams.length === 0 ? `
+              <p class="text-[11px] text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 font-semibold">
+                ⚠️ ทุกทีมมีคิวงานเต็มหมดแล้วในวันนี้
+              </p>
+            ` : `
+              <div class="flex flex-wrap gap-1.5">
+                ${selectedSnap.freeTeams.map(tName => {
+                  const c = teamColorMap[tName] || TEAM_COLORS[0];
+                  return `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span class="w-2 h-2 rounded-full ${c.dot}"></span>
+                      ${escapeHtml(tName)}
+                    </span>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- งานทีม SEARA วันนี้ -->
+          <div class="space-y-2 pt-1">
+            <span class="text-[11px] font-extrabold text-slate-700 block">🛠️ คิวงานทีมติดตั้งวันนี้ (${selectedSnap.searaJobs.length}):</span>
+            ${selectedSnap.searaJobs.length === 0 ? `
+              <p class="text-[11px] text-slate-400 italic px-1">ไม่มีคิวติดตั้งของทีม SEARA ในวันนี้</p>
+            ` : selectedSnap.searaJobs.map(p => {
+              const st = getStatusBadgeStyle(p.status);
+              const c = teamColorMap[p.team] || TEAM_COLORS[0];
+              return `
+                <div class="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${c.pill}">
+                      <span class="w-1.5 h-1.5 rounded-full ${c.dot}"></span>
+                      ${escapeHtml(p.team)}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg border ${st.bg}">${escapeHtml(p.status)}</span>
+                  </div>
+                  <p class="font-extrabold text-slate-900 text-[13px] leading-snug">${escapeHtml(p.projectName || 'Untitled')}</p>
+                  ${p.note ? `<p class="text-[11px] text-slate-500 font-medium">${escapeHtml(p.note)}</p>` : ''}
+                  <div class="text-[10px] font-bold text-slate-500 pt-1">
+                    🗓️ ช่วงติดตั้ง: <span class="text-slate-800">${formatShortThaiDate(p.startDate)} – ${formatShortThaiDate(p.endDate)}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- งานผู้รับเหมาวันนี้ (ถ้ามี) -->
+          ${selectedSnap.subJobs.length > 0 ? `
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+              <span class="text-[11px] font-extrabold text-slate-600 block">🏗️ งานผู้รับเหมาเตรียมพื้นที่วันนี้ (${selectedSnap.subJobs.length}):</span>
+              ${selectedSnap.subJobs.map(p => `
+                <div class="p-2.5 rounded-2xl bg-slate-100/80 border border-slate-200 space-y-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-extrabold text-slate-800 text-[12px] truncate">${escapeHtml(p.projectName || 'Untitled')}</span>
+                    <span class="text-[10px] font-bold text-slate-600 whitespace-nowrap">${formatShortThaiDate(p.subStart)} – ${formatShortThaiDate(p.subEnd)}</span>
+                  </div>
+                  ${p.note ? `<p class="text-[10px] text-slate-500 truncate">${escapeHtml(p.note)}</p>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+
       container.innerHTML = html;
     }
 
