@@ -66,7 +66,7 @@
         </div>
         <div class="flex items-center justify-center gap-1.5">
           <h2 class="text-xl font-extrabold text-slate-900 tracking-tight" id="authTitle">Sign In</h2>
-          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.6</span>
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200">v1.9.7</span>
         </div>
         <p class="text-[11px] font-medium text-slate-500" id="authSubtitle">Enter your work email to continue</p>
       </div>
@@ -145,7 +145,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-1.5">
               <h1 class="text-[15px] font-extrabold text-slate-900 leading-tight truncate">SEARA</h1>
-              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.6</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">v1.9.7</span>
             </div>
             <p class="text-[10px] font-medium text-slate-400 truncate" id="globalSyncText">Synced: -</p>
           </div>
@@ -213,15 +213,18 @@
       <!-- Row 3B: Contextual Bar for TEAM -->
       <div id="teamSubHeaderBar" class="hidden flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scroll"></div>
 
-      <!-- Row 3C: Contextual Bar for PROJECT -->
+      <!-- Row 3C: Contextual Bar for PROJECT (With Search Suggestions) -->
       <div id="projectSubHeaderBar" class="hidden">
         <div class="relative">
           <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">🔍</span>
-          <input type="text" id="projectSearchInput" oninput="onProjectSearchInput()" 
-                 placeholder="Search project or team..." 
+          <input type="text" id="projectSearchInput" oninput="onProjectSearchInput()" onfocus="onProjectSearchFocus()"
+                 placeholder="Search project, team or note..." 
                  autocomplete="off"
                  class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[12px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-800 placeholder:text-slate-400">
           <button id="clearProjSearchBtn" onclick="clearProjectSearch()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold">✕</button>
+
+          <!-- Project Search Suggestions Dropdown -->
+          <div id="projectSuggestionDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl shadow-xl border border-slate-200 max-h-60 overflow-y-auto divide-y divide-slate-100 text-[11px] z-50 custom-scroll"></div>
         </div>
       </div>
 
@@ -331,9 +334,9 @@
 
   <script>
     // ==========================================
-    // CONFIGURATION - VERSION 1.9.6
+    // CONFIGURATION - VERSION 1.9.7
     // ==========================================
-    const APP_VERSION = "1.9.6";
+    const APP_VERSION = "1.9.7";
     const API_URL = "https://script.google.com/macros/s/AKfycbwfQ1z41ldFapHtjkgjWjzf2k4MPhORVu0yhnF3QWQJ4dgjtToPnoNHtccmBjVR405O_w/exec";
     const DATA_URL = "./data.json";
 
@@ -363,6 +366,7 @@
 
     let masterWarehouseList = [];
     let stockSearchDebounceTimer = null;
+    let projectSearchDebounceTimer = null;
     let currentRenderList = [];
 
     const DB_NAME = 'InventoryAppDB';
@@ -886,6 +890,7 @@
         selectedProjectCalDate = getTodayIso();
       }
       hideStockSuggestions();
+      hideProjectSuggestions();
       closeAccountDrawer();
 
       const btnStock = document.getElementById('navBtnStock');
@@ -952,6 +957,7 @@
         if (activeProjectKeyword) clearBtn.classList.remove('hidden');
         else clearBtn.classList.add('hidden');
       }
+      hideProjectSuggestions();
       navigateMainTab('project');
     }
 
@@ -978,7 +984,7 @@
     }
 
     // ========================================================
-    // INDEPENDENT SEARCH 1: PROJECT SEARCH
+    // INDEPENDENT SEARCH 1: PROJECT SEARCH + SUGGESTIONS
     // ========================================================
     function onProjectSearchInput() {
       const input = document.getElementById('projectSearchInput');
@@ -986,13 +992,183 @@
       const clearBtn = document.getElementById('clearProjSearchBtn');
       if (activeProjectKeyword) clearBtn.classList.remove('hidden');
       else clearBtn.classList.add('hidden');
+
+      clearTimeout(projectSearchDebounceTimer);
+      projectSearchDebounceTimer = setTimeout(() => {
+        renderProjectSuggestions();
+        renderInstallPlanView();
+      }, 120);
+    }
+
+    function onProjectSearchFocus() {
+      if (activeProjectKeyword.length >= 1) {
+        renderProjectSuggestions();
+      }
+    }
+
+    function hideProjectSuggestions() {
+      const box = document.getElementById('projectSuggestionDropdown');
+      if (box) box.classList.add('hidden');
+    }
+
+    function renderProjectSuggestions() {
+      const box = document.getElementById('projectSuggestionDropdown');
+      if (!box) return;
+
+      const val = activeProjectKeyword.trim();
+      if (val.length < 1 || !appData.installPlan) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      const term = val.toLowerCase();
+      const plan = appData.installPlan;
+      const matches = [];
+      const seen = new Set();
+
+      // 1. ค้นหาจากชื่อทีม (Team) สูงสุด 2 รายการ
+      (plan.teams || []).forEach(t => {
+        const tName = (t.team || '').trim();
+        if (tName && tName.toLowerCase().includes(term)) {
+          const key = 'team_' + tName.toLowerCase();
+          if (!seen.has(key) && matches.length < 2) {
+            seen.add(key);
+            matches.push({
+              type: 'TEAM',
+              primary: tName,
+              secondary: t.summaryText || 'Installation Team',
+              fillVal: tName,
+              targetDate: ''
+            });
+          }
+        }
+      });
+
+      // 2. ค้นหาจากรายการโปรเจค (ไม่รวม 6. Cancelled)
+      const allProjects = (plan.projects || []).filter(p => !String(p.status || '').startsWith('6.'));
+      const projGroupMap = {};
+
+      allProjects.forEach(p => {
+        const pName = (p.projectName || '').trim();
+        if (!pName) return;
+        const pTeam = (p.team || '').trim();
+        const pNote = (p.note || '').trim();
+
+        const isMatch = pName.toLowerCase().includes(term) ||
+                        pTeam.toLowerCase().includes(term) ||
+                        pNote.toLowerCase().includes(term);
+
+        if (!isMatch) return;
+
+        if (!projGroupMap[pName]) {
+          projGroupMap[pName] = {
+            projectName: pName,
+            teams: new Set(),
+            notes: new Set(),
+            earliestStart: '',
+            latestEnd: ''
+          };
+        }
+        if (pTeam) projGroupMap[pName].teams.add(pTeam);
+        if (pNote) projGroupMap[pName].notes.add(pNote);
+        if (p.startDate && (!projGroupMap[pName].earliestStart || p.startDate < projGroupMap[pName].earliestStart)) {
+          projGroupMap[pName].earliestStart = p.startDate;
+        }
+        if (p.endDate && (!projGroupMap[pName].latestEnd || p.endDate > projGroupMap[pName].latestEnd)) {
+          projGroupMap[pName].latestEnd = p.endDate;
+        }
+      });
+
+      Object.values(projGroupMap)
+        .sort((a, b) => a.projectName.localeCompare(b.projectName, 'th', { sensitivity: 'base' }))
+        .forEach(pg => {
+          if (matches.length >= 6) return;
+          const dateStr = (pg.earliestStart || pg.latestEnd)
+            ? `${formatShortDate(pg.earliestStart)} – ${formatShortDate(pg.latestEnd)}`
+            : 'Schedule TBD';
+          const noteArr = Array.from(pg.notes);
+          const teamArr = Array.from(pg.teams);
+          const subText = `${dateStr}${noteArr.length > 0 ? ' · ' + noteArr.join(', ') : ''}`;
+
+          matches.push({
+            type: teamArr.length > 0 ? teamArr.join(', ') : 'PROJECT',
+            primary: pg.projectName,
+            secondary: subText,
+            fillVal: pg.projectName,
+            targetDate: pg.earliestStart || ''
+          });
+        });
+
+      if (matches.length === 0) {
+        box.innerHTML = `
+          <div class="p-3 text-center text-slate-400 font-semibold text-[11px]">
+            No matching project or team found
+          </div>
+        `;
+        box.classList.remove('hidden');
+        return;
+      }
+
+      let html = '';
+      matches.forEach(m => {
+        const isTeam = m.type === 'TEAM';
+        const badgeStyle = isTeam
+          ? 'bg-slate-900 text-white font-extrabold'
+          : 'bg-emerald-50 text-emerald-800 border border-emerald-200 font-extrabold';
+
+        html += `
+          <div onclick="applyProjectSuggestion('${encodeURIComponent(m.fillVal)}', '${m.targetDate}')" 
+               class="p-2.5 hover:bg-slate-50 active:bg-slate-100 cursor-pointer flex justify-between items-center gap-2 transition">
+            <div class="min-w-0 flex-1">
+              <span class="font-extrabold text-slate-900 text-[12px] block truncate">${escapeHtml(m.primary)}</span>
+              <span class="text-[10px] text-slate-500 font-medium block truncate mt-0.5">${escapeHtml(m.secondary)}</span>
+            </div>
+            <span class="text-[9px] uppercase px-2 py-0.5 rounded-md flex-shrink-0 ${badgeStyle}">${escapeHtml(m.type)}</span>
+          </div>
+        `;
+      });
+
+      box.innerHTML = html;
+      box.classList.remove('hidden');
+    }
+
+    function applyProjectSuggestion(encodedVal, targetDate) {
+      const val = decodeURIComponent(encodedVal);
+      activeProjectKeyword = val;
+
+      const input = document.getElementById('projectSearchInput');
+      if (input) {
+        input.value = val;
+        input.blur(); // พับคีย์บอร์ดมือถือลงเพื่อให้เห็นปฏิทินและการ์ดรายละเอียดทันที
+      }
+
+      const clearBtn = document.getElementById('clearProjSearchBtn');
+      if (clearBtn) clearBtn.classList.remove('hidden');
+
+      hideProjectSuggestions();
+
+      if (targetDate && targetDate.includes('-')) {
+        const parts = targetDate.split('-');
+        calYear = parseInt(parts[0], 10);
+        calMonth = parseInt(parts[1], 10) - 1;
+        selectedProjectCalDate = targetDate;
+      }
+
       renderInstallPlanView();
+
+      if (targetDate) {
+        setTimeout(() => {
+          const card = document.getElementById('projectDayInspectorCard');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
+      }
     }
 
     function clearProjectSearch() {
       activeProjectKeyword = '';
       document.getElementById('projectSearchInput').value = '';
       document.getElementById('clearProjSearchBtn').classList.add('hidden');
+      hideProjectSuggestions();
       renderInstallPlanView();
     }
 
@@ -1127,6 +1303,10 @@
       const stockSub = document.getElementById('stockSubHeaderBar');
       if (stockSub && !stockSub.contains(e.target)) {
         hideStockSuggestions();
+      }
+      const projSub = document.getElementById('projectSubHeaderBar');
+      if (projSub && !projSub.contains(e.target)) {
+        hideProjectSuggestions();
       }
     });
 
@@ -1915,8 +2095,6 @@
       const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay();
       const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
       const mStr = String(calMonth + 1).padStart(2, '0');
-      const monthStartIso = `${calYear}-${mStr}-01`;
-      const monthEndIso = `${calYear}-${mStr}-${String(daysInMonth).padStart(2, '0')}`;
 
       // กรองเฉพาะงาน SEARA Install (ตัด Subcontractor และ 6. Cancelled ออก)
       const filteredSearaScopes = analytics.allNonCancelProjects.filter(p => {
@@ -1942,7 +2120,6 @@
         } else {
           if (p.startDate < projectSpansMap[name].startDate) projectSpansMap[name].startDate = p.startDate;
           if (p.endDate > projectSpansMap[name].endDate) projectSpansMap[name].endDate = p.endDate;
-          // ถ้ามี scope ใดยังไม่ completed ให้ถือว่าโปรเจคนี้ยังไม่จบ (สีเข้ม)
           if (!isScopeCompleted) projectSpansMap[name].isCompleted = false;
         }
       });
@@ -1966,14 +2143,13 @@
         weeks.push(currentWeek);
       }
 
-      // ฟังก์ชันคำนวณ Track แถบสีลากยาวของแต่ละสัปดาห์ (ไม่ทับกัน และแสดงครบทุกโปรเจค)
+      // ฟังก์ชันคำนวณ Track แถบสีลากยาวของแต่ละสัปดาห์
       const buildWeekBars = (weekDates) => {
         const validDates = weekDates.filter(Boolean);
         if (validDates.length === 0) return { tracks: [] };
         const wStart = validDates[0];
         const wEnd = validDates[validDates.length - 1];
 
-        // หาโปรเจคทั้งหมดที่มีช่วงเวลาพาดผ่านสัปดาห์นี้
         const overlapping = Object.values(projectSpansMap).filter(sp => {
           return sp.startDate <= wEnd && sp.endDate >= wStart;
         }).sort((a, b) => {
@@ -2003,7 +2179,6 @@
           };
         }).filter(b => b.startCol !== -1);
 
-        // จัดลง Track (แถวแนวนอน) เพื่อไม่ให้แถบสีชนกัน
         const tracks = [];
         bars.forEach(bar => {
           let placed = false;
@@ -2121,9 +2296,6 @@
                         const barStyle = bar.isCompleted
                           ? 'bg-emerald-600/20 text-emerald-950/75 border border-emerald-600/25'
                           : 'bg-emerald-600 text-white shadow-2xs';
-
-                        const roundLeft = bar.continuesLeft ? 'rounded-l-none ml-0' : 'rounded-l-[5px] ml-[2px]';
-                        const roundRight = bar.continuesRight ? 'rounded-r-none mr-0' : 'rounded-r-[5px] mr-[2px]';
 
                         return `
                           <div onclick="event.stopPropagation(); selectProjectCalendarDay('${bar.clickIso}')"
@@ -2567,7 +2739,6 @@
       container.innerHTML = gridHtml;
     }
 
-    // Compact 2-Column Brand Card (Matched to Team Card height & spacing)
     function renderBrandCardHtml(brandObj, isBrandOpen) {
       const initials = getBrandInitials(brandObj.brand);
       return `
